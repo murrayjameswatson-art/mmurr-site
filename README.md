@@ -1,2 +1,2 @@
 # mmur-site
-First repo push to murr.ai. Developed for fun.
+First repo push to mumrr.ai. Developed for fun.

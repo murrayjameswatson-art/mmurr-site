@@ -1,2 +1,2 @@
 // Add your JavaScript here
-console.log('MMUR Site loaded successfully!');
+console.log('MMURR Site loaded successfully!');

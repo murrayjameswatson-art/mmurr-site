@@ -86,7 +86,7 @@ body {
 
 .mmurrai::after {
     content: ' mmurr.ai';
-    color: #000000;
+    color: #d4af37;
     text-shadow: 
         0 0 20px #d4af37,
         0 0 40px #d4af37,
@@ -121,7 +121,7 @@ body {
         transform: scale(1);
     }
     50% {
-        opacity: 0.5;
+        opacity: 1;
         transform: scale(1.2);
     }
 }

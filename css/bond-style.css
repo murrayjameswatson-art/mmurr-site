@@ -74,13 +74,23 @@ body {
     animation: pulse 0.8s ease-out 0.4s backwards;
 }
 
-.murrai {
+.mmurrai {
     color: #d4af37;
     text-shadow: 
         0 0 20px #d4af37,
         0 0 40px #d4af37,
         0 0 60px rgba(212, 175, 55, 0.5);
     animation: slideInRight 0.8s ease-out 0.6s backwards;
+    user-select: none;
+}
+
+.mmurrai::after {
+    content: ' mmurr.ai';
+    color: #000000;
+    text-shadow: 
+        0 0 20px #d4af37,
+        0 0 40px #d4af37,
+        0 0 60px rgba(212, 175, 55, 0.5);
 }
 
 @keyframes slideInLeft {

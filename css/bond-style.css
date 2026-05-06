@@ -85,12 +85,12 @@ body {
 }
 
 .mmurrai::after {
-    content: ' mmurr.ai';
-    color: #d4af37;
+    content: '.ai';
+    color: #ffffff;
     text-shadow: 
-        0 0 20px #d4af37,
+        0 0 20px #ffffff,
         0 0 40px #d4af37,
-        0 0 60px rgba(212, 175, 55, 0.5);
+        0 0 60px rgba(212, 175, 55, 0.8);
             animation: slideInRight 1.8s ease-out 0.6s backwards;
             user-select: none;
 }

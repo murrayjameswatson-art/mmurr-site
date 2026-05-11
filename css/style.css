@@ -34,16 +34,19 @@ body {
 }
 
 h1 {
-    color: white;
+    background: linear-gradient(90deg, #FFA500 0%, #FFD700 50%, #1E40AF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
-    font-size: 3rem;
+    font-size: 4.5rem;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .tagline {
     color: #FFD700;
-    font-size: 0.95rem;
+    font-size: 1.4rem;
     font-style: italic;
     margin: 0;
 }

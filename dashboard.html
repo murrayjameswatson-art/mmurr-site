@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Carbon Dashboard — mmurr.ai</title>
+<meta name="description" content="Estimate the GHG, energy and water impact of your AI and data-platform usage. UK data-centre defaults, sourced factors, runs in your browser.">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>AI Carbon Dashboard</h1>
+      <p class="sub">Estimate the GHG, energy &amp; water impact of your AI &amp; data-platform usage — UK data centres</p>
+    </div>
+    <a class="back" href="index.html">← mmurr.ai</a>
+  </header>
+
+  <!-- PERIOD + PROFILES -->
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <span class="sub">Figures represent usage per</span>
+        <div class="seg" id="period" style="margin-left:8px">
+          <button data-p="day">Day</button>
+          <button data-p="week">Week</button>
+          <button data-p="month" class="on">Month</button>
+          <button data-p="year">Year</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <span class="sub">Quick fill</span>
+      <div class="profiles" id="profiles">
+        <button class="chip" data-profile="personal">Personal</button>
+        <button class="chip" data-profile="developer">Developer</button>
+        <button class="chip" data-profile="team">Team</button>
+        <button class="chip" data-profile="enterprise">Enterprise</button>
+        <button class="chip" data-profile="asset" data-tip="Aviva">Asset Manager</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES render here -->
+  <h2>Your usage</h2>
+  <div id="services"></div>
+
+  <!-- GLOBAL TOGGLES -->
+  <div class="panel">
+    <div class="toggles">
+      <label><input type="checkbox" id="reasoning">
+        <span>Heavy reasoning-model use (o-series, Gemini Thinking, R1) — applies the reasoning multiplier to LLM token/message energy</span></label>
+      <label><input type="checkbox" id="lifecycle">
+        <span>Include lifecycle impact (cooling water + embodied carbon)</span></label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="cta" id="calc">Calculate emissions</button>
+      <button class="cta secondary" id="share">Copy shareable link</button>
+    </div>
+  </div>
+
+  <!-- FACTORS -->
+  <details class="factors">
+    <summary>Assumptions &amp; conversion factors (edit to refine)</summary>
+    <div class="factor-grid" id="factorGrid"></div>
+    <p class="hint" style="padding:0 14px 14px">
+      Formula: <code>emissions = IT-energy(kWh) × PUE × grid intensity</code>.
+      Per-unit energy defaults are <em>all-in facility</em> figures where a comprehensive measurement exists
+      (Gemini), so PUE defaults to 1.0 — raise it only if you switch a factor to an IT-only basis.
+      Full sourcing in the table below.
+    </p>
+  </details>
+
+  <!-- PRICES (for cost & seat input) -->
+  <details class="factors">
+    <summary>Unit prices &amp; per-seat intensity (used by Cost / Seats input modes)</summary>
+    <div class="factor-grid" id="priceGrid"></div>
+    <p class="hint" style="padding:0 14px 14px">
+      Prices vary by contract, edition, model and FX — treat as starting points and overwrite with your own.
+      Licensed seats (Copilot, Gemini seats) are billed per user regardless of usage, so seat cost tells you nothing
+      about tokens; usage is instead estimated from messages-per-user-per-day.
+    </p>
+  </details>
+
+  <!-- RESULTS -->
+  <h2>Estimated emissions</h2>
+  <div class="result">
+    <div class="stat"><div class="big" id="rEnergy">0 kWh</div><div class="lab">Energy (incl. PUE)</div></div>
+    <div class="stat"><div class="big" id="rCO2">0 g</div><div class="lab">CO₂e <span id="rPeriod">per month</span></div></div>
+    <div class="stat"><div class="big" id="rTotal">0 g</div><div class="lab">CO₂e incl. embodied</div></div>
+  </div>
+  <p class="compare" id="compare"></p>
+
+  <div class="result" id="lifecycleBox" style="display:none">
+    <div class="stat"><div class="big" id="rWater">0 L</div><div class="lab">Cooling water</div></div>
+    <div class="stat"><div class="big" id="rEmbodied">0 g</div><div class="lab">Embodied CO₂e</div></div>
+    <div class="stat"><div class="big" id="rKm">0 km</div><div class="lab">≈ car driving</div></div>
+  </div>
+
+  <!-- SOURCES -->
+  <h2>Sources &amp; methodology</h2>
+  <div class="panel">
+    <p class="sub">Every default below is editable. Tags: <span class="tag measured">measured</span> from a primary
+      vendor/peer study · <span class="tag official">official</span> government dataset ·
+      <span class="tag estimate">estimate</span> engineering approximation where no vendor figure is published.</p>
+    <table class="src">
+      <thead><tr><th>Factor</th><th>Default</th><th>Basis</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Gemini energy / prompt</td>
+          <td class="val">0.24 Wh</td>
+          <td>Median Gemini Apps text prompt, comprehensive in-production measurement (active silicon-only figure is 0.10 Wh). <span class="tag measured">measured</span></td>
+          <td><a href="https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/" target="_blank" rel="noopener">Google Cloud (2025)</a> · <a href="https://services.google.com/fh/files/misc/measuring_the_environmental_impact_of_delivering_ai_at_google_scale.pdf" target="_blank" rel="noopener">technical paper (PDF)</a></td>
+        </tr>
+        <tr>
+          <td>Gemini water / prompt</td>
+          <td class="val">0.26 mL</td>
+          <td>Same study; ≈1.1 L/kWh fleet WUE-equivalent. <span class="tag measured">measured</span></td>
+          <td><a href="https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/" target="_blank" rel="noopener">Google Cloud (2025)</a></td>
+        </tr>
+        <tr>
+          <td>Copilot / ChatGPT energy / message</td>
+          <td class="val">0.34 Wh</td>
+          <td>Microsoft publishes no per-message figure; OpenAI's stated average query is used as a like-for-like proxy. <span class="tag estimate">estimate</span></td>
+          <td><a href="https://blog.samaltman.com/the-gentle-singularity" target="_blank" rel="noopener">OpenAI / Altman (2025)</a></td>
+        </tr>
+        <tr>
+          <td>UK grid intensity</td>
+          <td class="val">0.177 kgCO₂e/kWh</td>
+          <td>2025 location-based generation factor (down ~14.5% on 2024's 0.207). Add 0.0185 for T&amp;D losses. <span class="tag official">official</span></td>
+          <td><a href="https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025" target="_blank" rel="noopener">DESNZ / Defra (2025)</a></td>
+        </tr>
+        <tr>
+          <td>Data-centre PUE</td>
+          <td class="val">1.0 / 1.12 / 1.56</td>
+          <td>Default 1.0 because Gemini's figure is already all-in. Hyperscale fleets run ~1.09–1.20 (Google 1.09); global all-facility average is 1.56. <span class="tag official">official</span></td>
+          <td><a href="https://intelligence.uptimeinstitute.com/resource/uptime-institute-global-data-center-survey-2024" target="_blank" rel="noopener">Uptime Institute (2024/25)</a></td>
+        </tr>
+        <tr>
+          <td>Cooling water</td>
+          <td class="val">1.8 L/kWh</td>
+          <td>Typical on-site WUE; rises sharply if water for power generation is included. <span class="tag estimate">estimate</span></td>
+          <td><a href="https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/" target="_blank" rel="noopener">Google (2025)</a> · industry WUE</td>
+        </tr>
+        <tr>
+          <td>Embodied carbon uplift</td>
+          <td class="val">15%</td>
+          <td>Scope-3 hardware manufacturing as a share of operational emissions; literature spans ~10–25%. <span class="tag estimate">estimate</span></td>
+          <td><a href="https://services.google.com/fh/files/misc/measuring_the_environmental_impact_of_delivering_ai_at_google_scale.pdf" target="_blank" rel="noopener">Google paper, §embodied (2025)</a></td>
+        </tr>
+        <tr>
+          <td>Snowflake energy / credit</td>
+          <td class="val">500 Wh</td>
+          <td>No vendor disclosure. 1 credit ≈ 1 node-hour of compute; mid-range server draw with overhead. <span class="tag estimate">estimate</span></td>
+          <td><a href="https://www.snowflake.com/en/data-cloud/pricing-options/" target="_blank" rel="noopener">Snowflake credit model</a> (energy = own estimate)</td>
+        </tr>
+        <tr>
+          <td>Cortex / Coco energy / 1k tokens</td>
+          <td class="val">0.70 Wh</td>
+          <td>LLM-inference basis, aligned to Gemini comprehensive per-token. <span class="tag estimate">estimate</span></td>
+          <td>Derived from Google (2025)</td>
+        </tr>
+        <tr>
+          <td>Car comparison</td>
+          <td class="val">0.17 kgCO₂e/km</td>
+          <td>UK average car, all fuels. <span class="tag official">official</span></td>
+          <td><a href="https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025" target="_blank" rel="noopener">DESNZ / Defra (2025)</a></td>
+        </tr>
+        <tr>
+          <td>Smartphone charge</td>
+          <td class="val">0.0082 kgCO₂e</td>
+          <td>Full charge on average grid. <span class="tag estimate">estimate</span></td>
+          <td><a href="https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator" target="_blank" rel="noopener">US EPA equivalencies</a></td>
+        </tr>
+        <tr>
+          <td>M365 Copilot seat price</td>
+          <td class="val">£24.70/mo</td>
+          <td>UK list, enterprise add-on ($30 list). Used only for Cost→seats. <span class="tag official">official</span></td>
+          <td><a href="https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing" target="_blank" rel="noopener">Microsoft (2026)</a></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="foot">Estimates only — for awareness, not formal carbon accounting. Vendor measurements (especially
+      Google's) use market-based emissions; a location-based view of the same prompt is roughly 3× higher. All figures
+      above are editable in the panels at the top of the page. Calculations run entirely in your browser — no servers,
+      no tracking.</p>
+  </div>
+
+</div>
+
+<script src="js/factors.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

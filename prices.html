@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Price History — mmurr.ai</title>
+<meta name="description" content="See how the cost of a fixed AI/data basket — Copilot seats, Snowflake credits, Gemini & OpenAI tokens — has changed since 2023. Runs in your browser.">
+<link rel="stylesheet" href="css/prices.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>AI Price History</h1>
+      <p class="sub">How the cost of a <em>fixed</em> AI &amp; data basket has changed since 2023 — even as the
+        model behind each product was swapped underneath you.</p>
+    </div>
+    <a class="back" href="index.html">← mmurr.ai</a>
+  </header>
+
+  <div class="panel">
+    <p class="sub" style="margin:0">
+      Pick the services you use, set how much you use, and watch the monthly bill move over time. Seat- and
+      credit-priced products barely shift; token-priced models have fallen sharply per unit but each new generation
+      does far more per token. All prices are list, USD, and editable in the dataset — refine with your own contract rates.
+    </p>
+  </div>
+
+  <h2>Choose your stack</h2>
+  <div class="tracks" id="tracks"></div>
+
+  <div class="controls">
+    <div>
+      <span class="sub">Chart</span>
+      <div class="seg" id="chartType" style="margin-left:8px">
+        <button data-t="area" class="on">Stacked area</button>
+        <button data-t="line">Lines</button>
+      </div>
+    </div>
+    <label class="sub" style="display:flex;gap:6px;align-items:center;cursor:pointer">
+      <input type="checkbox" id="showTotal" checked style="accent-color:var(--accent)"> Show total
+    </label>
+    <div>
+      <span class="sub">Adoption curve</span>
+      <div class="seg" id="adoptCurve" style="margin-left:8px">
+        <button data-c="flat">Flat</button>
+        <button data-c="linear" class="on">Linear</button>
+        <button data-c="exp">Exponential</button>
+      </div>
+    </div>
+    <label class="sub" style="display:flex;gap:6px;align-items:center">
+      Adoption start
+      <input type="month" id="adoptStart" value="2023-06"
+        style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 8px;font-family:var(--mono)">
+    </label>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="big" id="sStart">$0</div><div class="lab">Monthly cost — <span id="sStartDate">start</span></div></div>
+    <div class="stat"><div class="big" id="sNow">$0</div><div class="lab">Monthly cost — now</div></div>
+    <div class="stat"><div class="big" id="sChange">—</div><div class="lab">Change over period</div></div>
+  </div>
+
+  <div class="chartbox"><canvas id="chart"></canvas></div>
+
+  <h2>Sources &amp; assumptions</h2>
+  <div class="panel">
+    <p class="sub" style="margin-top:0">Token tracks follow the <em>representative default model</em> at each date
+      (the backend a product like Copilot actually rode), blended 50/50 input/output. Seat and credit tracks are list
+      prices for the product itself.</p>
+    <table class="src">
+      <thead><tr><th>Track</th><th>Key points</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI default model<br>(Copilot backend)</td>
+          <td class="v">GPT-4 $45 → Turbo $20 → 4o $10 → 4o $6.25 → 4.1 $5 → 5.x $8.75</td>
+          <td><a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI pricing</a></td></tr>
+        <tr><td>Gemini Pro API</td>
+          <td class="v">1.5 Pro $7 → cut $3.13 → 2.5 Pro $5.63 → 3.x Pro $7</td>
+          <td><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Gemini pricing</a></td></tr>
+        <tr><td>Gemini Flash API</td>
+          <td class="v">1.5 Flash $0.70 → cut $0.19 → 2.5 Flash $1.40 → 3.5 Flash $5.25</td>
+          <td><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Gemini pricing</a></td></tr>
+        <tr><td>M365 Copilot seat</td>
+          <td class="v">$30/seat/mo, flat 2023→2026 (Business SKU cut to $21 in Dec 2025)</td>
+          <td><a href="https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing" target="_blank" rel="noopener">Microsoft</a></td></tr>
+        <tr><td>Snowflake credit</td>
+          <td class="v">$3/credit (Enterprise), stable. Standard $2 · Business Critical $4</td>
+          <td><a href="https://www.snowflake.com/en/data-cloud/pricing-options/" target="_blank" rel="noopener">Snowflake</a></td></tr>
+      </tbody>
+    </table>
+    <p class="foot">Prices are list, USD, blended 50/50 where token-based. The point of the chart is the <em>shape</em>
+      of change, not exact invoices — overwrite the dataset with your real rates. Runs entirely in your browser.</p>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/prices.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Data Centres — mmurr.ai</title>
+<meta name="description" content="UK data-centre capacity, the construction pipeline, and the sourced environmental footprint of building and running it — CO2, water and hardware lifecycle. Runs in your browser.">
+<link rel="stylesheet" href="css/datacentres.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>UK Data Centres</h1>
+      <p class="sub">The capacity being built, what it delivers, and the sourced footprint of constructing and
+        running it — CO₂, water and hardware lifecycle.</p>
+    </div>
+    <a class="back" href="index.html">← mmurr.ai</a>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat"><div class="big">~1.6 GW</div><div class="lab">Operational capacity (2024)</div></div>
+    <div class="stat"><div class="big">8.1 GW</div><div class="lab">Announced pipeline to 2037</div></div>
+    <div class="stat"><div class="big">6 GW</div><div class="lab">Gov AI-capable target by 2030</div></div>
+    <div class="stat"><div class="big">266</div><div class="lab">Data centres (up from 52 in 2000)</div></div>
+  </div>
+
+  <h2>Capacity over time</h2>
+  <div class="chartbox"><canvas id="capChart"></canvas></div>
+  <p class="note">Cumulative installed capacity (area) versus the full announced pipeline (line). The government's
+    6 GW AI-capable target for 2030 sits above the planning-approved trajectory of ~4.9 GW — the gap is the build
+    that is announced but not yet consented. Figures are approximate, drawn from the sources below.</p>
+
+  <h2>Footprint of the build-out</h2>
+  <div class="panel">
+    <div class="seg" id="scenario">
+      <button data-gw="1.6" class="on">Today · 1.6 GW</button>
+      <button data-gw="6">2030 target · 6 GW</button>
+      <button data-gw="8.1">Full pipeline · 8.1 GW</button>
+    </div>
+    <div class="calc">
+      <div>
+        <p class="sub" style="margin-top:0">Capacity &amp; factors (editable)</p>
+        <div class="factor-grid">
+          <div><label class="f" for="gw">Capacity (GW)</label><input type="number" id="gw" step="any" value="1.6"></div>
+          <div><label class="f" for="load">Load factor</label><input type="number" id="load" step="any" value="0.8"></div>
+          <div><label class="f" for="con">Construction (tCO₂e/MW)</label><input type="number" id="con" step="any" value="200"></div>
+          <div><label class="f" for="spm">Servers / MW</label><input type="number" id="spm" step="any" value="1000"></div>
+          <div><label class="f" for="sec">Server embodied (kgCO₂e)</label><input type="number" id="sec" step="any" value="2500"></div>
+          <div><label class="f" for="ref">Refresh cycle (years)</label><input type="number" id="ref" step="any" value="4"></div>
+          <div><label class="f" for="pue">PUE</label><input type="number" id="pue" step="any" value="1.2"></div>
+          <div><label class="f" for="grid">Grid (kgCO₂e/kWh)</label><input type="number" id="grid" step="any" value="0.177"></div>
+          <div><label class="f" for="wue">WUE (L/kWh)</label><input type="number" id="wue" step="any" value="1.9"></div>
+        </div>
+      </div>
+      <div class="out" id="out"></div>
+    </div>
+    <p class="note" id="ctx"></p>
+  </div>
+
+  <h2>Where it is — capacity by cluster</h2>
+  <div class="panel">
+    <p class="sub" style="margin-top:0">Operational capacity is heavily concentrated. London and the M4 corridor
+      hold over half; the next planned giants shift weight toward the Humber, North East and Scotland.</p>
+    <div class="heat" id="heatNow"></div>
+    <p class="sub" style="margin:16px 0 6px">Largest single planned builds <span class="pill">announced</span></p>
+    <div class="heat" id="heatPlan"></div>
+    <p class="note">A full geographic heatmap (production vs consumption by postcode/region) is a sensible next step,
+      but reliable per-site consumption data is scarce — operators self-report inconsistently. This cluster view uses
+      the regional figures that are actually published.</p>
+  </div>
+
+  <h2>Sources</h2>
+  <div class="panel">
+    <table class="src">
+      <thead><tr><th>Figure</th><th>Value</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>UK capacity &amp; pipeline</td><td class="v">1.6 GW now · 8.1 GW pipeline · 4.9 GW likely by 2030</td>
+          <td><a href="https://www.computerweekly.com/news/366640935/Data-dive-Government-2030-datacentre-capacity-targets-look-shaky" target="_blank" rel="noopener">Computer Weekly / Barbour ABI (2026)</a></td></tr>
+        <tr><td>Gov 6 GW AI target; 266 DCs</td><td class="v">6 GW by 2030 · 266 sites (2024)</td>
+          <td><a href="https://www.oxfordeconomics.com/resource/the-uks-data-centre-boom-growth-trends-drivers-and-the-rising-power-challenge/" target="_blank" rel="noopener">Oxford Economics (2026)</a></td></tr>
+        <tr><td>Construction embodied carbon</td><td class="v">~200 tCO₂e/MW (10 MW ≈ 1–2 kt concrete CO₂)</td>
+          <td><a href="https://arxiv.org/pdf/2509.21312" target="_blank" rel="noopener">Texas DC LCA, arXiv (2025)</a> · <a href="https://arxiv.org/pdf/2505.08530" target="_blank" rel="noopener">ATLAS (200–800 kg/m²)</a></td></tr>
+        <tr><td>Server embodied carbon</td><td class="v">~1.8–3.3 tCO₂e/server</td>
+          <td><a href="https://arxiv.org/pdf/2502.01671" target="_blank" rel="noopener">Google, Life-Cycle Emissions of AI Hardware (2025)</a></td></tr>
+        <tr><td>Hardware refresh cycle</td><td class="v">3–5 years</td>
+          <td><a href="https://arxiv.org/pdf/2501.01990" target="_blank" rel="noopener">Sustainable LLM Serving (2025)</a></td></tr>
+        <tr><td>Water (WUE)</td><td class="v">~1.9 L/kWh avg · 1 MW evap ≈ 26 ML/yr</td>
+          <td><a href="https://www.eesi.org/articles/view/data-centers-and-water-consumption" target="_blank" rel="noopener">EESI / Green Grid</a> · <a href="https://assets.publishing.service.gov.uk/media/688cb407dc6688ed50878367/Water_use_in_data_centre_and_AI_report.pdf" target="_blank" rel="noopener">UK Gov water report (2025)</a></td></tr>
+      </tbody>
+    </table>
+    <p class="foot">All factors are editable and represent academic/industry approximations — the literature spans wide
+      ranges (server embodied carbon alone varies ~40× across published LCAs), so treat outputs as order-of-magnitude.
+      The CO₂/water bases here match the per-usage dashboard so totals reconcile across the site. Runs in your browser.</p>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/factors.js"></script>
+<script src="js/datacentres.js"></script>
+</body>
+</html>

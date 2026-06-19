@@ -10,19 +10,25 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;
+  background:var(--bg);
+  /* subtle spotlight so the dark feels intentional, not flat */
+  background-image:radial-gradient(ellipse 80% 60% at 50% 30%, #1b1f2a 0%, var(--bg) 62%);
+  color:var(--ink);font-family:var(--sans);line-height:1.5;
   min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
 }
 .home{width:100%;max-width:620px;text-align:center}
 
-/* Lowercase wordmark in a golden gradient */
+/* Lowercase wordmark, styled as a logo: tight tracking, heavy weight,
+   golden gradient fill and a soft gold glow. This is the design that will be
+   frozen into assets/logo.svg once approved. */
 .wordmark{
-  font-size:clamp(3rem,12vw,5rem);font-weight:700;letter-spacing:-.01em;line-height:1;
-  background:linear-gradient(90deg,var(--gold1),var(--gold2));
+  font-size:clamp(3.2rem,13vw,5.5rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(95deg,#FFB733 0%,var(--gold2) 48%,var(--gold1) 100%);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 2px 20px rgba(255,180,40,.28));
 }
-.lead{color:var(--muted);font-size:1.05rem;margin:14px auto 28px;max-width:34rem}
+.lead{color:var(--muted);font-size:1.05rem;margin:18px auto 30px;max-width:34rem}
 
 /* Tool links as slick dark cards */
 .links{display:flex;flex-direction:column;gap:12px;text-align:left}

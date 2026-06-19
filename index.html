@@ -1,37 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mmurr.ai</title>
+    <meta name="description" content="Small browser-based experiments in AI, data and their footprint.">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="banner">
-        <svg class="logo" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
-            <!-- Letter M -->
-            <path d="M 10 60 L 10 20 L 25 45 L 40 20 L 40 60" stroke="#FFA500" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Letter m -->
-            <path d="M 50 60 L 50 35 Q 50 25 60 25 Q 70 25 70 35 L 70 60 M 70 35 Q 70 25 80 25 Q 90 25 90 35 L 90 60" stroke="#FFD700" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Letter u -->
-            <path d="M 100 25 L 100 50 Q 100 60 110 60 L 120 60 Q 130 60 130 50 L 130 25" stroke="#FFA500" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Letter r -->
-            <path d="M 140 25 L 140 60 M 140 35 Q 140 25 150 25 Q 160 25 160 30" stroke="#FFD700" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Letter r -->
-            <path d="M 170 25 L 170 60 M 170 35 Q 170 25 180 25 Q 190 25 190 30" stroke="#FFA500" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div class="banner-content">
-            <h1>mmurr.ai</h1>
-            <p class="tagline">mur.ia and murr.ai were taken and this was cheap</p>
-        </div>
-    </header>
-    <main class="content">
+    <main class="home">
+        <h1 class="wordmark">mmurr.ai</h1>
         <p class="lead">Small browser-based experiments in AI, data and their footprint — no servers, no tracking.</p>
-        <div class="links">
-            <a href="dashboard.html">AI Carbon Dashboard</a>
-            <a href="prices.html">AI Price History</a>
-            <a href="datacentres.html">UK Data Centres</a>
-        </div>
+        <nav class="links">
+            <a href="dashboard.html">
+                <span class="t">AI Carbon Dashboard</span>
+                <span class="d">Estimate the energy, CO₂ &amp; water of your AI &amp; data usage</span>
+            </a>
+            <a href="prices.html">
+                <span class="t">AI Price History</span>
+                <span class="d">How a fixed AI &amp; data basket has repriced since 2023</span>
+            </a>
+            <a href="datacentres.html">
+                <span class="t">UK Data Centres</span>
+                <span class="d">Capacity, build-out pipeline &amp; environmental footprint</span>
+            </a>
+        </nav>
     </main>
     <script src="js/script.js"></script>
 </body>

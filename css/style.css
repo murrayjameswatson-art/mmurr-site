@@ -1,5 +1,6 @@
 /* Styles for index.html — landing page.
    Dark theme matching the tool pages (dashboard / prices / datacentres). */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap');
 :root{
   --bg:#0f1115; --panel:#171a21; --line:#2a2f3a;
   --ink:#e8eaed; --muted:#9aa3b2;
@@ -22,11 +23,13 @@ body{
    golden gradient fill and a soft gold glow. This is the design that will be
    frozen into assets/logo.svg once approved. */
 .wordmark{
-  font-size:clamp(3.2rem,13vw,5.5rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-family:'Orbitron',var(--sans);
+  font-size:clamp(2.6rem,11vw,4.8rem);font-weight:800;letter-spacing:.02em;line-height:1;
   background:linear-gradient(95deg,#FFB733 0%,var(--gold2) 48%,var(--gold1) 100%);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;
-  filter:drop-shadow(0 2px 20px rgba(255,180,40,.28));
+  /* layered neon halo: tight bright core + wider amber bloom */
+  filter:drop-shadow(0 0 6px rgba(255,210,80,.55)) drop-shadow(0 0 22px rgba(255,150,20,.35));
 }
 .lead{color:var(--muted);font-size:1.05rem;margin:18px auto 30px;max-width:34rem}
 

@@ -29,7 +29,6 @@ const FACTORS = {
   pa_wh:       {label:'Power Automate (Wh/credit)',   val:10,   note:'Engineering estimate for an AI Builder / flow credit.'},
   water:       {label:'Cooling water (L/kWh)',        val:1.8,  note:'Typical on-site water-use effectiveness (WUE).'},
   embodied:    {label:'Embodied uplift (%)',          val:15,   note:'Scope-3 hardware manufacturing as a share of operational emissions (~10–25%).'},
-  reasoningX:  {label:'Reasoning multiplier (×)',     val:10,   note:'Extra energy for reasoning models (o-series, Thinking, R1) vs a standard query.'},
 };
 
 // --- Default unit prices (GBP) & per-seat intensity -----------------------
@@ -69,7 +68,7 @@ const SERVICES = {
 // --- Live state -----------------------------------------------------------
 const STATE = {
   period:'month',
-  reasoning:false, lifecycle:false,
+  lifecycle:false,
   // per-service: {mode, usage, cost, seats, second:{usage}}
   svc:{
     gemini:{mode:'usage', usage:0, cost:0, seats:0},
@@ -234,18 +233,16 @@ function resolveUsage(key){
 // --- Core calculation -----------------------------------------------------
 function calculate(){
   const F=STATE.factors;
-  const rx = STATE.reasoning ? F.reasoningX : 1;
 
   let g=resolveUsage('gemini'), s=resolveUsage('snowflake'), c=resolveUsage('copilot');
 
-  // IT energy in Wh — reasoning multiplier applies to LLM token/message energy
-  // but NOT to Snowflake compute credits (those are compute, not inference).
+  // IT energy in Wh.
   let wh = 0;
-  wh += (g.geminiTokens/1000)*F.gemini_wh1k*rx;
-  wh += g.geminiPrompts*F.gemini_wh*rx;
-  wh += s.credits*F.snow_wh;                       // compute — not reasoning-scaled
-  wh += (s.cortexTokens/1000)*F.cortex_wh1k*rx;
-  wh += c.copilotMsgs*F.copilot_wh*rx;
+  wh += (g.geminiTokens/1000)*F.gemini_wh1k;
+  wh += g.geminiPrompts*F.gemini_wh;
+  wh += s.credits*F.snow_wh;
+  wh += (s.cortexTokens/1000)*F.cortex_wh1k;
+  wh += c.copilotMsgs*F.copilot_wh;
   wh += c.paCredits*F.pa_wh;
 
   const itKWh = wh/1000;
@@ -293,7 +290,6 @@ function syncFromInputs(){
   }
   for(const k of Object.keys(FACTORS)) STATE.factors[k]=num('#fac-'+k);
   for(const k of Object.keys(PRICES)) STATE.prices[k]=num('#pri-'+k);
-  STATE.reasoning=$('#reasoning').checked;
   STATE.lifecycle=$('#lifecycle').checked;
 }
 
@@ -309,7 +305,7 @@ function applyProfile(name){
 // --- Shareable link (encode state in URL) --------------------------------
 function shareLink(){
   syncFromInputs();
-  const payload=btoa(encodeURIComponent(JSON.stringify({p:STATE.period,svc:STATE.svc,f:STATE.factors,r:STATE.reasoning,l:STATE.lifecycle})));
+  const payload=btoa(encodeURIComponent(JSON.stringify({p:STATE.period,svc:STATE.svc,f:STATE.factors,l:STATE.lifecycle})));
   const url=location.origin+location.pathname+'#s='+payload;
   navigator.clipboard?.writeText(url);
   $('#share').textContent='Link copied ✓';
@@ -320,8 +316,8 @@ function loadFromHash(){
   try{
     const d=JSON.parse(decodeURIComponent(atob(location.hash.slice(3))));
     STATE.period=d.p||STATE.period; Object.assign(STATE.svc,d.svc||{});
-    Object.assign(STATE.factors,d.f||{}); STATE.reasoning=!!d.r; STATE.lifecycle=!!d.l;
-    $('#reasoning').checked=STATE.reasoning; $('#lifecycle').checked=STATE.lifecycle;
+    Object.assign(STATE.factors,d.f||{}); STATE.lifecycle=!!d.l;
+    $('#lifecycle').checked=STATE.lifecycle;
     [...$('#period').children].forEach(b=>b.classList.toggle('on',b.dataset.p===STATE.period));
   }catch(e){/* ignore bad hash */}
 }
@@ -347,7 +343,6 @@ function init(){
   document.addEventListener('input',e=>{
     if(e.target.matches('input[type=number]')){ syncFromInputs(); calculate(); }
   });
-  $('#reasoning').addEventListener('change',()=>{syncFromInputs();calculate();});
   $('#lifecycle').addEventListener('change',()=>{syncFromInputs();calculate();});
   $('#calc').addEventListener('click',()=>{syncFromInputs();calculate();});
   $('#share').addEventListener('click',shareLink);

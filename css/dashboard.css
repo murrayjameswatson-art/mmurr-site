@@ -1,4 +1,4 @@
-/* dashboard.html — AI Carbon Dashboard. Page-specific only; shared base + theme
+/* dashboard.html — AI Carbon Calculator. Page-specific only; shared base + theme
    live in css/base.css (loaded first). */
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .profiles{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}

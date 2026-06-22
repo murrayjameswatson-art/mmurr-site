@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-   mmurr.ai — AI Carbon Dashboard
+   mmurr.ai — AI Carbon Calculator
    Client-side only. Estimates GHG / energy / water from AI & data-platform use.
    Shared CO2 bases (grid, car, phone) come from js/factors.js (loaded first) so
    they reconcile with the data-centre page. Everything stays user-editable.
@@ -19,28 +19,28 @@ const MONTHS   = {day:1/30, week:7/30, month:1, year:12}; // for seat licence co
 // Per-unit energy defaults are all-in facility figures where a real measurement
 // exists (Gemini), so PUE defaults to 1.0 to avoid double-counting.
 const FACTORS = {
-  grid:        {label:'UK grid (kgCO₂e/kWh)',        val:MMURR_BASES.grid}, // shared base (§4)
-  pue:         {label:'PUE (facility overhead)',      val:1.0},
-  gemini_wh:   {label:'Gemini (Wh/prompt)',           val:0.24},
-  gemini_wh1k: {label:'Gemini (Wh/1k tokens)',        val:0.70},
-  copilot_wh:  {label:'Copilot (Wh/message)',         val:0.34},
-  snow_wh:     {label:'Snowflake (Wh/credit)',        val:500},
-  cortex_wh1k: {label:'Cortex/Coco (Wh/1k tokens)',   val:0.70},
-  pa_wh:       {label:'Power Automate (Wh/credit)',   val:10},
-  water:       {label:'Cooling water (L/kWh)',        val:1.8},
-  embodied:    {label:'Embodied uplift (%)',          val:15},
-  reasoningX:  {label:'Reasoning multiplier (×)',     val:10},
+  grid:        {label:'UK grid (kgCO₂e/kWh)',        val:MMURR_BASES.grid, note:'UK location-based grid intensity (DESNZ/Defra 2025).'}, // shared base (§4)
+  pue:         {label:'PUE (facility overhead)',      val:1.0,  note:'Facility energy ÷ IT energy. 1.0 here because the Gemini figure is already all-in.'},
+  gemini_wh:   {label:'Gemini (Wh/prompt)',           val:0.24, note:'Median Gemini text prompt, all-in facility measurement (Google 2025).'},
+  gemini_wh1k: {label:'Gemini (Wh/1k tokens)',        val:0.70, note:'Per-token LLM-inference basis, aligned to Gemini’s measured figure.'},
+  copilot_wh:  {label:'Copilot (Wh/message)',         val:0.34, note:'OpenAI’s stated average query, used as a Copilot proxy (Microsoft publishes none).'},
+  snow_wh:     {label:'Snowflake (Wh/credit)',        val:500,  note:'1 credit ≈ 1 node-hour of compute; mid-range server draw. Own estimate.'},
+  cortex_wh1k: {label:'Cortex/Coco (Wh/1k tokens)',   val:0.70, note:'LLM-inference basis, aligned to Gemini per-token.'},
+  pa_wh:       {label:'Power Automate (Wh/credit)',   val:10,   note:'Engineering estimate for an AI Builder / flow credit.'},
+  water:       {label:'Cooling water (L/kWh)',        val:1.8,  note:'Typical on-site water-use effectiveness (WUE).'},
+  embodied:    {label:'Embodied uplift (%)',          val:15,   note:'Scope-3 hardware manufacturing as a share of operational emissions (~10–25%).'},
+  reasoningX:  {label:'Reasoning multiplier (×)',     val:10,   note:'Extra energy for reasoning models (o-series, Thinking, R1) vs a standard query.'},
 };
 
 // --- Default unit prices (GBP) & per-seat intensity -----------------------
 const PRICES = {
-  gemini_gbp_1m:  {label:'Gemini API (£/1M tokens)',   val:0.30},
-  snow_gbp_cr:    {label:'Snowflake (£/credit)',       val:2.30},
-  cortex_gbp_1m:  {label:'Cortex/Coco (£/1M tokens)',  val:0.80},
-  copilot_seat:   {label:'Copilot (£/seat/month)',     val:24.70},
-  copilot_mpd:    {label:'Copilot msgs/user/day',      val:20},
-  gemini_seat:    {label:'Gemini (£/seat/month)',      val:21.00},
-  gemini_mpd:     {label:'Gemini msgs/user/day',       val:15},
+  gemini_gbp_1m:  {label:'Gemini API (£/1M tokens)',   val:0.30,  note:'Blended input+output list price; varies by model and FX.'},
+  snow_gbp_cr:    {label:'Snowflake (£/credit)',       val:2.30,  note:'List credit price; varies by edition, region and contract.'},
+  cortex_gbp_1m:  {label:'Cortex/Coco (£/1M tokens)',  val:0.80,  note:'Token price for Cortex LLM functions.'},
+  copilot_seat:   {label:'Copilot (£/seat/month)',     val:24.70, note:'M365 Copilot UK list, enterprise add-on. Used only for Cost→seats.'},
+  copilot_mpd:    {label:'Copilot msgs/user/day',      val:20,    note:'Assumed active messages per licensed user per working day.'},
+  gemini_seat:    {label:'Gemini (£/seat/month)',      val:21.00, note:'Gemini for Workspace seat list price.'},
+  gemini_mpd:     {label:'Gemini msgs/user/day',       val:15,    note:'Assumed active prompts per licensed user per working day.'},
 };
 
 // --- Service config -------------------------------------------------------
@@ -93,6 +93,8 @@ const PROFILES = {
 
 const $ = s=>document.querySelector(s);
 const num = (id)=>{const v=parseFloat($(id)?.value);return isNaN(v)?0:v;};
+// Generic count formatter — only for unitless tallies (tokens, prompts) where a
+// k/M prefix reads naturally. NOT for physical units (use the named ones below).
 const fmt = (n,u)=>{
   if(n>=1e6) return (n/1e6).toFixed(2)+' M'+u;
   if(n>=1e3) return (n/1e3).toFixed(2)+' k'+u;
@@ -100,6 +102,43 @@ const fmt = (n,u)=>{
   if(n>0)    return n.toFixed(3)+' '+u;
   return '0 '+u;
 };
+
+// Energy: common power-of-1000 names, value in kWh → Wh / kWh / MWh / GWh / TWh.
+// No stacked prefixes ("kkWh" can't happen).
+const fmtEnergy = (kWh)=>{
+  for(const [u,d] of [['TWh',1e9],['GWh',1e6],['MWh',1e3],['kWh',1]])
+    if(kWh>=d) return (kWh/d).toFixed(2)+' '+u;
+  if(kWh>0) return (kWh*1000).toFixed(0)+' Wh';
+  return '0 kWh';
+};
+
+// CO₂ mass: value in kg → g / kg / tonnes. Tonnes is the reporting unit and stays
+// terminal — beyond 1000 t we switch to scientific-notation tonnes, never kilotonnes.
+const fmtMass = (kg)=>{
+  if(kg>=1e6) return (kg/1e3).toExponential(2)+' t';
+  if(kg>=1e3) return (kg/1e3).toFixed(2)+' t';
+  if(kg>=1)   return kg.toFixed(2)+' kg';
+  if(kg>0)    return (kg*1e3).toFixed(0)+' g';
+  return '0 kg';
+};
+
+// Water: value in litres → mL / L / m³. m³ is terminal (no larger unit).
+const fmtWater = (L)=>{
+  if(L>=1e3) return (L/1e3).toFixed(2)+' m³';
+  if(L>=1)   return L.toFixed(L<10?2:0)+' L';
+  if(L>0)    return (L*1000).toFixed(0)+' mL';
+  return '0 L';
+};
+
+// ponytail: unit-formatter self-check, runs only when opened locally.
+if(['localhost','127.0.0.1',''].includes(location.hostname)){
+  console.assert(fmtEnergy(1500)==='1.50 MWh', 'energy MWh');
+  console.assert(fmtEnergy(2.5e6)==='2.50 GWh', 'energy GWh');
+  console.assert(fmtMass(1500)==='1.50 t', 'mass tonnes');
+  console.assert(fmtMass(1.5e6)==='1.50e+3 t', 'mass sci-notation tonnes');
+  console.assert(fmtMass(0.5)==='500 g', 'mass grams');
+  console.assert(fmtWater(2500)==='2.50 m³', 'water m³');
+}
 
 // --- Build the service cards ---------------------------------------------
 function renderServices(){
@@ -156,10 +195,12 @@ function field(id,label,val,hint){
 function renderFactors(){
   $('#factorGrid').innerHTML = Object.entries(FACTORS).map(([k,v])=>
     `<div><label class="f" for="fac-${k}">${v.label}</label>
-     <input type="number" id="fac-${k}" step="any" value="${STATE.factors[k]}"></div>`).join('');
+     <input type="number" id="fac-${k}" step="any" value="${STATE.factors[k]}">
+     ${v.note?`<div class="hint">${v.note}</div>`:''}</div>`).join('');
   $('#priceGrid').innerHTML = Object.entries(PRICES).map(([k,v])=>
     `<div><label class="f" for="pri-${k}">${v.label}</label>
-     <input type="number" id="pri-${k}" step="any" value="${STATE.prices[k]}"></div>`).join('');
+     <input type="number" id="pri-${k}" step="any" value="${STATE.prices[k]}">
+     ${v.note?`<div class="hint">${v.note}</div>`:''}</div>`).join('');
 }
 
 // --- Resolve a service to active usage units ------------------------------
@@ -219,9 +260,9 @@ function calculate(){
   const charges = totalKg/MMURR_BASES.phone;
 
   // render
-  $('#rEnergy').textContent = fmt(facilityKWh,'kWh');
-  $('#rCO2').textContent    = co2kg>=1?fmt(co2kg,'kg'):fmt(co2kg*1000,'g');
-  $('#rTotal').textContent  = totalKg>=1?fmt(totalKg,'kg'):fmt(totalKg*1000,'g');
+  $('#rEnergy').textContent = fmtEnergy(facilityKWh);
+  $('#rCO2').textContent    = fmtMass(co2kg);
+  $('#rTotal').textContent  = fmtMass(totalKg);
   $('#rPeriod').textContent = 'per '+STATE.period;
   $('#compare').innerHTML = totalKg>0
     ? `That's ≈ <b>${km.toFixed(km<10?1:0)} km</b> of average car driving, or <b>${Math.round(charges)}</b> smartphone charges, per ${STATE.period}.`
@@ -229,8 +270,8 @@ function calculate(){
 
   $('#lifecycleBox').style.display = STATE.lifecycle?'grid':'none';
   if(STATE.lifecycle){
-    $('#rWater').textContent = fmt(waterL,'L');
-    $('#rEmbodied').textContent = embodiedKg>=1?fmt(embodiedKg,'kg'):fmt(embodiedKg*1000,'g');
+    $('#rWater').textContent = fmtWater(waterL);
+    $('#rEmbodied').textContent = fmtMass(embodiedKg);
     $('#rKm').textContent = (km).toFixed(km<10?1:0)+' km';
   }
 

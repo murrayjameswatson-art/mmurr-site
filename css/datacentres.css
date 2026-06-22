@@ -1,36 +1,10 @@
-/* Styles for datacentres.html — UK Data Centres.
-   Self-contained per-page stylesheet (same approach as bond-style.css). */
-:root{
-  --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --line:#2a2f3a;
-  --ink:#e8eaed; --muted:#9aa3b2; --faint:#6b7280;
-  --accent:#5bd1a6; --accent-ink:#0f1115; --warn:#e0b341; --link:#7db7ff; --hot:#ff6b57;
-  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:15px}
-a{color:var(--link)}
-.wrap{max-width:980px;margin:0 auto;padding:24px 18px 80px}
-header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-h1{font-size:1.5rem;margin:0;letter-spacing:-.01em}
-h2{font-size:1.05rem;margin:26px 0 8px;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
-.back{font-size:.85rem;color:var(--muted);text-decoration:none}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:12px}
+/* datacentres.html — UK Data Centres. Page-specific only; shared base + theme
+   live in css/base.css (loaded first). */
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.stat .big{font-size:1.45rem;font-family:var(--mono);letter-spacing:-.02em}
-.stat .lab{font-size:.74rem;color:var(--muted);margin-top:3px}
 .chartbox{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
 canvas{width:100%!important;max-height:360px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel2)}
-.seg button{background:transparent;border:0;color:var(--muted);padding:7px 12px;font-size:.84rem;cursor:pointer}
-.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
 .factor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label.f{display:block;font-size:.78rem;color:var(--muted);margin-bottom:3px}
-input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
-  border-radius:7px;padding:8px 10px;font-family:var(--mono);font-size:.92rem}
 .out{display:flex;flex-direction:column;gap:10px}
 .outrow{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px}
 .outrow .v{font-family:var(--mono);font-size:1.15rem}
@@ -41,21 +15,11 @@ input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--li
 .bar>span{display:block;height:100%}
 .heatrow .mw{font-family:var(--mono);text-align:right;color:var(--muted)}
 .pill{font-size:.7rem;border:1px solid var(--line);border-radius:999px;padding:1px 7px;color:var(--muted)}
-table.src{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
-table.src th,table.src td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
-table.src th{color:var(--muted)}
-table.src td.v{font-family:var(--mono);color:var(--accent);white-space:nowrap}
-.foot{margin-top:22px;color:var(--faint);font-size:.78rem}
 .note{font-size:.78rem;color:var(--faint);margin-top:8px}
-@media(max-width:680px){.stat-row{grid-template-columns:1fr 1fr}.calc{grid-template-columns:1fr}.factor-grid{grid-template-columns:1fr}.heatrow{grid-template-columns:120px 1fr 56px}}
-/* mobile hardening */
-input[type=number],input[type=month]{font-size:16px} /* ≥16px stops iOS zoom-on-focus */
-table.src td,table.src th{overflow-wrap:anywhere}
-canvas,table,img{max-width:100%}
-a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media(max-width:680px){
-  .seg button{min-height:42px}
-  table.src{font-size:.78rem}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .calc{grid-template-columns:1fr}
+  .factor-grid{grid-template-columns:1fr}
+  .heatrow{grid-template-columns:120px 1fr 56px}
   canvas{max-height:300px}
 }

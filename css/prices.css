@@ -1,25 +1,5 @@
-/* Styles for prices.html — AI Price History.
-   Self-contained per-page stylesheet (same approach as bond-style.css). */
-:root{
-  --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --line:#2a2f3a;
-  --ink:#e8eaed; --muted:#9aa3b2; --faint:#6b7280;
-  --accent:#5bd1a6; --accent-ink:#0f1115; --warn:#e0b341; --link:#7db7ff;
-  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:15px}
-a{color:var(--link)}
-.wrap{max-width:980px;margin:0 auto;padding:24px 18px 80px}
-header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-h1{font-size:1.5rem;margin:0;letter-spacing:-.01em}
-h2{font-size:1.05rem;margin:26px 0 8px;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
-.back{font-size:.85rem;color:var(--muted);text-decoration:none}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:12px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel2)}
-.seg button{background:transparent;border:0;color:var(--muted);padding:7px 12px;font-size:.85rem;cursor:pointer}
-.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+/* prices.html — AI Price History. Page-specific only; shared base + theme
+   live in css/base.css (loaded first). */
 .tracks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .track{border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--panel)}
 .track .thead{display:flex;align-items:center;gap:8px}
@@ -27,36 +7,17 @@ h2{font-size:1.05rem;margin:26px 0 8px;letter-spacing:.02em;text-transform:upper
 .track .nm{font-weight:600;font-size:.92rem}
 .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
 .track .meta{font-size:.74rem;color:var(--faint);margin:4px 0 8px}
-.track label.f{display:block;font-size:.78rem;color:var(--muted);margin-bottom:3px}
-.track input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
-  border-radius:7px;padding:7px 9px;font-family:var(--mono);font-size:.9rem}
+.track label.f{font-size:.78rem}
+.track input[type=number]{padding:7px 9px;font-size:.9rem}
 .track.off{opacity:.45}
-.badge{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-.badge.licensed{color:var(--warn);border-color:var(--warn)}
-.badge.metered{color:var(--accent);border-color:var(--accent)}
 .controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.stat .big{font-size:1.5rem;font-family:var(--mono);letter-spacing:-.02em}
-.stat .lab{font-size:.76rem;color:var(--muted);margin-top:2px}
 .chartbox{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
 canvas{width:100%!important;max-height:380px}
-.foot{margin-top:22px;color:var(--faint);font-size:.78rem}
-table.src{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
-table.src th,table.src td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
-table.src th{color:var(--muted)}
-table.src td.v{font-family:var(--mono);color:var(--accent);white-space:nowrap}
-@media(max-width:680px){.tracks{grid-template-columns:1fr}.stat-row{grid-template-columns:1fr}}
-/* mobile hardening */
-input[type=number],input[type=month]{font-size:16px} /* ≥16px stops iOS zoom-on-focus */
-table.src td,table.src th{overflow-wrap:anywhere}
-canvas,table,img{max-width:100%}
-a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media(max-width:680px){
-  .seg button,.chip{min-height:42px}
+  .tracks{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr}
   .track input[type=checkbox]{width:20px;height:20px}
-  table.src{font-size:.78rem}
   canvas{max-height:300px}
   .controls{gap:10px}
 }

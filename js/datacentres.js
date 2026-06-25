@@ -92,13 +92,21 @@ function heat(el, rows, color){
     </div>`).join('');
 }
 
+// Grid + water default to the selected region (§6); both remain editable.
+function applyRegion(){
+  const R = MMURR_REGION.data();
+  $('grid').value = R.grid;
+  $('wue').value  = R.wue;
+  calc();
+}
+
 // --- Wire -----------------------------------------------------------------
 function init(){
-  $('grid').value = MMURR_BASES.grid;   // single-source the grid factor (§4)
   drawCap();
   heat('heatNow', CLUSTERS_NOW, '#5bd1a6');
   heat('heatPlan', CLUSTERS_PLAN, '#ff6b57');
-  calc();
+  applyRegion();                        // sets grid/water from region, then calc()
+  MMURR_REGION.onChange(applyRegion);
   document.querySelectorAll('.calc input').forEach(i=>i.addEventListener('input',calc));
   $('scenario').addEventListener('click',e=>{
     if(!e.target.dataset.gw) return;

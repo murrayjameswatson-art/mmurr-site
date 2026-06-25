@@ -39,6 +39,18 @@ table.src th,table.src td{text-align:left;padding:8px 6px;border-bottom:1px soli
 table.src th{color:var(--muted);font-weight:600}
 table.src td.val,table.src td.v{font-family:var(--mono);white-space:nowrap;color:var(--accent)}
 .foot{margin-top:24px;color:var(--faint);font-size:.78rem}
+/* region / currency selector (shared, rendered by js/region.js) */
+.region-bar{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-top:12px}
+.region-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.region-info strong{display:block;font-size:.95rem}
+.region-info .sub{display:block}
+.region-seg button{min-width:64px}
+.region-seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.region-disclose{margin-top:10px;font-size:.84rem;color:var(--muted)}
+.region-disclose summary{cursor:pointer;color:var(--link);width:max-content}
+.region-ledger{margin:10px 0 0;padding-left:18px}
+.region-ledger li{margin:6px 0}
+.region-ledger b{color:var(--ink)}
 /* mobile hardening */
 input[type=number],input[type=month]{font-size:16px} /* ≥16px stops iOS zoom-on-focus */
 table.src td,table.src th{overflow-wrap:anywhere}

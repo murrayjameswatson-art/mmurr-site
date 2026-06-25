@@ -43,5 +43,19 @@ body{
 .links .t{display:block;color:var(--ink);font-weight:600;font-size:1.02rem}
 .links .d{display:block;color:var(--muted);font-size:.85rem;margin-top:3px}
 
+/* region / currency selector (rendered by js/region.js) */
+.region-bar{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:0 0 22px;text-align:left}
+.region-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.region-info strong{display:block;font-size:.95rem;color:var(--ink)}
+.region-info .sub{display:block;color:var(--muted);font-size:.82rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#1d2129}
+.seg button{background:transparent;border:0;color:var(--muted);padding:7px 12px;font-size:.85rem;cursor:pointer;min-width:64px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg);font-weight:600}
+.region-disclose{margin-top:10px;font-size:.82rem;color:var(--muted)}
+.region-disclose summary{cursor:pointer;color:#7db7ff;width:max-content}
+.region-ledger{margin:10px 0 0;padding-left:18px}
+.region-ledger li{margin:6px 0}
+.region-ledger b{color:var(--ink)}
+
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}

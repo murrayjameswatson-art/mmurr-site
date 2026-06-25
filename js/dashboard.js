@@ -322,6 +322,21 @@ function loadFromHash(){
   }catch(e){/* ignore bad hash */}
 }
 
+// --- Region consumption ---------------------------------------------------
+// Grid intensity + cooling water default to the selected region (§5). PUE stays
+// the page's all-in 1.0. User can still override either factor below.
+function applyRegion(){
+  const R = MMURR_REGION.data();
+  STATE.factors.grid  = R.grid;
+  STATE.factors.water = R.wue;
+  const g=$('#fac-grid');  if(g) g.value=R.grid;
+  const w=$('#fac-water'); if(w) w.value=R.wue;
+  const note=$('#regionNote');
+  if(note) note.textContent =
+    `${R.flag} ${R.label} · grid ${R.grid} kgCO₂e/kWh · cooling water ${R.wue} L/kWh — editable in the factors panel.`;
+  calculate();
+}
+
 // --- Wire up --------------------------------------------------------------
 function init(){
   renderServices(); renderFactors(); loadFromHash(); renderServices(); renderFactors();
@@ -347,6 +362,7 @@ function init(){
   $('#calc').addEventListener('click',()=>{syncFromInputs();calculate();});
   $('#share').addEventListener('click',shareLink);
 
-  calculate();
+  MMURR_REGION.onChange(applyRegion);   // grid/water follow the region selector
+  applyRegion();                        // apply the persisted region on load (also calculates)
 }
 document.addEventListener('DOMContentLoaded',init);

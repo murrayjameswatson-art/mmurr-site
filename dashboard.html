@@ -19,6 +19,8 @@
     <a class="back" href="index.html">← mmurr.ai</a>
   </header>
 
+  <div id="region-bar"></div>
+
   <!-- PERIOD + PROFILES -->
   <div class="panel">
     <div class="row" style="justify-content:space-between">
@@ -85,6 +87,7 @@
 
   <!-- RESULTS -->
   <h2>Estimated emissions</h2>
+  <p class="sub" id="regionNote" style="margin:0 0 8px"></p>
   <div class="result">
     <div class="stat"><div class="big" id="rEnergy">0 kWh</div><div class="lab">Energy (incl. PUE)</div></div>
     <div class="stat"><div class="big" id="rCO2">0 g</div><div class="lab">CO₂e <span id="rPeriod">per month</span></div></div>
@@ -190,6 +193,7 @@
 </div>
 
 <script src="js/factors.js"></script>
+<script src="js/region.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@
 const TRACKS = {
   copilot: {
     name:'M365 Copilot', billing:'licensed', unit:'seats', usageLabel:'Seats',
-    color:'#e0b341', usageStart:50, usage:1000, on:true,
+    color:'#e0b341', usageStart:50, usage:1000, on:true, curRule:'seat', // regional list, not FX
     points:[ ['2023-11',30], ['2024-01',30], ['2025-01',30], ['2026-01',30] ], // per seat / month
     cost:(price,usage)=> price*usage,
   },
@@ -104,11 +104,16 @@ function renderTracks(){
 // --- Build datasets & compute ---------------------------------------------
 let chart;
 function compute(){
+  // Region rules: 'seat' tracks render the regional LIST price (not FX-converted);
+  // everything else is USD list converted at the editable FX anchor. (§2.1)
+  const R = MMURR_REGION.data(), region = MMURR_REGION.get();
+  const seatList = MMURR_DATA.seat.list[region] ?? MMURR_DATA.seat.list.UK;
   const datasets=[]; const totals=MONTHS.map(()=>0);
   for(const [key,t] of Object.entries(TRACKS)){
     if(!t.on || (!t.usage && !t.usageStart)) continue;
     const pf=fillPrices(t.points);
-    const series=MONTHS.map((m,i)=> pf[m]==null ? null : +t.cost(pf[m], rampUsage(t,i)).toFixed(2));
+    const conv = p => t.curRule==='seat' ? seatList : p*R.fx;
+    const series=MONTHS.map((m,i)=> pf[m]==null ? null : +t.cost(conv(pf[m]), rampUsage(t,i)).toFixed(2));
     series.forEach((v,i)=>{ if(v!=null) totals[i]+=v; });
     datasets.push({
       label:t.name, data:series, borderColor:t.color,
@@ -131,10 +136,11 @@ function setStats(totals){
   const valid=totals.map((v,i)=>[MONTHS[i],v]).filter(([,v])=>v>0);
   if(!valid.length){ ['sStart','sNow','sChange'].forEach(id=>document.getElementById(id).textContent='—'); return; }
   const [d0,v0]=valid[0], [,vN]=valid[valid.length-1];
-  const usd=n=> '$'+Math.round(n).toLocaleString();
-  document.getElementById('sStart').textContent=usd(v0);
+  const sym=MMURR_REGION.data().sym;
+  const cur=n=> sym+Math.round(n).toLocaleString();
+  document.getElementById('sStart').textContent=cur(v0);
   document.getElementById('sStartDate').textContent=d0;
-  document.getElementById('sNow').textContent=usd(vN);
+  document.getElementById('sNow').textContent=cur(vN);
   const pct=v0? ((vN-v0)/v0*100):0;
   document.getElementById('sChange').textContent=(pct>=0?'+':'')+pct.toFixed(0)+'%';
   document.getElementById('sChange').style.color = pct<=0?'var(--accent)':'var(--warn)';
@@ -143,6 +149,7 @@ function setStats(totals){
 // --- Draw -----------------------------------------------------------------
 let CHART_TYPE='area';
 function draw(){
+  const R=MMURR_REGION.data();
   const {datasets,totals}=compute();
   setStats(totals);
   const cfg={
@@ -152,12 +159,12 @@ function draw(){
       responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: $${Math.round(c.parsed.y).toLocaleString()}`}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${R.sym}${Math.round(c.parsed.y).toLocaleString()}`}},
       },
       scales:{
         x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
-        y:{stacked:CHART_TYPE==='area', ticks:{color:'#6b7280',callback:v=>'$'+(v/1000)+'k',font:{size:10}},
-           grid:{color:'#222732'},title:{display:true,text:'Monthly cost (USD)',color:'#9aa3b2',font:{size:11}}},
+        y:{stacked:CHART_TYPE==='area', ticks:{color:'#6b7280',callback:v=>R.sym+(v/1000)+'k',font:{size:10}},
+           grid:{color:'#222732'},title:{display:true,text:`Monthly cost (${R.cur||'local'})`,color:'#9aa3b2',font:{size:11}}},
       },
     },
   };
@@ -193,6 +200,7 @@ function init(){
     e.target.classList.add('on'); CHART_TYPE=e.target.dataset.t; draw();
   });
   document.getElementById('showTotal').addEventListener('change',draw);
+  MMURR_REGION.onChange(draw);   // re-price the basket when region/currency changes
   draw();
 }
 document.addEventListener('DOMContentLoaded',init);

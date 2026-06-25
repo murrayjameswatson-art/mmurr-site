@@ -19,6 +19,20 @@
 
   // --- state (region comes from MMURR_REGION) ------------------------------
   let profile = 'list', seats = 5000, override = 0, cohort = 0, mainModel = M.defaultAxis;
+  let ppd = M.defaultPpd;
+  const on = { energy:false, co2:false, water:false };   // footprint overlay series
+
+  // Footprint per user per day for a given per-prompt Wh, in the region's
+  // grid/PUE/WUE. Same basis as the carbon dashboard so the two reconcile (§4.4).
+  // PUE is the region's all-in 1.0 — NOT a >1 multiplier (that would double-count).
+  function footprint(wh, R){
+    const energyWh = ppd * wh;                       // Wh / user / day
+    return {
+      energy: energyWh,
+      co2:   energyWh/1000 * R.pue * R.grid * 1000,  // g  / user / day
+      water: energyWh/1000 * R.wue * 1000,           // mL / user / day
+    };
+  }
 
   // --- date + scale helpers ------------------------------------------------
   const D = s => { const [y,m] = s.split('-'); return new Date(+y, +m-1, 1).getTime(); };
@@ -65,6 +79,7 @@
   // --- draw ----------------------------------------------------------------
   function draw(){
     const R = MMURR_REGION.data();
+    const am = M.axis[mainModel];
     svg.innerHTML='';
     const seat = seatPrice();
     const lic = seats * seat;
@@ -77,6 +92,20 @@
       svg.appendChild(txt('lab-axis',PL-6,yy+3,'end', R.sym+Math.round(maxCost*(1-i/4)).toLocaleString())); }
     for(const yr of ['2024','2025','2026']){ const xx=x(D(yr+'-01'));
       svg.appendChild(txt('lab-axis',xx,H-PB+16,'middle',yr)); }
+
+    // footprint overlay (secondary scale, drawn behind the licence line).
+    // Wh/prompt steps at the MAIN MODEL's own lineage dates (§4.4), so switching
+    // model visibly moves the footprint — often DOWN as capability rises.
+    const pts=[]; for(let t=T0;t<=T1;t=addDays(t,30)) pts.push(t);
+    const fpAt = t => footprint(stepAt(am.steps,t)[3], R);
+    const series = { energy: pts.map(t=>fpAt(t).energy), co2: pts.map(t=>fpAt(t).co2), water: pts.map(t=>fpAt(t).water) };
+    const shown = Object.keys(on).filter(k=>on[k]);
+    const maxFp = Math.max(1, ...shown.flatMap(k=>series[k])) * 1.25;
+    const yF = v => H-PB - (v/maxFp)*(H-PT-PB);
+    const path = (arr,cls) => { let d=''; pts.forEach((t,i)=> d+=(i?'L':'M')+x(t)+' '+yF(arr[i])); svg.appendChild(el('path',{class:cls,d})); };
+    if(on.energy) path(series.energy,'ser-energy');
+    if(on.co2)    path(series.co2,'ser-co2');
+    if(on.water)  path(series.water,'ser-water');
 
     // flat licence line
     svg.appendChild(el('line',{class:'ser-lic',x1:PL,x2:W-PR,y1:yC(lic),y2:yC(lic)}));
@@ -99,11 +128,12 @@
 
     // readouts
     const disc = profile==='list' ? seatDiscount(seats) : 0;
+    const fpNow = footprint(stepAt(am.steps,T1)[3], R);
     document.getElementById('lab-r-lic').textContent  = R.sym+Math.round(lic).toLocaleString();
     document.getElementById('lab-r-seat').textContent = `${R.sym}${seat.toFixed(2)}` + (disc>0?` (−${Math.round(disc*100)}%)`:'');
     document.getElementById('lab-r-model').textContent = stepAt(M.backend,T1)[1];
+    document.getElementById('lab-r-fp').textContent = `${fpNow.energy.toFixed(1)} Wh · ${fpNow.co2.toFixed(1)} g · ${fpNow.water.toFixed(1)} mL`;
 
-    const am = M.axis[mainModel];
     let note = override>0
       ? `Seat fixed at your <b>${R.sym}${override.toFixed(2)}</b> override.`
       : profile==='list'
@@ -112,8 +142,9 @@
     if(profile==='business' && seats>MMURR_DATA.seat.businessCap)
       note += ` <b style="color:var(--hot)">Business SKU is capped at ${MMURR_DATA.seat.businessCap} employees</b> — this headcount can't use it; sits on the E-series.`;
     note += ` Markers are the Copilot backend swapping underneath; the line stays flat. `+
-            `Main-model axis (drives the API/footprint comparison next): <b>${am.group} ${am.label}</b>` +
-            (am.assumedWh?` <span class="vflag" title="Anthropic publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') + `.`;
+            `Footprint overlay follows the main-model axis <b>${am.group} ${am.label}</b>` +
+            (am.assumedWh?` <span class="vflag" title="Anthropic publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') +
+            `, stepping at that model's own dates. Footprint assumes one standardised text prompt — reasoning/image/video are far higher.`;
     document.getElementById('lab-disc').innerHTML = note;
   }
 
@@ -124,10 +155,31 @@
   onNum('lab-override', v=>override=v);
   document.getElementById('lab-cohort').addEventListener('change', e=>{ cohort=+e.target.value; draw(); });
   document.getElementById('lab-model').addEventListener('change', e=>{ mainModel=e.target.value; draw(); });
+  document.getElementById('lab-ppd').addEventListener('input', e=>{ ppd=+e.target.value; document.getElementById('lab-ppdOut').textContent=ppd; draw(); });
+  document.getElementById('lab-toggles').addEventListener('click', e=>{
+    const c=e.target.closest('.lab-chip'); if(!c) return;
+    const k=c.dataset.t, v=c.getAttribute('aria-pressed')!=='true';
+    c.setAttribute('aria-pressed',v); on[k]=v;
+    const lg=document.getElementById('lab-lg-'+k); if(lg) lg.hidden=!v;
+    draw();
+  });
   MMURR_REGION.onChange(()=>{ buildModelSelect(); draw(); });   // re-price + relabel on region switch
 
   // expose state for later-phase overlays
-  window.__lab = { get:()=>({profile,seats,override,cohort,mainModel}), draw };
+  window.__lab = { get:()=>({profile,seats,override,cohort,mainModel,ppd}), footprint, draw };
 
   buildCohortSelect(); buildModelSelect(); draw();
+
+  // ponytail: reconciliation self-check (local only). The price-page footprint
+  // and the carbon dashboard MUST agree for identical inputs — same grid, same
+  // all-in PUE (1.0, not a >1 multiplier), same per-prompt Wh. Guards the P4
+  // acceptance test and the bug where the mockup hard-coded PUE 1.25 / grid 0.21.
+  if(['localhost','127.0.0.1',''].includes(location.hostname)){
+    const R = MMURR_DATA.regions.UK;
+    console.assert(R.pue === 1.0, 'UK region PUE must be all-in 1.0 to reconcile with dashboard');
+    const wh = 0.31, p = ppd;
+    const got = footprint(wh, R).co2;
+    const dashboard = (p*wh)/1000 * R.pue * R.grid * 1000;   // dashboard's formula
+    console.assert(Math.abs(got - dashboard) < 1e-9, 'price/dashboard CO2 per day reconcile');
+  }
 })();

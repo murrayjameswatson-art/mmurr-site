@@ -129,6 +129,17 @@
         <label class="f" for="lab-model">Main model (your currency)</label>
         <select id="lab-model"></select>
       </div>
+      <div>
+        <label class="f" for="lab-ppd">Prompts / user / day <output id="lab-ppdOut">20</output></label>
+        <input type="range" id="lab-ppd" min="2" max="120" value="20" style="width:100%;accent-color:var(--warn)">
+      </div>
+    </div>
+
+    <div class="lab-toggles" id="lab-toggles">
+      <span class="sub" style="align-self:center;margin-right:4px">Overlay footprint:</span>
+      <button class="lab-chip" data-t="energy" aria-pressed="false"><span class="dot" style="background:var(--accent)"></span>Energy</button>
+      <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂</button>
+      <button class="lab-chip" data-t="water" aria-pressed="false"><span class="dot" style="background:#54c8e8"></span>Water</button>
     </div>
 
     <div class="chartbox lab-chartbox">
@@ -136,10 +147,18 @@
       <div class="lab-tip" id="labTip"></div>
     </div>
 
+    <div class="lab-legend">
+      <span><i style="border-color:var(--warn)"></i>Licence (flat)</span>
+      <span id="lab-lg-energy" hidden><i style="border-color:var(--accent)"></i>Energy Wh/user/day</span>
+      <span id="lab-lg-co2" hidden><i style="border-color:#b18cff"></i>CO₂ g/user/day</span>
+      <span id="lab-lg-water" hidden><i style="border-color:#54c8e8"></i>Water mL/user/day</span>
+    </div>
+
     <div class="lab-readout">
       <div><span class="lab-k">Licence / mo</span><span class="lab-v" id="lab-r-lic">—</span></div>
       <div><span class="lab-k">Effective seat rate</span><span class="lab-v" id="lab-r-seat">—</span></div>
       <div><span class="lab-k">Backend model now</span><span class="lab-v" id="lab-r-model">—</span></div>
+      <div><span class="lab-k">Footprint / user / day</span><span class="lab-v" id="lab-r-fp">—</span></div>
     </div>
 
     <p class="sub" id="lab-disc" style="margin-top:12px"></p>

@@ -71,6 +71,48 @@ window.MMURR_DATA = {
     discountMax: 0.30,
   },
 
+  // Model lineage for the price-page decision chart (js/pricelab.js).
+  // The licence price barely moves while the model underneath is swapped — the
+  // markers carry that story. Token $ are blended 50/50 in/out, USD per 1M.
+  // Anthropic per-query Wh are ASSUMPTIONS (vendor publishes none). (§4.1-4.3, §7)
+  models: {
+    tokPerPrompt: 1500,                 // tokens per standard prompt (editable, §4.5)
+    defaultPpd: 20,                     // prompts / user / day (a standard working day)
+    tierLagDays: [0, 18, 42, 210],      // Frontier program / priority / standard / premium (§4.2)
+    cohorts: ['Frontier program (early)', 'Priority access', 'Standard access', 'M365 Premium (consumer)'],
+
+    // Copilot/OpenAI backend that rides under the M365 licence (drives markers).
+    // [date, label, blendedUSD/1M, Wh/prompt]
+    backend: [
+      ['2023-11','GPT-4 Turbo',20,3.0],['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],
+      ['2025-08','GPT-5',5.6,0.34],['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],
+      ['2026-05','GPT-5.5',8.75,0.31],
+    ],
+
+    // Main-model axis: which lineage drives the API line + footprint overlay.
+    // io=[inUSD/1M, outUSD/1M, current-model label]; steps=[date,label,blendedUSD/1M,Wh]
+    defaultAxis: 'oa:auto',
+    axis: {
+      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[1.25,10,'GPT-5.5 (Auto)'],
+        steps:[['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],['2025-08','GPT-5',5.6,0.34],
+               ['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],['2026-05','GPT-5.5',8.75,0.31]]},
+      'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[1.25,10,'GPT-5.5 Thinking'],
+        steps:[['2024-12','o1',30,3.4],['2025-04','o3',20,3.0],['2025-08','GPT-5 Thinking',6.5,3.1],
+               ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1]]},
+      'oa:mini':  {group:'OpenAI', label:'Mini / o4', conf:'VERIFY', io:[0.25,2,'o4 / GPT-5 mini'],
+        steps:[['2025-01','o3-mini',2.8,0.2],['2025-04','o4-mini',2.8,0.2],['2025-08','GPT-5 mini',1.1,0.15],['2026-03','GPT-5 mini',1.1,0.15]]},
+      'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
+        steps:[['2024-03','Haiku 3',0.75,0.25],['2025-10','Haiku 4.5',3.0,0.3]]},
+      'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],
+        steps:[['2024-06','Sonnet 3.5',9.0,0.34],['2025-09','Sonnet 4.5',9.0,0.34],['2026-01','Sonnet 4.6',9.0,0.34]]},
+      'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[5,25,'Opus 4.8'],
+        steps:[['2024-03','Opus 3',45,0.6],['2025-08','Opus 4.1',45,0.6],['2026-01','Opus 4.6',15,0.5],['2026-05','Opus 4.8',15,0.5]]},
+    },
+
+    // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)
+    credits: { dualMode:['2025-11','2026-11'], unitUsd:0.01 },
+  },
+
   // Front-page "what this costs to run" figures (§7.6). Editable & sourced.
   // domain is a USD/yr range (FX-shown per region); claude is the owner's real
   // GBP figure (shown verbatim under UK, FX-converted elsewhere).

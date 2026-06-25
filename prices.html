@@ -96,11 +96,61 @@
       of change, not exact invoices — overwrite the dataset with your real rates. Runs entirely in your browser.</p>
   </div>
 
+  <!-- ============ DECISION CHART (licence vs model + footprint) ============ -->
+  <h2>Licence vs the model underneath</h2>
+  <div class="panel">
+    <p class="sub" style="margin-top:0">A seat price barely moves while the model underneath it is swapped. Set your
+      profile and watch the backend markers step across a flat licence line. Your <strong>seats</strong> drive the
+      expected enterprise-agreement discount (≈20% at 5,000); set a real rate in <em>Seat override</em> to pin it.</p>
+
+    <div class="lab-controls">
+      <div>
+        <label class="f" for="lab-profile">Licence profile</label>
+        <select id="lab-profile">
+          <option value="list" selected>E5 + Copilot add-on (enterprise list)</option>
+          <option value="frontierE7">E7 “Frontier Suite” (model a renewal)</option>
+          <option value="business">Business + Copilot (≤300 employees)</option>
+        </select>
+      </div>
+      <div>
+        <label class="f" for="lab-seats">Seats / headcount</label>
+        <input type="number" id="lab-seats" min="0" step="any" value="5000">
+      </div>
+      <div>
+        <label class="f" for="lab-override">Seat override (auto if blank)</label>
+        <input type="number" id="lab-override" min="0" step="any" placeholder="auto">
+      </div>
+      <div>
+        <label class="f" for="lab-cohort">Early-access cohort
+          <span class="vflag" title="The Frontier *program* (early preview features, Copilot-licence-gated) is NOT the E7 Frontier *Suite* (a paid E5+Copilot+Agent 365+Entra bundle). Same name, different thing. The cohort shifts WHEN models reach you, not the price.">(?)</span></label>
+        <select id="lab-cohort"></select>
+      </div>
+      <div>
+        <label class="f" for="lab-model">Main model (your currency)</label>
+        <select id="lab-model"></select>
+      </div>
+    </div>
+
+    <div class="chartbox lab-chartbox">
+      <svg id="labChart" viewBox="0 0 760 320" role="img" aria-label="Licence cost and the model lineage underneath it, over time"></svg>
+      <div class="lab-tip" id="labTip"></div>
+    </div>
+
+    <div class="lab-readout">
+      <div><span class="lab-k">Licence / mo</span><span class="lab-v" id="lab-r-lic">—</span></div>
+      <div><span class="lab-k">Effective seat rate</span><span class="lab-v" id="lab-r-seat">—</span></div>
+      <div><span class="lab-k">Backend model now</span><span class="lab-v" id="lab-r-model">—</span></div>
+    </div>
+
+    <p class="sub" id="lab-disc" style="margin-top:12px"></p>
+  </div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/factors.js"></script>
 <script src="js/region.js"></script>
 <script src="js/prices.js"></script>
+<script src="js/pricelab.js"></script>
 </body>
 </html>

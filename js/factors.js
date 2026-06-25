@@ -70,6 +70,15 @@ window.MMURR_DATA = {
     discountAnchors: [ [1, 0], [1000, 0.10], [5000, 0.20], [10000, 0.30] ],
     discountMax: 0.30,
   },
+
+  // Front-page "what this costs to run" figures (§7.6). Editable & sourced.
+  // domain is a USD/yr range (FX-shown per region); claude is the owner's real
+  // GBP figure (shown verbatim under UK, FX-converted elsewhere).
+  running: {
+    domainUsdPerYear: [75, 100],     // .ai domain — wholesale +$10/yr from Mar 2026 (SOURCED)
+    claudeGbpPerMonth: 20,           // Claude Pro — owner's actual (SOURCED)
+    ghPagesLimits: '1 GB storage · 100 GB/mo bandwidth',
+  },
 };
 
 // --- Seat-price helpers -----------------------------------------------------

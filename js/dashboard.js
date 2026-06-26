@@ -26,7 +26,7 @@ const FACTORS = {
   copilot_wh:  {label:'Copilot (Wh/message)',         val:0.34, note:'OpenAI’s stated average query, used as a Copilot proxy (Microsoft publishes none).'},
   snow_wh:     {label:'Snowflake (Wh/credit)',        val:500,  note:'1 credit ≈ 1 node-hour of compute; mid-range server draw. Own estimate.'},
   cortex_wh1k: {label:'Cortex/Coco (Wh/1k tokens)',   val:0.70, note:'LLM-inference basis, aligned to Gemini per-token.'},
-  pa_wh:       {label:'Power Automate (Wh/credit)',   val:10,   note:'Engineering estimate for an AI Builder / flow credit.'},
+  pa_wh:       {label:'Copilot Credit (Wh/credit)',   val:10,   note:'Coarse estimate per Copilot Credit / AI Builder credit. AI Builder→Copilot Credits dual-mode runs to Nov 2026; no auto-conversion between the two.'},
   water:       {label:'Cooling water (L/kWh)',        val:1.8,  note:'Typical on-site water-use effectiveness (WUE).'},
   embodied:    {label:'Embodied uplift (%)',          val:15,   note:'Scope-3 hardware manufacturing as a share of operational emissions (~10–25%).'},
 };
@@ -60,8 +60,8 @@ const SERVICES = {
   copilot: {
     name:'Copilot (incl. Power Automate)', billing:'licensed', modesAllowed:['usage','cost','seats'],
     usageLabel:'Copilot messages / interactions', usageHint:'M365 Copilot chat. Seats are licensed per user — usage is estimated from messages/user/day.',
-    second:{key:'pa', label:'Power Automate / AI Builder credits'},
-    badge:'seats licensed · PA metered',
+    second:{key:'pa', label:'Copilot Credits (incl. Power Automate / AI Builder)'},
+    badge:'seats licensed · credits metered',
   },
 };
 
@@ -178,7 +178,7 @@ function renderFields(key){
   // secondary metered input (Cortex tokens, PA credits) always shown as usage
   if(cfg.second){
     html += field(`${key}-second`, cfg.second.label, st.second||0,
-      key==='snowflake'?'Cortex / Coco LLM tokens (metered separately).':'Power Automate / AI Builder credits.');
+      key==='snowflake'?'Cortex / Coco LLM tokens (metered separately).':'Copilot Credits — folds in Power Automate / AI Builder; coarse energy estimate.');
   }
   box.className = 'fields '+(cfg.second?'':'one');
   box.innerHTML = html + `<div class="derived" id="derived-${key}"></div>`;

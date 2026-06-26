@@ -200,6 +200,7 @@ function renderSources(){
     ['Anthropic token $ (Haiku/Sonnet/Opus)', `Opus 4.8 $5/$25 · Sonnet 4.6 $3/$15 · Haiku 4.5 $1/$5 per 1M`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
     ['Gemini token $ (Pro/Flash)', `Pro ~$7 · Flash ~$5.25 / 1M; shown ${fxLine}`, 'VERIFY', aLink(SRC.gemini,'Gemini pricing')],
     ['Snowflake credit', `$3/credit (Enterprise) at FX; Standard $2 · Business-Critical $4`, 'SOURCED', aLink(SRC.snow,'Snowflake')],
+    ['Copilot Credits transition', `AI Builder credits end-of-sale 1 Nov 2025; dual-mode → 1 Nov 2026; Copilot Credit $0.01; no auto-conversion between currencies`, 'SOURCED', aLink('https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-licensing','Microsoft Learn')],
     ['Copilot energy', `0.31 Wh / prompt`, 'SOURCED', 'Microsoft disclosure (2026)'],
     ['Gemini energy', `0.24 Wh / prompt`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
     ['Anthropic energy', `per-query Wh not published — values are labelled assumptions`, 'ASSUMPTION', '(vendor publishes none)'],

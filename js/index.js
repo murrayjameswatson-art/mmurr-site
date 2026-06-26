@@ -18,15 +18,13 @@ function renderRunningCosts(){
 
   host.innerHTML = `
     <h2 class="run-h">What this costs to run</h2>
-    <p class="run-lead">No ads, no servers, no analytics — so it's basically a domain and some time.</p>
+    <p class="run-lead">No ads, no servers, no analytics — just a domain, some time and the occasional whisky.</p>
     <dl class="run-grid">
       <dt>.ai domain</dt><dd>~${R.sym}${dom[0]}–${dom[1]} / yr</dd>
       <dt>Hosting — GitHub Pages (public repo)</dt><dd>${z(R.sym+'0')}</dd>
       <dt>Build assistant — Claude subscription (Pro)</dt><dd>${R.sym}${claude} / mo</dd>
       <dt>Compute to serve you</dt><dd>${z(R.sym+'0')} · runs in your browser</dd>
-    </dl>
-    <p class="run-foot">Rough all-in: a domain a year, plus the occasional whisky.
-      GitHub Pages is free within ${r.ghPagesLimits}.</p>`;
+    </dl>`;
 }
 
 MMURR_REGION.onChange(renderRunningCosts);

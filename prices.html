@@ -14,7 +14,7 @@
   <header class="top">
     <div>
       <h1>AI Price History</h1>
-      <p class="sub">How the cost of a <em>fixed</em> AI &amp; data basket has changed since 2023 — even as the
+      <p class="sub bright">How the cost of a <em>fixed</em> AI &amp; data basket has changed since 2023 — even as the
         model behind each product was swapped underneath you.</p>
     </div>
     <a class="back" href="index.html">← mmurr.ai</a>
@@ -67,35 +67,6 @@
 
   <div class="chartbox"><canvas id="chart"></canvas></div>
 
-  <h2>Sources &amp; assumptions</h2>
-  <div class="panel">
-    <p class="sub" style="margin-top:0">Token tracks follow the <em>representative default model</em> at each date
-      (the backend a product like Copilot actually rode), blended 50/50 input/output. Seat and credit tracks are list
-      prices for the product itself.</p>
-    <table class="src">
-      <thead><tr><th>Track</th><th>Key points</th><th>Source</th></tr></thead>
-      <tbody>
-        <tr><td>OpenAI default model<br>(Copilot backend)</td>
-          <td class="v">GPT-4 $45 → Turbo $20 → 4o $10 → 4o $6.25 → 4.1 $5 → 5.x $8.75</td>
-          <td><a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI pricing</a></td></tr>
-        <tr><td>Gemini Pro API</td>
-          <td class="v">1.5 Pro $7 → cut $3.13 → 2.5 Pro $5.63 → 3.x Pro $7</td>
-          <td><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Gemini pricing</a></td></tr>
-        <tr><td>Gemini Flash API</td>
-          <td class="v">1.5 Flash $0.70 → cut $0.19 → 2.5 Flash $1.40 → 3.5 Flash $5.25</td>
-          <td><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Gemini pricing</a></td></tr>
-        <tr><td>M365 Copilot seat</td>
-          <td class="v">$30/seat/mo, flat 2023→2026 (Business SKU cut to $21 in Dec 2025)</td>
-          <td><a href="https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing" target="_blank" rel="noopener">Microsoft</a></td></tr>
-        <tr><td>Snowflake credit</td>
-          <td class="v">$3/credit (Enterprise), stable. Standard $2 · Business Critical $4</td>
-          <td><a href="https://www.snowflake.com/en/data-cloud/pricing-options/" target="_blank" rel="noopener">Snowflake</a></td></tr>
-      </tbody>
-    </table>
-    <p class="foot">Prices are list, USD, blended 50/50 where token-based. The point of the chart is the <em>shape</em>
-      of change, not exact invoices — overwrite the dataset with your real rates. Runs entirely in your browser.</p>
-  </div>
-
   <!-- ============ DECISION CHART (licence vs model + footprint) ============ -->
   <h2>Licence vs the model underneath</h2>
   <div class="panel">
@@ -136,19 +107,23 @@
     </div>
 
     <div class="lab-toggles" id="lab-toggles">
-      <span class="sub" style="align-self:center;margin-right:4px">Overlay footprint:</span>
+      <span class="sub" style="align-self:center;margin-right:4px">Cost:</span>
+      <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="false"><span class="dot" style="background:var(--link)"></span>Same workload on raw API (find break-even)</button>
+      <span class="sub" style="align-self:center;margin:0 4px 0 10px">Footprint:</span>
       <button class="lab-chip" data-t="energy" aria-pressed="false"><span class="dot" style="background:var(--accent)"></span>Energy</button>
       <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂</button>
       <button class="lab-chip" data-t="water" aria-pressed="false"><span class="dot" style="background:#54c8e8"></span>Water</button>
     </div>
 
     <div class="chartbox lab-chartbox">
-      <svg id="labChart" viewBox="0 0 760 320" role="img" aria-label="Licence cost and the model lineage underneath it, over time"></svg>
+      <svg id="labChart" viewBox="0 0 760 320" role="img" aria-label="Licence cost, raw-API cost and the model lineage underneath, over time"></svg>
       <div class="lab-tip" id="labTip"></div>
     </div>
+    <p class="sub lab-hover" id="lab-hover">Hover the chart to read the values at any month.</p>
 
     <div class="lab-legend">
       <span><i style="border-color:var(--warn)"></i>Licence (flat)</span>
+      <span id="lab-lg-api" hidden><i style="border-color:var(--link);border-top-style:dashed"></i>Same workload, raw API</span>
       <span id="lab-lg-energy" hidden><i style="border-color:var(--accent)"></i>Energy Wh/user/day</span>
       <span id="lab-lg-co2" hidden><i style="border-color:#b18cff"></i>CO₂ g/user/day</span>
       <span id="lab-lg-water" hidden><i style="border-color:#54c8e8"></i>Water mL/user/day</span>
@@ -156,6 +131,8 @@
 
     <div class="lab-readout">
       <div><span class="lab-k">Licence / mo</span><span class="lab-v" id="lab-r-lic">—</span></div>
+      <div><span class="lab-k">Same workload, API / mo</span><span class="lab-v" id="lab-r-api">—</span></div>
+      <div><span class="lab-k">Break-even</span><span class="lab-v" id="lab-r-be">—</span></div>
       <div><span class="lab-k">Effective seat rate</span><span class="lab-v" id="lab-r-seat">—</span></div>
       <div><span class="lab-k">Backend model now</span><span class="lab-v" id="lab-r-model">—</span></div>
       <div><span class="lab-k">Footprint / user / day</span><span class="lab-v" id="lab-r-fp">—</span></div>
@@ -163,6 +140,9 @@
 
     <p class="sub" id="lab-disc" style="margin-top:12px"></p>
   </div>
+
+  <h2>Sources &amp; assumptions</h2>
+  <div class="panel" id="sourcesPanel"></div>
 
 </div>
 

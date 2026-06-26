@@ -48,10 +48,6 @@ window.MMURR_DATA = {
     EU: { label:'EU', flag:'🇪🇺', cur:'EUR', sym:'€', fx:0.92,
           grid:0.23, wue:1.9, pue:1.0,
           gridNote:'EU average grid', gridConf:'VERIFY' },
-    // Custom inherits UK's numbers as a starting point; every field is editable.
-    Custom: { label:'Custom', flag:'🌐', cur:'', sym:'¤', fx:1.00,
-          grid:0.177, wue:1.9, pue:1.0,
-          gridNote:'User-set — your own contract / location figures', gridConf:'USER' },
   },
 
   // FX = local currency per 1 USD. Editable anchors, NOT a live feed. (§7.5)

@@ -20,7 +20,9 @@
   // --- state (region comes from MMURR_REGION) ------------------------------
   let profile = 'list', seats = 5000, override = 0, cohort = 0, mainModel = M.defaultAxis;
   let ppd = M.defaultPpd;
-  const on = { energy:false, co2:false, water:false };   // footprint overlay series
+  const tokPerPrompt = M.tokPerPrompt;
+  const on = { api:false, energy:false, co2:false, water:false };   // cost + footprint overlays
+  let ctx = null;   // last-drawn context, read by the hover handler
 
   // Footprint per user per day for a given per-prompt Wh, in the region's
   // grid/PUE/WUE. Same basis as the carbon dashboard so the two reconcile (§4.4).
@@ -77,13 +79,21 @@
   }
 
   // --- draw ----------------------------------------------------------------
+  const PTS = (()=>{ const a=[]; for(let t=T0;t<=T1;t=addDays(t,30)) a.push(t); return a; })();
+
   function draw(){
     const R = MMURR_REGION.data();
     const am = M.axis[mainModel];
+    const mdlAt = t => stepAt(am.steps, t);
     svg.innerHTML='';
     const seat = seatPrice();
     const lic = seats * seat;
-    const maxCost = (lic || 1) * 1.4;
+
+    // same workload metered on the raw API, per month, in region currency (§4.5)
+    const apiAt = t => seats * ppd * 30 * tokPerPrompt/1e6 * mdlAt(t)[2] * R.fx;
+    const apiSeries = PTS.map(apiAt);
+
+    const maxCost = (Math.max(lic, on.api ? Math.max(...apiSeries) : 0) * (on.api?1.18:1.4)) || 1;
     const yC = v => H-PB - (v/maxCost)*(H-PT-PB);
 
     // gridlines + cost axis (region currency)
@@ -93,19 +103,28 @@
     for(const yr of ['2024','2025','2026']){ const xx=x(D(yr+'-01'));
       svg.appendChild(txt('lab-axis',xx,H-PB+16,'middle',yr)); }
 
-    // footprint overlay (secondary scale, drawn behind the licence line).
-    // Wh/prompt steps at the MAIN MODEL's own lineage dates (§4.4), so switching
-    // model visibly moves the footprint — often DOWN as capability rises.
-    const pts=[]; for(let t=T0;t<=T1;t=addDays(t,30)) pts.push(t);
-    const fpAt = t => footprint(stepAt(am.steps,t)[3], R);
-    const series = { energy: pts.map(t=>fpAt(t).energy), co2: pts.map(t=>fpAt(t).co2), water: pts.map(t=>fpAt(t).water) };
-    const shown = Object.keys(on).filter(k=>on[k]);
+    // footprint overlay (secondary scale, drawn behind the cost lines). Wh/prompt
+    // steps at the MAIN MODEL's own dates (§4.4) — switching model moves it.
+    const fpAt = t => footprint(mdlAt(t)[3], R);
+    const series = { energy:PTS.map(t=>fpAt(t).energy), co2:PTS.map(t=>fpAt(t).co2), water:PTS.map(t=>fpAt(t).water) };
+    const shown = ['energy','co2','water'].filter(k=>on[k]);
     const maxFp = Math.max(1, ...shown.flatMap(k=>series[k])) * 1.25;
     const yF = v => H-PB - (v/maxFp)*(H-PT-PB);
-    const path = (arr,cls) => { let d=''; pts.forEach((t,i)=> d+=(i?'L':'M')+x(t)+' '+yF(arr[i])); svg.appendChild(el('path',{class:cls,d})); };
-    if(on.energy) path(series.energy,'ser-energy');
-    if(on.co2)    path(series.co2,'ser-co2');
-    if(on.water)  path(series.water,'ser-water');
+    const path = (arr,cls,yfn) => { let d=''; PTS.forEach((t,i)=> d+=(i?'L':'M')+x(t)+' '+yfn(arr[i])); svg.appendChild(el('path',{class:cls,d})); };
+    if(on.energy) path(series.energy,'ser-energy',yF);
+    if(on.co2)    path(series.co2,'ser-co2',yF);
+    if(on.water)  path(series.water,'ser-water',yF);
+
+    // raw-API cost line + break-even (the headline business view: where metering
+    // overtakes the flat licence)
+    if(on.api){
+      path(apiSeries,'ser-api',yC);
+      for(let i=1;i<apiSeries.length;i++){
+        if((apiSeries[i-1]-lic)*(apiSeries[i]-lic)<0){ const xx=x(PTS[i]);
+          svg.appendChild(el('line',{class:'lab-be',x1:xx,x2:xx,y1:PT,y2:H-PB}));
+          svg.appendChild(txt('lab-belab',xx+4,PT+10,null,'break-even')); break; }
+      }
+    }
 
     // flat licence line
     svg.appendChild(el('line',{class:'ser-lic',x1:PL,x2:W-PR,y1:yC(lic),y2:yC(lic)}));
@@ -126,14 +145,24 @@
       svg.appendChild(g);
     });
 
+    // moving cursor line, driven by the hover handler
+    const cursor = el('line',{class:'lab-cursor',x1:PL,x2:PL,y1:PT,y2:H-PB,opacity:0});
+    svg.appendChild(cursor);
+
     // readouts
     const disc = profile==='list' ? seatDiscount(seats) : 0;
-    const fpNow = footprint(stepAt(am.steps,T1)[3], R);
+    const fpNow = footprint(mdlAt(T1)[3], R);
+    const apiNow = apiSeries[apiSeries.length-1];
+    const rateNow = mdlAt(T1)[2]*R.fx;
+    const beUsers = (seats>0 && rateNow>0) ? lic/(30*tokPerPrompt/1e6*rateNow*seats) : 0;
     document.getElementById('lab-r-lic').textContent  = R.sym+Math.round(lic).toLocaleString();
+    document.getElementById('lab-r-api').textContent  = on.api ? R.sym+Math.round(apiNow).toLocaleString() : 'toggle on';
+    document.getElementById('lab-r-be').textContent   = on.api ? (beUsers>0?`${beUsers.toFixed(1)} prompts/seat/day`:'—') : 'toggle on';
     document.getElementById('lab-r-seat').textContent = `${R.sym}${seat.toFixed(2)}` + (disc>0?` (−${Math.round(disc*100)}%)`:'');
     document.getElementById('lab-r-model').textContent = stepAt(M.backend,T1)[1];
     document.getElementById('lab-r-fp').textContent = `${fpNow.energy.toFixed(1)} Wh · ${fpNow.co2.toFixed(1)} g · ${fpNow.water.toFixed(1)} mL`;
 
+    // disclosure
     let note = override>0
       ? `Seat fixed at your <b>${R.sym}${override.toFixed(2)}</b> override.`
       : profile==='list'
@@ -141,12 +170,46 @@
         : `Seat = ${R.sym}${seat.toFixed(2)} regional list for this SKU.`;
     if(profile==='business' && seats>MMURR_DATA.seat.businessCap)
       note += ` <b style="color:var(--hot)">Business SKU is capped at ${MMURR_DATA.seat.businessCap} employees</b> — this headcount can't use it; sits on the E-series.`;
-    note += ` Markers are the Copilot backend swapping underneath; the line stays flat. `+
-            `Footprint overlay follows the main-model axis <b>${am.group} ${am.label}</b>` +
+    if(on.api){
+      const verdict = apiNow<lic ? `the metered API is <b>cheaper</b> than the licence at ${ppd} prompts/seat/day`
+                                 : `the flat licence <b>wins</b> at ${ppd} prompts/seat/day`;
+      note += ` At your usage, ${verdict}; break-even ≈ <b>${beUsers.toFixed(1)} prompts/seat/day</b>. `+
+              `A Copilot seat also buys Graph grounding, security and the in-app surfaces — the API line prices tokens only, so this isn't strictly like-for-like.`;
+    } else {
+      note += ` Markers are the Copilot backend swapping underneath; the line stays flat. Toggle <b>Same workload on raw API</b> to find where metering overtakes the licence.`;
+    }
+    note += ` Footprint follows <b>${am.group} ${am.label}</b>` +
             (am.assumedWh?` <span class="vflag" title="Anthropic publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') +
-            `, stepping at that model's own dates. Footprint assumes one standardised text prompt — reasoning/image/video are far higher.`;
+            `; one standardised text prompt (reasoning/image/video are far higher). All figures sourced below.`;
     document.getElementById('lab-disc').innerHTML = note;
+
+    ctx = { R, mdlAt, lic, cursor };   // stash for the hover handler
   }
+
+  // --- interactive hover: vertical cursor + on-page caption ----------------
+  const fmtMonth = t => new Date(t).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+  const hoverEl = document.getElementById('lab-hover');
+  function onHover(clientX){
+    if(!ctx) return;
+    const rect = svg.getBoundingClientRect();
+    let px = (clientX-rect.left)/rect.width*W;
+    px = Math.max(PL, Math.min(W-PR, px));
+    const t = T0 + (px-PL)/(W-PL-PR)*(T1-T0);
+    ctx.cursor.setAttribute('x1',px); ctx.cursor.setAttribute('x2',px); ctx.cursor.setAttribute('opacity',1);
+    const R = ctx.R;
+    const api = seats*ppd*30*tokPerPrompt/1e6*ctx.mdlAt(t)[2]*R.fx;
+    const fp  = footprint(ctx.mdlAt(t)[3], R);
+    let s = `<b>${fmtMonth(t)}</b> · Licence ${R.sym}${Math.round(ctx.lic).toLocaleString()}`;
+    if(on.api)    s += ` · API ${R.sym}${Math.round(api).toLocaleString()}`;
+    if(on.energy) s += ` · ${fp.energy.toFixed(1)} Wh`;
+    if(on.co2)    s += ` · ${fp.co2.toFixed(1)} g`;
+    if(on.water)  s += ` · ${fp.water.toFixed(1)} mL`;
+    s += ` · backend ${ctx.mdlAt(t)[1]}`;
+    hoverEl.innerHTML = s;
+  }
+  svg.addEventListener('mousemove', e=>onHover(e.clientX));
+  svg.addEventListener('mouseleave', ()=>{ if(ctx) ctx.cursor.setAttribute('opacity',0);
+    hoverEl.textContent='Hover the chart to read the values at any month.'; });
 
   // --- bindings ------------------------------------------------------------
   const onNum = (id, set) => document.getElementById(id).addEventListener('input', e=>{ set(parseFloat(e.target.value)||0); draw(); });

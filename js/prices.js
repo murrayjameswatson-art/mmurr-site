@@ -172,9 +172,54 @@ function draw(){
   chart=new Chart(document.getElementById('chart'),cfg);
 }
 
+// --- Region-aware sources & assumptions (covers BOTH charts) --------------
+// Re-rendered on region switch so prices/grid here track the selected currency.
+// Double-inclusion of sources is deliberate: a reader should never have to hunt.
+const SRC = {
+  openai:'https://openai.com/api/pricing/',
+  gemini:'https://ai.google.dev/gemini-api/docs/pricing',
+  anthropic:'https://www.anthropic.com/pricing',
+  ms:'https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing',
+  snow:'https://www.snowflake.com/en/data-cloud/pricing-options/',
+  gEnergy:'https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/',
+  grid:'https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025',
+};
+const aLink = (href,text)=>`<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+const confTag = kind=>`<span class="conf ${kind.toLowerCase()}">${kind}</span>`;
+
+function renderSources(){
+  const host=document.getElementById('sourcesPanel'); if(!host) return;
+  const R=MMURR_REGION.data(), region=MMURR_REGION.get();
+  const seatList=(MMURR_DATA.seat.list[region]??MMURR_DATA.seat.list.UK);
+  const fxLine = region==='US' ? 'USD list (no conversion)' : `USD list × ${R.fx} FX → ${R.cur}`;
+  const rows = [
+    ['Currency basis', `Seat/credit prices are <b>${R.label}</b> regional list; token/API prices are USD list shown at the editable FX anchor (${R.cur} ${R.fx}/USD).`, 'VERIFY', '(editable anchor — no live feed)'],
+    ['M365 Copilot seat', `${R.sym}${seatList.toFixed(2)}/seat/mo regional list, then headcount EA discount`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
+    ['EA discount band', `0% below 1k seats → ~20% at 5k → ~30% at 10k+ (MS discounts 15–30% on 5,000+ seat EAs)`, 'ASSUMPTION', aLink(SRC.ms,'Microsoft EA guidance')],
+    ['OpenAI token $ (Auto/Think/Mini)', `GPT-5.x blended ~$5.6–8.75 / 1M; shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI pricing')],
+    ['Anthropic token $ (Haiku/Sonnet/Opus)', `Opus 4.8 $5/$25 · Sonnet 4.6 $3/$15 · Haiku 4.5 $1/$5 per 1M`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Gemini token $ (Pro/Flash)', `Pro ~$7 · Flash ~$5.25 / 1M; shown ${fxLine}`, 'VERIFY', aLink(SRC.gemini,'Gemini pricing')],
+    ['Snowflake credit', `$3/credit (Enterprise) at FX; Standard $2 · Business-Critical $4`, 'SOURCED', aLink(SRC.snow,'Snowflake')],
+    ['Copilot energy', `0.31 Wh / prompt`, 'SOURCED', 'Microsoft disclosure (2026)'],
+    ['Gemini energy', `0.24 Wh / prompt`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
+    ['Anthropic energy', `per-query Wh not published — values are labelled assumptions`, 'ASSUMPTION', '(vendor publishes none)'],
+    ['Reasoning multiplier', `≈ ×10 for “Thinking” modes (up to ×70 seen)`, 'VERIFY', 'Jegham et al. (2025)'],
+    ['Grid intensity', `${R.label} ≈ ${R.grid} kgCO₂e/kWh — ${R.gridNote}`, R.gridConf, aLink(SRC.grid,'DESNZ/Defra (2025)')],
+    ['Tokens / prompt', `${MMURR_DATA.models.tokPerPrompt} (≈ 300-token answer + context; editable)`, 'ASSUMPTION', '—'],
+  ];
+  host.innerHTML = `
+    <p class="sub" style="margin-top:0">These reflect the <b>${R.label}</b> selection above — switch region/currency and the
+      prices and grid here update too. Every value is flagged ${confTag('SOURCED')} ${confTag('VERIFY')} ${confTag('ASSUMPTION')} and links to its origin.</p>
+    <table class="src"><thead><tr><th>Item</th><th>Value (this region)</th><th>Conf.</th><th>Source</th></tr></thead>
+    <tbody>${rows.map(([k,v,c,s])=>`<tr><td>${k}</td><td>${v}</td><td>${confTag(c)}</td><td>${s}</td></tr>`).join('')}</tbody></table>
+    <p class="foot">Prices are list and indicative — the whole point is to overwrite them with your own contract rates.
+      Token prices convert at an editable FX anchor; no network calls. Runs entirely in your browser.</p>`;
+}
+
 // --- Wire up --------------------------------------------------------------
 function init(){
   renderTracks();
+  renderSources();
   document.getElementById('tracks').addEventListener('change',e=>{
     const key=e.target.dataset.on;
     if(key){ TRACKS[key].on=e.target.checked;
@@ -191,16 +236,19 @@ function init(){
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
     e.target.classList.add('on'); ADOPTION.curve=e.target.dataset.c; draw();
   });
-  document.getElementById('adoptStart').addEventListener('change',e=>{
+  // redraw on both events: 'change' (picker commit) and 'input' (typed/spun) so
+  // the graph always follows the adoption-start date. Out-of-range months fall
+  // back to the series start inside rampUsage().
+  ['change','input'].forEach(ev=>document.getElementById('adoptStart').addEventListener(ev,e=>{
     ADOPTION.start=e.target.value; draw();
-  });
+  }));
   document.getElementById('chartType').addEventListener('click',e=>{
     if(!e.target.dataset.t) return;
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
     e.target.classList.add('on'); CHART_TYPE=e.target.dataset.t; draw();
   });
   document.getElementById('showTotal').addEventListener('change',draw);
-  MMURR_REGION.onChange(draw);   // re-price the basket when region/currency changes
+  MMURR_REGION.onChange(()=>{ draw(); renderSources(); });   // re-price basket + sources on region switch
   draw();
 }
 document.addEventListener('DOMContentLoaded',init);

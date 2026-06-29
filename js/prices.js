@@ -1,65 +1,14 @@
 /* ----------------------------------------------------------------------------
-   mmurr.ai — AI Price History
-   Fixed-basket cost over time. Filter tracks, set usage, see stacked total.
-   Hold a company's usage and watch the monthly bill move since 2023, even as
-   the model behind each product (Copilot, Snowflake Cortex, Gemini) was swapped
-   underneath. Client-side only except Chart.js (loaded from cdnjs).
+   mmurr.ai — AI Price History · "Choose your stack" basket
+   Size each service by SEATS (or credits) and one shared headline of average
+   prompts/user/day. Every model is assumed to answer the SAME standardised
+   prompt, so the same task can be priced and footprinted as the engine under
+   each licence changes. Seat fees are flat per user; prompts drive the optional
+   "cost if billed on raw API" line, the environmental view, and Claude's
+   optional metered usage — never the per-seat bill. Client-side except Chart.js.
 ---------------------------------------------------------------------------- */
 
-// Price points are (month, unitPrice). Prices hold (step) until the next point.
-// Token prices = blended 50/50 input/output, USD per 1M tokens.
-// usageStart = usage at adoption start (pilot); usage = current usage. Ramp between them.
-const TRACKS = {
-  copilot: {
-    name:'M365 Copilot', billing:'licensed', unit:'seats', usageLabel:'Seats',
-    color:'#e0b341', usageStart:50, usage:1000, on:true, curRule:'seat', // regional list, not FX
-    points:[ ['2023-11',30], ['2024-01',30], ['2025-01',30], ['2026-01',30] ], // per seat / month
-    cost:(price,usage)=> price*usage,
-  },
-  snowflake: {
-    name:'Snowflake (Enterprise)', billing:'metered', unit:'credits/mo', usageLabel:'Credits / month',
-    color:'#7db7ff', usageStart:500, usage:5000, on:true,
-    points:[ ['2023-03',3], ['2024-01',3], ['2025-01',3], ['2026-01',3] ], // per credit
-    cost:(price,usage)=> price*usage,
-  },
-  openai: {
-    name:'OpenAI default (Copilot backend)', billing:'metered', unit:'M tokens/mo', usageLabel:'Million tokens / month',
-    color:'#5bd1a6', usageStart:5, usage:50, on:true,
-    points:[ ['2023-03',45], ['2023-11',20], ['2024-05',10], ['2024-08',6.25], ['2025-04',5], ['2025-08',8.75] ],
-    cost:(price,usage)=> price*usage, // $/1M × Mtokens
-  },
-  geminiFlash: {
-    name:'Gemini Flash API', billing:'metered', unit:'M tokens/mo', usageLabel:'Million tokens / month',
-    color:'#b98cff', usageStart:10, usage:200, on:true,
-    points:[ ['2024-05',0.70], ['2024-08',0.19], ['2025-06',1.40], ['2026-05',5.25] ],
-    cost:(price,usage)=> price*usage,
-  },
-  geminiPro: {
-    name:'Gemini Pro API', billing:'metered', unit:'M tokens/mo', usageLabel:'Million tokens / month',
-    color:'#ff8fa3', usageStart:0, usage:0, on:false,
-    points:[ ['2024-05',7], ['2024-10',3.13], ['2025-06',5.63], ['2025-11',7] ],
-    cost:(price,usage)=> price*usage,
-  },
-};
-
-// Global adoption ramp: usage grows from usageStart (at ADOPTION.start) to current usage (at latest month).
-const ADOPTION = { curve:'linear', start:'2023-06' };  // curve: 'flat' | 'linear' | 'exp'
-function rampUsage(t, monthIdx){
-  if(ADOPTION.curve==='flat') return t.usage;
-  const startIdx = Math.max(0, MONTHS.indexOf(ADOPTION.start));
-  const endIdx = MONTHS.length-1;
-  if(monthIdx < startIdx) return 0;                       // not adopted yet
-  if(endIdx<=startIdx) return t.usage;
-  const p = (monthIdx-startIdx)/(endIdx-startIdx);        // 0..1
-  const a = t.usageStart||0, b = t.usage;
-  if(ADOPTION.curve==='exp'){
-    const a0 = a>0?a:Math.max(b*0.01,1);                  // floor so geometric ramp works from ~0
-    return a0 * Math.pow(b/a0, p);
-  }
-  return a + (b-a)*p;                                     // linear
-}
-
-// --- Timeline helpers -----------------------------------------------------
+// --- Timeline -------------------------------------------------------------
 function monthList(start, end){
   const out=[]; let [y,m]=start.split('-').map(Number); const [ey,em]=end.split('-').map(Number);
   while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} }
@@ -67,104 +16,219 @@ function monthList(start, end){
 }
 const START='2023-03', END='2026-06';
 const MONTHS = monthList(START,END);
+const D = s => { const [y,m]=s.split('-').map(Number); return new Date(y,m-1,1).getTime(); };
+const TS = MONTHS.map(D);
 
-// forward-fill a track's unit price across every month
-function fillPrices(points){
-  const map={}; let last=null, pi=0;
-  for(const mth of MONTHS){
-    while(pi<points.length && points[pi][0]<=mth){ last=points[pi][1]; pi++; }
-    map[mth]=last; // null before first point
-  }
-  return map;
+const B   = MMURR_DATA.basket;
+const M   = MMURR_DATA.models;
+const WD  = B.workdaysPerMonth;
+const TPP = M.tokPerPrompt;
+
+// --- Shared + per-service state ------------------------------------------
+let ppd = B.ppdDefault;                       // headline average prompts/user/day
+let metric = 'cost';                          // cost | energy | co2 | water
+let showApi = false;                          // "cost if billed on raw API" line
+let showGemHist = false;                      // overlay Gemini's seat-price history
+
+// Build editable service state from the single-sourced config.
+const SVC = {};
+for(const [k,c] of Object.entries(B.services)){
+  SVC[k] = {
+    ...c, key:k, on:true, qty:c.defaultQty,
+    basis:'prompts',          // seat services: 'prompts' (seats×ppd) | 'tokens' (direct Mtokens/mo)
+    ppdOverride:0,            // 0 = use the shared headline
+    tokensMo:0,              // used when basis==='tokens'
+    usage:false,             // Claude: bill metered usage at API rates on top
+    ro:{on:false, q0:0, q1:0, m0:START, m1:END},   // rollout ramp
+  };
 }
 
-// --- Render the track cards ----------------------------------------------
-function renderTracks(){
+// --- Series helpers -------------------------------------------------------
+// forward-fill [ [month,val], ... ] across every month; null before first point.
+function fill(points){
+  const out={}; let last=null, pi=0;
+  for(const mth of MONTHS){ while(pi<points.length && points[pi][0]<=mth){ last=points[pi][1]; pi++; } out[mth]=last; }
+  return out;
+}
+// seat price (region currency) at each month for a service. 0 in the data = gap → null.
+function seatFill(s, region){
+  let pts;
+  if(s.seatRule==='fx'){
+    const usd = fill(MMURR_DATA.seat.series.claudeUsd), fx = MMURR_REGION.data().fx;
+    return MONTHS.map(m => usd[m]==null ? null : usd[m]*fx);
+  }
+  const tbl = MMURR_DATA.seat.series[s.seatKey];
+  pts = (tbl[region] || tbl.UK);
+  if(s.key==='gemini' && !showGemHist){ const cur = pts[pts.length-1][1]; pts=[[pts[0][0], cur]]; }  // flatten history
+  const f = fill(pts);
+  return MONTHS.map(m => (f[m]==null || f[m]===0) ? null : f[m]);
+}
+// latest lineage step ≤ t (clamped to first). [date,label,blended$/1M,Wh/prompt]
+function stepAt(key, t){ const st=M.axis[key].steps; let c=st[0]; for(const s of st){ if(D(s[0])<=t) c=s; } return c; }
+
+// quantity (seats/credits) at month index i — flat, or a linear rollout ramp.
+function qtyAt(s, i){
+  if(!s.ro.on) return s.qty;
+  const a=Math.max(0,MONTHS.indexOf(s.ro.m0)), b=Math.max(a,MONTHS.indexOf(s.ro.m1));
+  if(i<a) return 0;
+  if(i>=b) return s.ro.q1;
+  return s.ro.q0 + (s.ro.q1-s.ro.q0)*(i-a)/(b-a||1);
+}
+// prompts / month for a seat service at month index i (for API line, footprint, usage).
+function promptsAt(s, i, t){
+  if(s.basis==='tokens') return s.tokensMo*1e6 / TPP;
+  const p = s.ppdOverride>0 ? s.ppdOverride : ppd;
+  return qtyAt(s,i) * p * WD;
+}
+
+// --- Render the service cards --------------------------------------------
+function renderServices(){
   const host=document.getElementById('tracks'); host.innerHTML='';
-  for(const [key,t] of Object.entries(TRACKS)){
-    const div=document.createElement('div'); div.className='track'+(t.on?'':' off'); div.dataset.key=key;
-    div.innerHTML=`
+  for(const [k,s] of Object.entries(SVC)){
+    const seat = s.billing==='seat';
+    const qtyLabel = seat ? 'Seats' : 'Credits / month';
+    const div=document.createElement('div'); div.className='svc'+(s.on?'':' off'); div.dataset.key=k;
+    div.innerHTML = `
       <div class="thead">
-        <input type="checkbox" ${t.on?'checked':''} data-on="${key}" aria-label="Include ${t.name}">
-        <span class="dot" style="background:${t.color}"></span>
-        <span class="nm">${t.name}</span>
-        <span class="badge ${t.billing}">${t.billing}</span>
+        <input type="checkbox" ${s.on?'checked':''} data-on="${k}" aria-label="Include ${s.name}">
+        <span class="dot" style="background:${s.color}"></span>
+        <span class="nm">${s.name}</span>
+        <span class="badge ${seat?'licensed':'metered'}">${seat?'seat':'credits'}</span>
       </div>
-      <div class="meta">${t.unit}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label class="f" for="us-${key}">Start (pilot)</label>
-          <input type="number" id="us-${key}" min="0" step="any" value="${t.usageStart}"></div>
-        <div><label class="f" for="u-${key}">Now</label>
-          <input type="number" id="u-${key}" min="0" step="any" value="${t.usage}"></div>
+      <label class="f" for="q-${k}">${qtyLabel}</label>
+      <input type="number" id="q-${k}" min="0" step="any" value="${s.qty}">
+      <button type="button" class="more" data-more="${k}" aria-expanded="false">More detail ▾</button>
+      <div class="more-body" id="more-${k}" hidden>
+        ${seat ? `
+        <label class="f" for="basis-${k}">Usage basis</label>
+        <select id="basis-${k}" class="svc-sel">
+          <option value="prompts" selected>Prompts (seats × headline/day)</option>
+          <option value="tokens">Direct — million tokens / month</option>
+        </select>
+        <div id="ppdwrap-${k}"><label class="f" for="ppd-${k}">Prompts / user / day override</label>
+          <input type="number" id="ppd-${k}" min="0" step="any" placeholder="${ppd} (headline)"></div>
+        <div id="tokwrap-${k}" hidden><label class="f" for="tok-${k}">Million tokens / month</label>
+          <input type="number" id="tok-${k}" min="0" step="any" value="0"></div>
+        ${s.usageAddon ? `<label class="chk"><input type="checkbox" id="use-${k}"> Bill usage at API rates <em>on top</em> of the seat</label>` : ''}
+        ` : ''}
+        <label class="chk"><input type="checkbox" id="ro-${k}"> Specify rollout (start → end)</label>
+        <div id="rowrap-${k}" class="ro-grid" hidden>
+          <div><label class="f">Start ${seat?'seats':'credits'}</label><input type="number" id="ro-q0-${k}" min="0" step="any" value="0"></div>
+          <div><label class="f">End ${seat?'seats':'credits'}</label><input type="number" id="ro-q1-${k}" min="0" step="any" value="${s.qty}"></div>
+          <div><label class="f">Start month</label><input type="month" id="ro-m0-${k}" min="${START}" max="${END}" value="2024-01"></div>
+          <div><label class="f">End month</label><input type="month" id="ro-m1-${k}" min="${START}" max="${END}" value="${END}"></div>
+        </div>
       </div>`;
     host.appendChild(div);
   }
 }
 
-// --- Build datasets & compute ---------------------------------------------
-let chart;
+// --- Compute series -------------------------------------------------------
+function metricFromEnergyWh(wh, R){
+  const kwh = wh/1000;
+  if(metric==='energy') return wh;                 // Wh / month
+  if(metric==='co2')    return kwh*R.pue*R.grid;    // kg / month
+  if(metric==='water')  return kwh*R.wue;           // L  / month
+  return 0;
+}
 function compute(){
-  // Region rules: 'seat' tracks render the regional LIST price (not FX-converted);
-  // everything else is USD list converted at the editable FX anchor. (§2.1)
-  const R = MMURR_REGION.data(), region = MMURR_REGION.get();
-  const seatList = MMURR_DATA.seat.list[region] ?? MMURR_DATA.seat.list.UK;
+  const R=MMURR_REGION.data(), region=MMURR_REGION.get();
   const datasets=[]; const totals=MONTHS.map(()=>0);
-  for(const [key,t] of Object.entries(TRACKS)){
-    if(!t.on || (!t.usage && !t.usageStart)) continue;
-    const pf=fillPrices(t.points);
-    const conv = p => t.curRule==='seat' ? seatList : p*R.fx;
-    const series=MONTHS.map((m,i)=> pf[m]==null ? null : +t.cost(conv(pf[m]), rampUsage(t,i)).toFixed(2));
+  let apiSeries=null;
+
+  for(const [k,s] of Object.entries(SVC)){
+    if(!s.on) continue;
+    let series;
+    if(metric==='cost'){
+      if(s.billing==='seat'){
+        const price = seatFill(s, region);
+        series = MONTHS.map((m,i)=>{ const p=price[i]; if(p==null) return null;
+          let c = qtyAt(s,i)*p;
+          if(s.usage && s.usageAddon){ const Mt=promptsAt(s,i,TS[i])*TPP/1e6; c += Mt*stepAt(s.lineage,TS[i])[2]*R.fx; }
+          return +c.toFixed(2); });
+      } else { // credits — USD regional rate, shown at the FX anchor
+        const rate = (MMURR_DATA.basket.credit[region] ?? MMURR_DATA.basket.credit.US) * R.fx;
+        series = MONTHS.map((m,i)=> +(qtyAt(s,i)*rate).toFixed(2));
+      }
+    } else { // environmental — prompt-driven seat services only
+      if(s.billing!=='seat'){ continue; }
+      series = MONTHS.map((m,i)=>{ const price=seatFill(s,region)[i]; if(price==null) return null;
+        const wh = promptsAt(s,i,TS[i]) * stepAt(s.lineage,TS[i])[3];
+        return +metricFromEnergyWh(wh,R).toFixed(metric==='energy'?0:2); });
+    }
     series.forEach((v,i)=>{ if(v!=null) totals[i]+=v; });
-    datasets.push({
-      label:t.name, data:series, borderColor:t.color,
-      backgroundColor:t.color+'55', fill:CHART_TYPE==='area', stack:'basket',
-      tension:.15, pointRadius:0, borderWidth:2, spanGaps:true,
-    });
+    datasets.push({ label:s.name, data:series, borderColor:s.color, backgroundColor:s.color+'55',
+      fill:true, stack:'basket', tension:.15, pointRadius:0, borderWidth:2, spanGaps:false });
   }
-  if(document.getElementById('showTotal').checked && datasets.length){
-    datasets.push({
-      label:'Total', data:totals.map(v=>+v.toFixed(2)), borderColor:'#ffffff',
-      backgroundColor:'transparent', fill:false, stack:'total',
-      borderDash:[5,4], borderWidth:2, pointRadius:0, tension:.15,
-    });
+
+  // "cost if billed on raw API" — the same prompt volume metered, vs paying per seat.
+  if(metric==='cost' && showApi){
+    apiSeries = MONTHS.map((m,i)=>{ let c=0, any=false;
+      for(const s of Object.values(SVC)){ if(!s.on || s.billing!=='seat') continue;
+        if(seatFill(s,region)[i]==null) continue; any=true;
+        c += promptsAt(s,i,TS[i])*TPP/1e6 * stepAt(s.lineage,TS[i])[2] * R.fx; }
+      return any ? +c.toFixed(2) : null; });
+    datasets.push({ label:'Cost if billed on raw API', data:apiSeries, borderColor:'#7db7ff',
+      backgroundColor:'transparent', fill:false, stack:'api', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:.15 });
+  }
+
+  if(document.getElementById('showTotal').checked && datasets.some(d=>d.stack==='basket')){
+    datasets.push({ label:'Total', data:totals.map(v=>+v.toFixed(2)), borderColor:'#ffffff',
+      backgroundColor:'transparent', fill:false, stack:'total', borderDash:[5,4], borderWidth:2, pointRadius:0, tension:.15 });
   }
   return {datasets, totals};
 }
 
-// --- Stats ----------------------------------------------------------------
+// --- Stats + axis labelling ----------------------------------------------
+const UNIT = { cost:r=>r.sym, energy:()=>'', co2:()=>'', water:()=>'' };
+function fmtVal(v){
+  const R=MMURR_REGION.data();
+  if(metric==='cost')  return R.sym+Math.round(v).toLocaleString();
+  if(metric==='energy')return Math.round(v).toLocaleString()+' Wh';
+  if(metric==='co2')   return v.toLocaleString(undefined,{maximumFractionDigits:1})+' kg';
+  return v.toLocaleString(undefined,{maximumFractionDigits:0})+' L';
+}
+function yLabel(){
+  const R=MMURR_REGION.data();
+  return metric==='cost' ? `Monthly cost (${R.cur||'local'})`
+       : metric==='energy'? 'Energy — Wh / month'
+       : metric==='co2'  ? 'CO₂ — kg / month'
+       :                    'Water — L / month';
+}
 function setStats(totals){
+  const lab = metric==='cost'?'cost':metric==='energy'?'energy':metric==='co2'?'CO₂':'water';
+  document.getElementById('sStartLab').textContent = `Monthly ${lab} — `;
+  document.getElementById('sNowLab').textContent   = `Monthly ${lab} — now`;
   const valid=totals.map((v,i)=>[MONTHS[i],v]).filter(([,v])=>v>0);
   if(!valid.length){ ['sStart','sNow','sChange'].forEach(id=>document.getElementById(id).textContent='—'); return; }
   const [d0,v0]=valid[0], [,vN]=valid[valid.length-1];
-  const sym=MMURR_REGION.data().sym;
-  const cur=n=> sym+Math.round(n).toLocaleString();
-  document.getElementById('sStart').textContent=cur(v0);
+  document.getElementById('sStart').textContent=fmtVal(v0);
   document.getElementById('sStartDate').textContent=d0;
-  document.getElementById('sNow').textContent=cur(vN);
+  document.getElementById('sNow').textContent=fmtVal(vN);
   const pct=v0? ((vN-v0)/v0*100):0;
   document.getElementById('sChange').textContent=(pct>=0?'+':'')+pct.toFixed(0)+'%';
   document.getElementById('sChange').style.color = pct<=0?'var(--accent)':'var(--warn)';
 }
 
-// --- Draw -----------------------------------------------------------------
-let CHART_TYPE='area';
+// --- Draw (stacked area only) --------------------------------------------
+let chart;
 function draw(){
   const R=MMURR_REGION.data();
   const {datasets,totals}=compute();
   setStats(totals);
   const cfg={
-    type:'line',
-    data:{labels:MONTHS, datasets},
+    type:'line', data:{labels:MONTHS, datasets},
     options:{
       responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${R.sym}${Math.round(c.parsed.y).toLocaleString()}`}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtVal(c.parsed.y)}`}},
       },
       scales:{
         x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
-        y:{stacked:CHART_TYPE==='area', ticks:{color:'#6b7280',callback:v=>R.sym+(v/1000)+'k',font:{size:10}},
-           grid:{color:'#222732'},title:{display:true,text:`Monthly cost (${R.cur||'local'})`,color:'#9aa3b2',font:{size:11}}},
+        y:{stacked:true, ticks:{color:'#6b7280',font:{size:10},
+             callback:v=> metric==='cost' ? R.sym+(v>=1000?(v/1000)+'k':v) : v.toLocaleString()},
+           grid:{color:'#222732'},title:{display:true,text:yLabel(),color:'#9aa3b2',font:{size:11}}},
       },
     },
   };
@@ -173,12 +237,11 @@ function draw(){
 }
 
 // --- Region-aware sources & assumptions (covers BOTH charts) --------------
-// Re-rendered on region switch so prices/grid here track the selected currency.
-// Double-inclusion of sources is deliberate: a reader should never have to hunt.
 const SRC = {
   openai:'https://openai.com/api/pricing/',
   gemini:'https://ai.google.dev/gemini-api/docs/pricing',
-  anthropic:'https://www.anthropic.com/pricing',
+  geminiEnt:'https://cloud.google.com/blog/products/ai-machine-learning/gemini-enterprise-launch',
+  anthropic:'https://claude.com/pricing',
   ms:'https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing',
   snow:'https://www.snowflake.com/en/data-cloud/pricing-options/',
   gEnergy:'https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/',
@@ -190,66 +253,86 @@ const confTag = kind=>`<span class="conf ${kind.toLowerCase()}">${kind}</span>`;
 function renderSources(){
   const host=document.getElementById('sourcesPanel'); if(!host) return;
   const R=MMURR_REGION.data(), region=MMURR_REGION.get();
-  const seatList=(MMURR_DATA.seat.list[region]??MMURR_DATA.seat.list.UK);
-  const fxLine = region==='US' ? 'USD list (no conversion)' : `USD list × ${R.fx} FX → ${R.cur}`;
+  const cop=(MMURR_DATA.seat.series.copilot[region]??MMURR_DATA.seat.series.copilot.UK)[0][1];
+  const gem=(MMURR_DATA.seat.series.gemini[region]??MMURR_DATA.seat.series.gemini.UK);
+  const gemNow=gem[gem.length-1][1];
+  const cred=MMURR_DATA.basket.credit[region]??MMURR_DATA.basket.credit.US;
+  const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
   const rows = [
-    ['Currency basis', `Seat/credit prices are <b>${R.label}</b> regional list; token/API prices are USD list shown at the editable FX anchor (${R.cur} ${R.fx}/USD).`, 'VERIFY', '(editable anchor — no live feed)'],
-    ['M365 Copilot seat', `${R.sym}${seatList.toFixed(2)}/seat/mo regional list, then headcount EA discount`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
-    ['EA discount band', `0% below 1k seats → ~20% at 5k → ~30% at 10k+ (MS discounts 15–30% on 5,000+ seat EAs)`, 'ASSUMPTION', aLink(SRC.ms,'Microsoft EA guidance')],
-    ['OpenAI token $ (Auto/Think/Mini)', `GPT-5.x blended ~$5.6–8.75 / 1M; shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI pricing')],
-    ['Anthropic token $ (Haiku/Sonnet/Opus)', `Opus 4.8 $5/$25 · Sonnet 4.6 $3/$15 · Haiku 4.5 $1/$5 per 1M`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
-    ['Gemini token $ (Pro/Flash)', `Pro ~$7 · Flash ~$5.25 / 1M; shown ${fxLine}`, 'VERIFY', aLink(SRC.gemini,'Gemini pricing')],
-    ['Snowflake credit', `$3/credit (Enterprise) at FX; Standard $2 · Business-Critical $4`, 'SOURCED', aLink(SRC.snow,'Snowflake')],
-    ['Copilot Credits transition', `AI Builder credits end-of-sale 1 Nov 2025; dual-mode → 1 Nov 2026; Copilot Credit $0.01; no auto-conversion between currencies`, 'SOURCED', aLink('https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-licensing','Microsoft Learn')],
+    ['Pricing basis', `Microsoft, Google &amp; Snowflake are shown as <b>${R.label}</b> regional list/rate; Claude is USD list at the FX anchor (${R.cur} ${R.fx}/USD) because Anthropic bills USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
+    ['M365 Copilot seat', `${R.sym}${cop.toFixed(2)}/seat/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
+    ['Copilot price changes', `≤300-seat Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
+    ['Gemini (enterprise) seat', `${R.sym}${gemNow}/seat/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
+    ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/seat (Oct 2025)`, 'SOURCED', aLink(SRC.gemini,'Google')],
+    ['Claude (enterprise) seat', `$20/seat/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Snowflake credit', `≈$${cred.toFixed(2)}/credit (Enterprise, ${R.label} region) at FX; ≈$3.00 US · ≈$3.60 EU · ≈$3.90 UK; stable`, 'VERIFY', aLink(SRC.snow,'Snowflake')],
+    ['Standardised prompt', `${TPP} tokens (≈300-token answer + context; editable). Same task for every model so cost &amp; footprint compare like-for-like.`, 'ASSUMPTION', '—'],
+    ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')],
     ['Copilot energy', `0.31 Wh / prompt`, 'SOURCED', 'Microsoft disclosure (2026)'],
     ['Gemini energy', `0.24 Wh / prompt`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
-    ['Anthropic energy', `per-query Wh not published — values are labelled assumptions`, 'ASSUMPTION', '(vendor publishes none)'],
-    ['Reasoning multiplier', `≈ ×10 for “Thinking” modes (up to ×70 seen)`, 'VERIFY', 'Jegham et al. (2025)'],
+    ['Anthropic energy', `per-query Wh not published — labelled assumption`, 'ASSUMPTION', '(vendor publishes none)'],
     ['Grid intensity', `${R.label} ≈ ${R.grid} kgCO₂e/kWh — ${R.gridNote}`, R.gridConf, aLink(SRC.grid,'DESNZ/Defra (2025)')],
-    ['Tokens / prompt', `${MMURR_DATA.models.tokPerPrompt} (≈ 300-token answer + context; editable)`, 'ASSUMPTION', '—'],
   ];
   host.innerHTML = `
     <p class="sub" style="margin-top:0">These reflect the <b>${R.label}</b> selection above — switch region/currency and the
-      prices and grid here update too. Every value is flagged ${confTag('SOURCED')} ${confTag('VERIFY')} ${confTag('ASSUMPTION')} and links to its origin.</p>
+      prices, grid and FX here update too. Every value is flagged ${confTag('SOURCED')} ${confTag('VERIFY')} ${confTag('ASSUMPTION')} and links to its origin.
+      EU figures are localised approximations (flagged VERIFY).</p>
     <table class="src"><thead><tr><th>Item</th><th>Value (this region)</th><th>Conf.</th><th>Source</th></tr></thead>
     <tbody>${rows.map(([k,v,c,s])=>`<tr><td>${k}</td><td>${v}</td><td>${confTag(c)}</td><td>${s}</td></tr>`).join('')}</tbody></table>
-    <p class="foot">Prices are list and indicative — the whole point is to overwrite them with your own contract rates.
-      Token prices convert at an editable FX anchor; no network calls. Runs entirely in your browser.</p>`;
+    <p class="foot">Prices are list/indicative — overwrite them with your own contract rates in the dataset. Token prices convert at an
+      editable FX anchor; no network calls. Runs entirely in your browser.</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
 function init(){
-  renderTracks();
+  renderServices();
   renderSources();
-  document.getElementById('tracks').addEventListener('change',e=>{
-    const key=e.target.dataset.on;
-    if(key){ TRACKS[key].on=e.target.checked;
-      e.target.closest('.track').classList.toggle('off',!e.target.checked); draw(); }
+  const tracks=document.getElementById('tracks');
+
+  tracks.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.dataset.on){ const k=t.dataset.on; SVC[k].on=t.checked;
+      t.closest('.svc').classList.toggle('off',!t.checked); draw(); return; }
+    const id=t.id||'';
+    if(id.startsWith('basis-')){ const k=id.slice(6); SVC[k].basis=t.value;
+      document.getElementById('ppdwrap-'+k).hidden = t.value!=='prompts';
+      document.getElementById('tokwrap-'+k).hidden = t.value!=='tokens'; draw(); return; }
+    if(id.startsWith('use-')){ SVC[id.slice(4)].usage=t.checked; draw(); return; }
+    if(id.startsWith('ro-')&&!id.includes('-q')&&!id.includes('-m')){ const k=id.slice(3);
+      SVC[k].ro.on=t.checked; document.getElementById('rowrap-'+k).hidden=!t.checked; draw(); return; }
   });
-  document.getElementById('tracks').addEventListener('input',e=>{
-    if(e.target.id?.startsWith('u-')){ const k=e.target.id.slice(2);
-      TRACKS[k].usage=parseFloat(e.target.value)||0; draw(); }
-    if(e.target.id?.startsWith('us-')){ const k=e.target.id.slice(3);
-      TRACKS[k].usageStart=parseFloat(e.target.value)||0; draw(); }
+  tracks.addEventListener('input',e=>{
+    const t=e.target, id=t.id||'', v=parseFloat(t.value)||0;
+    if(id.startsWith('q-')){ SVC[id.slice(2)].qty=v; draw(); }
+    else if(id.startsWith('ppd-')){ SVC[id.slice(4)].ppdOverride=v; draw(); }
+    else if(id.startsWith('tok-')){ SVC[id.slice(4)].tokensMo=v; draw(); }
+    else if(id.startsWith('ro-q0-')){ SVC[id.slice(6)].ro.q0=v; draw(); }
+    else if(id.startsWith('ro-q1-')){ SVC[id.slice(6)].ro.q1=v; draw(); }
+    else if(id.startsWith('ro-m0-')){ SVC[id.slice(6)].ro.m0=t.value; draw(); }
+    else if(id.startsWith('ro-m1-')){ SVC[id.slice(6)].ro.m1=t.value; draw(); }
   });
-  document.getElementById('adoptCurve').addEventListener('click',e=>{
-    if(!e.target.dataset.c) return;
+  tracks.addEventListener('click',e=>{
+    const b=e.target.closest('.more'); if(!b) return;
+    const body=document.getElementById('more-'+b.dataset.more), open=body.hidden;
+    body.hidden=!open; b.setAttribute('aria-expanded',open); b.textContent='More detail '+(open?'▴':'▾');
+  });
+
+  document.getElementById('ppd').addEventListener('input',e=>{
+    ppd=+e.target.value; document.getElementById('ppdOut').textContent=ppd;
+    document.querySelectorAll('[id^="ppd-"]').forEach(el=>el.placeholder=ppd+' (headline)'); draw();
+  });
+  document.getElementById('metric').addEventListener('click',e=>{
+    if(!e.target.dataset.m) return;
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
-    e.target.classList.add('on'); ADOPTION.curve=e.target.dataset.c; draw();
-  });
-  // redraw on both events: 'change' (picker commit) and 'input' (typed/spun) so
-  // the graph always follows the adoption-start date. Out-of-range months fall
-  // back to the series start inside rampUsage().
-  ['change','input'].forEach(ev=>document.getElementById('adoptStart').addEventListener(ev,e=>{
-    ADOPTION.start=e.target.value; draw();
-  }));
-  document.getElementById('chartType').addEventListener('click',e=>{
-    if(!e.target.dataset.t) return;
-    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
-    e.target.classList.add('on'); CHART_TYPE=e.target.dataset.t; draw();
+    e.target.classList.add('on'); metric=e.target.dataset.m;
+    document.getElementById('apiWrap').style.display = metric==='cost'?'':'none';
+    draw();
   });
   document.getElementById('showTotal').addEventListener('change',draw);
-  MMURR_REGION.onChange(()=>{ draw(); renderSources(); });   // re-price basket + sources on region switch
+  document.getElementById('showApi').addEventListener('change',e=>{ showApi=e.target.checked; draw(); });
+  document.getElementById('showGemHist').addEventListener('change',e=>{ showGemHist=e.target.checked; draw(); });
+
+  MMURR_REGION.onChange(()=>{ draw(); renderSources(); });
   draw();
 }
 document.addEventListener('DOMContentLoaded',init);

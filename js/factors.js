@@ -65,6 +65,21 @@ window.MMURR_DATA = {
     // [headcount, fraction off list]. Linear-interpolated between anchors.
     discountAnchors: [ [1, 0], [1000, 0.10], [5000, 0.20], [10000, 0.30] ],
     discountMax: 0.30,
+
+    // Seat price OVER TIME, per region (basket chart). Regional list in the
+    // region's own currency for Microsoft & Google (they price per market);
+    // Claude is USD-only and FX-converted (Anthropic bills USD worldwide).
+    // Points hold until the next; a value of 0 = "not sold standalone" (gap).
+    // [month, price]
+    series: {
+      copilot: { US:[['2023-11',30.00]], UK:[['2023-11',24.70]], EU:[['2023-11',28.10]] },
+      gemini:  { US:[['2024-02',30],['2025-02',0],['2025-10',30]],   // add-on → discontinued → Gemini Enterprise
+                 UK:[['2024-02',25],['2025-02',0],['2025-10',25]],
+                 EU:[['2024-02',28],['2025-02',0],['2025-10',28]] },
+      claudeUsd:[['2024-09',50],['2025-11',20]],                     // USD; enterprise w/ bundled tokens → flat seat + usage
+    },
+    // Snowflake Enterprise credit, billed in USD by deployment region. Stable.
+    credit: { US:3.00, EU:3.60, UK:3.90 },
   },
 
   // Model lineage for the price-page decision chart (js/pricelab.js).
@@ -97,6 +112,8 @@ window.MMURR_DATA = {
                ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1]]},
       'oa:mini':  {group:'OpenAI', label:'Mini / o4', conf:'VERIFY', io:[0.25,2,'o4 / GPT-5 mini'],
         steps:[['2025-01','o3-mini',2.8,0.2],['2025-04','o4-mini',2.8,0.2],['2025-08','GPT-5 mini',1.1,0.15],['2026-03','GPT-5 mini',1.1,0.15]]},
+      'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[0.30,2.50,'Gemini 2.5 Flash'],
+        steps:[['2024-05','1.5 Flash',0.70,0.30],['2024-08','1.5 Flash-002',0.19,0.24],['2025-06','2.5 Flash',1.40,0.24],['2026-05','2.5 Flash',5.25,0.24]]},
       'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
         steps:[['2024-03','Haiku 3',0.75,0.25],['2025-10','Haiku 4.5',3.0,0.3]]},
       'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],
@@ -107,6 +124,33 @@ window.MMURR_DATA = {
 
     // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)
     credits: { dualMode:['2025-11','2026-11'], unitUsd:0.01 },
+  },
+
+  // "Choose your stack" basket (js/prices.js). Every service is sized by SEATS
+  // and a shared headline of average prompts/user/day. One standardised prompt
+  // is assumed for every model so the same task can be priced and footprinted as
+  // the engine under each licence changes — that drives the "cost if billed on
+  // raw API" comparison line and the optional environmental view.
+  basket: {
+    workdaysPerMonth: 22,            // working days used to turn prompts/day into prompts/month
+    ppdDefault: 20,                  // headline average prompts / user / day (shared across services)
+    // billing: 'seat' = seats × regional seat price; 'credits' = qty × regional credit rate.
+    // seatRule: 'regional' = region's own-currency list; 'fx' = USD list × FX anchor.
+    // lineage: which models.axis entry prices the "same task on raw API" line + footprint.
+    services: {
+      copilot:  { name:'M365 Copilot',       billing:'seat',    color:'#e0b341', lineage:'oa:auto',  seatRule:'regional', seatKey:'copilot',  defaultQty:1000 },
+      gemini:   { name:'Gemini (enterprise)',billing:'seat',    color:'#b98cff', lineage:'gm:flash', seatRule:'regional', seatKey:'gemini',   defaultQty:70, history:true },
+      claude:   { name:'Claude (enterprise)',billing:'seat',    color:'#5bd1a6', lineage:'an:sonnet',seatRule:'fx',       seatKey:'claudeUsd',defaultQty:50, usageAddon:true },
+      snowflake:{ name:'Snowflake (Enterprise)', billing:'credits', color:'#7db7ff', defaultQty:5000 },
+    },
+    // Single-sourced "what changed over time" copy, surfaced in the page dropdowns + sources.
+    notes: {
+      copilot:'Microsoft prices Copilot per market (US $30 · UK £24.70 · EU €28.10 list, enterprise add-on) and has held it since Nov 2023. The ≤300-seat Business SKU was cut $30→$21 on 1 Dec 2025; from Jul 2026 Copilot bundles into premium licences.',
+      gemini:'Google’s seat price has churned: a $20/$30 Workspace add-on (2024) → folded into Workspace and the standalone add-on discontinued (Jan–Mar 2025, base plans +~17%) → relaunched as Gemini Enterprise at $30/seat (US; ~£25 UK · ~€28 EU) on 9 Oct 2025.',
+      claude:'Anthropic prices in USD worldwide — a UK/EU card converts at transaction time, so Claude is shown FX-converted. Enterprise moved from high seat fees with bundled tokens (≈$40–200/seat) to a flat $20/seat + usage at API rates (renewals from Nov 2025; default for new agreements by Feb 2026).',
+      snowflake:'Snowflake Enterprise credits are billed in USD by deployment region — ≈$3.00 (US-East) · ≈$3.60 (EU/Frankfurt) · ≈$3.90 (UK/London). Rates have held steady across the period.',
+      prompt:'One standardised business prompt is assumed for every model (≈300-token answer + context ≈ 1,500 tokens). Cost = tokens × the model’s $/token; energy uses vendor per-prompt disclosures (Gemini 0.24 Wh, Copilot/GPT backend 0.31 Wh; Anthropic per-query Wh is a labelled assumption). The same task lets you compare model efficiency as the engine under each licence changes.',
+    },
   },
 
   // Front-page "what this costs to run" figures (§7.6). Editable & sourced.

@@ -9,7 +9,8 @@
    Built up across phases:
      P3 (here)  — controls, flat licence line, backend markers, seat discount
      P4 (added) — energy / CO2 / water footprint overlay + reconciliation check
-     P5/P6      — same-workload-on-API line + break-even, Copilot Credits band
+     P5/P6      — same-workload-on-API line + break-even
+     (rework)   — header + cost notes moved into Seat/Cost-logic dropdowns; credits removed
 ---------------------------------------------------------------------------- */
 (function(){
   const svg = document.getElementById('labChart');
@@ -21,7 +22,7 @@
   let profile = 'list', seats = 5000, override = 0, cohort = 0, mainModel = M.defaultAxis;
   let ppd = M.defaultPpd;
   const tokPerPrompt = M.tokPerPrompt;
-  const on = { api:false, credits:false, energy:false, co2:false, water:false };   // cost + footprint overlays
+  const on = { api:false, energy:false, co2:false, water:false };   // cost + footprint overlays
   let ctx = null;   // last-drawn context, read by the hover handler
 
   // Footprint per user per day for a given per-prompt Wh, in the region's
@@ -103,15 +104,6 @@
     for(const yr of ['2024','2025','2026']){ const xx=x(D(yr+'-01'));
       svg.appendChild(txt('lab-axis',xx,H-PB+16,'middle',yr)); }
 
-    // Power Automate → Copilot Credits dual-mode band (§4.6/§7.7), drawn first
-    if(on.credits){
-      const dm=M.credits.dualMode, b0=x(D(dm[0])), b1=x(D(dm[1]));
-      svg.appendChild(el('rect',{class:'lab-band',x:b0,y:PT,width:Math.max(0,b1-b0),height:H-PT-PB,rx:4}));
-      svg.appendChild(txt('lab-bandlab',(b0+b1)/2,PT+12,'middle','AI Builder → Copilot Credits (dual-mode)'));
-      svg.appendChild(txt('lab-bandlab',b0,H-PB-5,'middle','Nov ’25'));
-      svg.appendChild(txt('lab-bandlab',b1,H-PB-5,'middle','Nov ’26'));
-    }
-
     // footprint overlay (secondary scale, drawn behind the cost lines). Wh/prompt
     // steps at the MAIN MODEL's own dates (§4.4) — switching model moves it.
     const fpAt = t => footprint(mdlAt(t)[3], R);
@@ -186,9 +178,6 @@
               `A Copilot seat also buys Graph grounding, security and the in-app surfaces — the API line prices tokens only, so this isn't strictly like-for-like.`;
     } else {
       note += ` Markers are the Copilot backend swapping underneath; the line stays flat. Toggle <b>Same workload on raw API</b> to find where metering overtakes the licence.`;
-    }
-    if(on.credits){
-      note += ` <b>Copilot Credits band:</b> AI Builder credits end-of-sale 1 Nov 2025; a dual-mode year (AI Builder consumed first, then Copilot Credits at $0.01) runs to 1 Nov 2026, after which seeded AI Builder credits are removed. There is <b>no automatic conversion</b> between the two currencies — rates differ by capability tier.`;
     }
     note += ` Footprint follows <b>${am.group} ${am.label}</b>` +
             (am.assumedWh?` <span class="vflag" title="Anthropic publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') +

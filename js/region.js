@@ -74,7 +74,7 @@ window.MMURR_REGION = (function(){
         <div class="seg region-seg" role="group" aria-label="Region and currency">${buttons}</div>
       </div>
       <details class="region-disclose">
-        <summary>What changes when I switch region?</summary>
+        <summary>Region logic</summary>
         ${ledgerHTML()}
       </details>`;
   }

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Price History — mmurr.ai</title>
-<meta name="description" content="See how the cost of a fixed AI/data basket — Copilot seats, Snowflake credits, Gemini & OpenAI tokens — has changed since 2023. Runs in your browser.">
+<meta name="description" content="See how a fixed AI stack — Copilot, Gemini & Claude seats, Snowflake credits — has cost over time, and what the same usage would cost billed on raw API tokens. Runs in your browser.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/prices.css">
 </head>
@@ -14,8 +14,8 @@
   <header class="top">
     <div>
       <h1>AI Price History</h1>
-      <p class="sub bright">How the cost of a <em>fixed</em> AI &amp; data basket has changed since 2023 — even as the
-        model behind each product was swapped underneath you.</p>
+      <p class="sub bright">How the cost — and energy — of a <em>fixed</em> AI &amp; data stack has changed since 2023,
+        even as the model behind each seat was swapped underneath you.</p>
     </div>
     <a class="back" href="index.html">← mmurr.ai</a>
   </header>
@@ -24,55 +24,24 @@
 
   <div class="panel">
     <p class="sub" style="margin:0">
-      Pick the services you use, set how much you use, and watch the monthly bill move over time. Seat- and
-      credit-priced products barely shift; token-priced models have fallen sharply per unit but each new generation
-      does far more per token. All prices are list, USD, and editable in the dataset — refine with your own contract rates.
+      Two forces pull enterprise AI bills in opposite directions. <strong>Per-user licences</strong> — Copilot, Gemini and
+      Claude seats — sit on flat monthly prices that have barely moved: you pay per head, not per token. Meanwhile the raw
+      <strong>API price of a token</strong> stopped falling in 2025 and has crept back up as frontier models got pricier,
+      even as the <strong>energy</strong> to run one standard prompt has broadly fallen (reasoning-heavy models spike it).
+      The old gap where "just pay for tokens" beat a per-seat licence is <strong>narrowing</strong>. The two charts below let
+      you watch which side wins — and what the same workload does to cost, energy and carbon over time.
     </p>
   </div>
-
-  <h2>Choose your stack</h2>
-  <div class="tracks" id="tracks"></div>
-
-  <div class="controls">
-    <div>
-      <span class="sub">Chart</span>
-      <div class="seg" id="chartType" style="margin-left:8px">
-        <button data-t="area" class="on">Stacked area</button>
-        <button data-t="line">Lines</button>
-      </div>
-    </div>
-    <label class="sub" style="display:flex;gap:6px;align-items:center;cursor:pointer">
-      <input type="checkbox" id="showTotal" checked style="accent-color:var(--accent)"> Show total
-    </label>
-    <div>
-      <span class="sub">Adoption curve</span>
-      <div class="seg" id="adoptCurve" style="margin-left:8px">
-        <button data-c="flat">Flat</button>
-        <button data-c="linear" class="on">Linear</button>
-        <button data-c="exp">Exponential</button>
-      </div>
-    </div>
-    <label class="sub" style="display:flex;gap:6px;align-items:center">
-      Adoption start
-      <input type="month" id="adoptStart" value="2023-06"
-        style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 8px;font-family:var(--mono)">
-    </label>
-  </div>
-
-  <div class="stat-row">
-    <div class="stat"><div class="big" id="sStart">$0</div><div class="lab">Monthly cost — <span id="sStartDate">start</span></div></div>
-    <div class="stat"><div class="big" id="sNow">$0</div><div class="lab">Monthly cost — now</div></div>
-    <div class="stat"><div class="big" id="sChange">—</div><div class="lab">Change over period</div></div>
-  </div>
-
-  <div class="chartbox"><canvas id="chart"></canvas></div>
 
   <!-- ============ DECISION CHART (licence vs model + footprint) ============ -->
   <h2>Licence vs the model underneath</h2>
   <div class="panel">
-    <p class="sub" style="margin-top:0">A seat price barely moves while the model underneath it is swapped. Set your
-      profile and watch the backend markers step across a flat licence line. Your <strong>seats</strong> drive the
-      expected enterprise-agreement discount (≈20% at 5,000); set a real rate in <em>Seat override</em> to pin it.</p>
+    <details class="logic-disclose">
+      <summary>Seat logic</summary>
+      <p class="sub" style="margin:10px 0 0">A seat price barely moves while the model underneath it is swapped. Set your
+        profile and watch the backend markers step across a flat licence line. Your <strong>seats</strong> drive the
+        expected enterprise-agreement discount (≈20% at 5,000); set a real rate in <em>Seat override</em> to pin it.</p>
+    </details>
 
     <div class="lab-controls">
       <div>
@@ -109,7 +78,6 @@
     <div class="lab-toggles" id="lab-toggles">
       <span class="sub" style="align-self:center;margin-right:4px">Cost:</span>
       <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="false"><span class="dot" style="background:var(--link)"></span>Same workload on raw API (find break-even)</button>
-      <button class="lab-chip" data-t="credits" aria-pressed="false"><span class="dot" style="background:var(--warn)"></span>Copilot Credits transition</button>
       <span class="sub" style="align-self:center;margin:0 4px 0 10px">Footprint:</span>
       <button class="lab-chip" data-t="energy" aria-pressed="false"><span class="dot" style="background:var(--accent)"></span>Energy</button>
       <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂</button>
@@ -139,8 +107,47 @@
       <div><span class="lab-k">Footprint / user / day</span><span class="lab-v" id="lab-r-fp">—</span></div>
     </div>
 
-    <p class="sub" id="lab-disc" style="margin-top:12px"></p>
+    <details class="logic-disclose" style="margin-top:12px">
+      <summary>Cost logic</summary>
+      <p class="sub" id="lab-disc" style="margin:10px 0 0"></p>
+    </details>
   </div>
+
+  <!-- ============ BASKET (choose your stack) ============ -->
+  <h2>Choose your stack</h2>
+
+  <div class="basket-head">
+    <label class="f" for="ppd" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <span>Average prompts / user / day — one standard task, applied to every service</span>
+      <output id="ppdOut">20</output>
+    </label>
+    <input type="range" id="ppd" min="2" max="120" value="20" style="width:100%;accent-color:var(--warn)">
+  </div>
+
+  <div class="tracks" id="tracks"></div>
+
+  <div class="controls">
+    <div>
+      <span class="sub">Show</span>
+      <div class="seg" id="metric" style="margin-left:8px">
+        <button data-m="cost" class="on">Cost</button>
+        <button data-m="energy">Energy</button>
+        <button data-m="co2">CO₂</button>
+        <button data-m="water">Water</button>
+      </div>
+    </div>
+    <label class="sub chk-inline"><input type="checkbox" id="showTotal" checked> Show total</label>
+    <span id="apiWrap"><label class="sub chk-inline"><input type="checkbox" id="showApi"> Cost if billed on raw API</label></span>
+    <label class="sub chk-inline"><input type="checkbox" id="showGemHist"> Show Gemini price history</label>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="big" id="sStart">$0</div><div class="lab"><span id="sStartLab">Monthly cost — </span><span id="sStartDate">start</span></div></div>
+    <div class="stat"><div class="big" id="sNow">$0</div><div class="lab" id="sNowLab">Monthly cost — now</div></div>
+    <div class="stat"><div class="big" id="sChange">—</div><div class="lab">Change over period</div></div>
+  </div>
+
+  <div class="chartbox"><canvas id="chart"></canvas></div>
 
   <h2>Sources &amp; assumptions</h2>
   <div class="panel" id="sourcesPanel"></div>

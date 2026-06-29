@@ -134,7 +134,7 @@ function metricFromEnergyWh(wh, R){
 function compute(){
   const R=MMURR_REGION.data(), region=MMURR_REGION.get();
   const datasets=[]; const totals=MONTHS.map(()=>0);
-  let apiSeries=null;
+  let apiSeries=null, apiMax=0;
 
   for(const [k,s] of Object.entries(SVC)){
     if(!s.on) continue;
@@ -158,7 +158,7 @@ function compute(){
     }
     series.forEach((v,i)=>{ if(v!=null) totals[i]+=v; });
     datasets.push({ label:s.name, data:series, borderColor:s.color, backgroundColor:s.color+'55',
-      fill:true, stack:'basket', tension:.15, pointRadius:0, borderWidth:2, spanGaps:false });
+      fill:false, stack:'basket', tension:.15, pointRadius:0, borderWidth:2, spanGaps:false });
   }
 
   // "cost if billed on raw API" — the same prompt volume metered, vs paying per seat.
@@ -168,6 +168,7 @@ function compute(){
         if(seatFill(s,region)[i]==null) continue; any=true;
         c += promptsAt(s,i,TS[i])*TPP/1e6 * stepAt(s.lineage,TS[i])[2] * R.fx; }
       return any ? +c.toFixed(2) : null; });
+    apiMax = Math.max(0, ...apiSeries.filter(v=>v!=null));
     datasets.push({ label:'Cost if billed on raw API', data:apiSeries, borderColor:'#7db7ff',
       backgroundColor:'transparent', fill:false, stack:'api', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:.15 });
   }
@@ -176,7 +177,7 @@ function compute(){
     datasets.push({ label:'Total', data:totals.map(v=>+v.toFixed(2)), borderColor:'#ffffff',
       backgroundColor:'transparent', fill:false, stack:'total', borderDash:[5,4], borderWidth:2, pointRadius:0, tension:.15 });
   }
-  return {datasets, totals};
+  return {datasets, totals, apiMax};
 }
 
 // --- Stats + axis labelling ----------------------------------------------
@@ -214,8 +215,20 @@ function setStats(totals){
 let chart;
 function draw(){
   const R=MMURR_REGION.data();
-  const {datasets,totals}=compute();
+  const {datasets,totals,apiMax}=compute();
   setStats(totals);
+  // Anchor the y-axis to a FIXED prompts reference (slider max) rather than the
+  // live values — so seat lines stay put and the API / footprint lines visibly
+  // climb as you slide prompts/day up, instead of the axis rescaling under them.
+  const tmax = Math.max(0, ...totals);
+  let yMax;
+  if(metric==='cost'){
+    let ref = tmax;
+    if(apiMax>0) ref = Math.max(ref, apiMax*(120/Math.max(1,ppd)));   // API at max prompts
+    yMax = ref>0 ? ref*1.15 : undefined;
+  } else {
+    yMax = tmax>0 ? tmax*(120/Math.max(1,ppd))*1.1 : undefined;        // footprint at max prompts
+  }
   const cfg={
     type:'line', data:{labels:MONTHS, datasets},
     options:{
@@ -226,7 +239,7 @@ function draw(){
       },
       scales:{
         x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
-        y:{stacked:true, ticks:{color:'#6b7280',font:{size:10},
+        y:{stacked:false, beginAtZero:true, max:yMax, ticks:{color:'#6b7280',font:{size:10},
              callback:v=> metric==='cost' ? R.sym+(v>=1000?(v/1000)+'k':v) : v.toLocaleString()},
            grid:{color:'#222732'},title:{display:true,text:yLabel(),color:'#9aa3b2',font:{size:11}}},
       },

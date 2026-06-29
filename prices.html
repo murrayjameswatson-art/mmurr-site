@@ -22,16 +22,15 @@
 
   <div id="region-bar"></div>
 
-  <div class="panel">
-    <p class="sub" style="margin:0">
-      Two forces pull enterprise AI bills in opposite directions. <strong>Per-user licences</strong> — Copilot, Gemini and
-      Claude seats — sit on flat monthly prices that have barely moved: you pay per head, not per token. Meanwhile the raw
-      <strong>API price of a token</strong> stopped falling in 2025 and has crept back up as frontier models got pricier,
-      even as the <strong>energy</strong> to run one standard prompt has broadly fallen (reasoning-heavy models spike it).
-      The old gap where "just pay for tokens" beat a per-seat licence is <strong>narrowing</strong>. The two charts below let
-      you watch which side wins — and what the same workload does to cost, energy and carbon over time.
+  <details class="panel logic-disclose">
+    <summary><strong>Overview</strong></summary>
+    <p class="sub" style="margin:10px 0 0">
+      Enterprise AI bills are pulled two ways. <strong>Per-user licences</strong> (Copilot, Gemini, Claude) sit on flat
+      prices — you pay per head, not per token. Meanwhile the raw <strong>API price of a token</strong> stopped falling in
+      2025 and is creeping back up, even as the <strong>energy</strong> per prompt has broadly fallen. The old "just pay for
+      tokens" advantage is <strong>narrowing</strong> — the charts below show which side wins.
     </p>
-  </div>
+  </details>
 
   <!-- ============ DECISION CHART (licence vs model + footprint) ============ -->
   <h2>Licence vs the model underneath</h2>
@@ -45,11 +44,11 @@
 
     <div class="lab-controls">
       <div>
-        <label class="f" for="lab-profile">Licence profile</label>
+        <label class="f" for="lab-profile">Copilot Licence Profile</label>
         <select id="lab-profile">
-          <option value="list" selected>E5 + Copilot add-on (enterprise list)</option>
-          <option value="frontierE7">E7 “Frontier Suite” (model a renewal)</option>
-          <option value="business">Business + Copilot (≤300 employees)</option>
+          <option value="list" selected>E5 + Copilot add-on — enterprise list</option>
+          <option value="frontierE7">E7 Frontier Suite — model a renewal</option>
+          <option value="business">Business + Copilot — ≤300 employees</option>
         </select>
       </div>
       <div>

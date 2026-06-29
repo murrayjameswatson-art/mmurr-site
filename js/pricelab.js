@@ -94,8 +94,12 @@
     const apiAt = t => seats * ppd * 30 * tokPerPrompt/1e6 * mdlAt(t)[2] * R.fx;
     const apiSeries = PTS.map(apiAt);
 
-    const maxCost = (Math.max(lic, on.api ? Math.max(...apiSeries) : 0) * (on.api?1.18:1.4)) || 1;
-    const yC = v => H-PB - (v/maxCost)*(H-PT-PB);
+    // Anchor the cost axis to the LICENCE (fixed), not to the API line — so the
+    // flat licence line never moves as you slide prompts/day; only the API line
+    // sweeps up/down across it. Clamp so an API line above the top rides the edge.
+    const maxCost = (lic * 2.6) || 1;
+    const clampY = y => Math.max(PT, Math.min(H-PB, y));
+    const yC = v => clampY(H-PB - (v/maxCost)*(H-PT-PB));
 
     // gridlines + cost axis (region currency)
     for(let i=0;i<=4;i++){ const yy=PT+i*(H-PT-PB)/4;
@@ -109,8 +113,13 @@
     const fpAt = t => footprint(mdlAt(t)[3], R);
     const series = { energy:PTS.map(t=>fpAt(t).energy), co2:PTS.map(t=>fpAt(t).co2), water:PTS.map(t=>fpAt(t).water) };
     const shown = ['energy','co2','water'].filter(k=>on[k]);
-    const maxFp = Math.max(1, ...shown.flatMap(k=>series[k])) * 1.25;
-    const yF = v => H-PB - (v/maxFp)*(H-PT-PB);
+    // Anchor the footprint axis to a FIXED prompts/day reference (the slider max),
+    // not to the current ppd — so the footprint lines visibly climb as you slide
+    // prompts up, instead of the axis rescaling and the line staying put.
+    const PPD_REF = 120, refE = PPD_REF*Math.max(...am.steps.map(s=>s[3]));
+    const refByK = { energy:refE, co2:refE/1000*R.pue*R.grid*1000, water:refE/1000*R.wue*1000 };
+    const maxFp = Math.max(1, ...shown.map(k=>refByK[k])) * 1.1;
+    const yF = v => clampY(H-PB - (v/maxFp)*(H-PT-PB));
     const path = (arr,cls,yfn) => { let d=''; PTS.forEach((t,i)=> d+=(i?'L':'M')+x(t)+' '+yfn(arr[i])); svg.appendChild(el('path',{class:cls,d})); };
     if(on.energy) path(series.energy,'ser-energy',yF);
     if(on.co2)    path(series.co2,'ser-co2',yF);

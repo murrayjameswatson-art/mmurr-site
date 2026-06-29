@@ -147,7 +147,7 @@ function compute(){
           if(s.usage && s.usageAddon){ const Mt=promptsAt(s,i,TS[i])*TPP/1e6; c += Mt*stepAt(s.lineage,TS[i])[2]*R.fx; }
           return +c.toFixed(2); });
       } else { // credits — USD regional rate, shown at the FX anchor
-        const rate = (MMURR_DATA.basket.credit[region] ?? MMURR_DATA.basket.credit.US) * R.fx;
+        const rate = (MMURR_DATA.seat.credit[region] ?? MMURR_DATA.seat.credit.US) * R.fx;
         series = MONTHS.map((m,i)=> +(qtyAt(s,i)*rate).toFixed(2));
       }
     } else { // environmental — prompt-driven seat services only
@@ -256,7 +256,7 @@ function renderSources(){
   const cop=(MMURR_DATA.seat.series.copilot[region]??MMURR_DATA.seat.series.copilot.UK)[0][1];
   const gem=(MMURR_DATA.seat.series.gemini[region]??MMURR_DATA.seat.series.gemini.UK);
   const gemNow=gem[gem.length-1][1];
-  const cred=MMURR_DATA.basket.credit[region]??MMURR_DATA.basket.credit.US;
+  const cred=MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US;
   const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
   const rows = [
     ['Pricing basis', `Microsoft, Google &amp; Snowflake are shown as <b>${R.label}</b> regional list/rate; Claude is USD list at the FX anchor (${R.cur} ${R.fx}/USD) because Anthropic bills USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],

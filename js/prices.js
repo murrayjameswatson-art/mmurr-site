@@ -240,13 +240,60 @@ function draw(){
       scales:{
         x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
         y:{stacked:false, beginAtZero:true, max:yMax, ticks:{color:'#6b7280',font:{size:10},
-             callback:v=> metric==='cost' ? R.sym+(v>=1000?(v/1000)+'k':v) : v.toLocaleString()},
+             callback:v=> metric==='cost' ? R.sym+(v>=1000?(+(v/1000).toFixed(1))+'k':v) : v.toLocaleString()},
            grid:{color:'#222732'},title:{display:true,text:yLabel(),color:'#9aa3b2',font:{size:11}}},
       },
     },
   };
   if(chart) chart.destroy();
   chart=new Chart(document.getElementById('chart'),cfg);
+  renderSnapshot();   // keep the per-service cost/footprint cards in sync with the chart
+}
+
+// --- Per-service snapshot: cost vs footprint for every model, at "now" ----
+// Independent of the metric toggle, so cost AND environmental impact are both
+// visible for the whole stack at once. Reuses the same series helpers as the
+// chart, read at the last month; colours match the decision chart's overlays.
+function fmtEnergy(wh){
+  if(wh>=1e6)  return (wh/1e6).toLocaleString(undefined,{maximumFractionDigits:1})+' MWh';
+  if(wh>=1000) return (wh/1000).toLocaleString(undefined,{maximumFractionDigits:1})+' kWh';
+  return Math.round(wh).toLocaleString()+' Wh';
+}
+function renderSnapshot(){
+  const host=document.getElementById('snap'); if(!host) return;
+  const R=MMURR_REGION.data(), region=MMURR_REGION.get(), i=MONTHS.length-1, t=TS[i];
+  let html='';
+  for(const [k,s] of Object.entries(SVC)){
+    if(!s.on) continue;
+    let cost=null, wh=null;
+    if(s.billing==='seat'){
+      const price=seatFill(s,region)[i];
+      if(price!=null){
+        cost=qtyAt(s,i)*price;
+        if(s.usage && s.usageAddon){ const Mt=promptsAt(s,i,t)*TPP/1e6; cost+=Mt*stepAt(s.lineage,t)[2]*R.fx; }
+        wh=promptsAt(s,i,t)*stepAt(s.lineage,t)[3];     // Wh / month
+      }
+    } else { // credits — infrastructure, not per-prompt: cost only
+      cost=qtyAt(s,i)*((MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US)*R.fx);
+    }
+    const costTxt = cost==null ? '—' : R.sym+Math.round(cost).toLocaleString();
+    let body;
+    if(wh==null){
+      body = `<div class="snap-note">Infrastructure credits — footprint depends on the workloads you run, not a per-prompt rate, so it isn't counted here.</div>`;
+    } else {
+      const kg = wh/1000*R.pue*R.grid, L = wh/1000*R.wue;   // CO₂ kg/mo · water L/mo
+      body = `<div class="snap-fp">
+        <div><span class="k"><i style="background:var(--accent)"></i>Energy</span><span class="v">${fmtEnergy(wh)}</span></div>
+        <div><span class="k"><i style="background:#b18cff"></i>CO₂</span><span class="v">${kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})} kg</span></div>
+        <div><span class="k"><i style="background:#54c8e8"></i>Water</span><span class="v">${Math.round(L).toLocaleString()} L</span></div>
+      </div>`;
+    }
+    html += `<div class="snap-card">
+      <div class="nm"><span class="dot" style="background:${s.color}"></span>${s.name}</div>
+      <div class="cost">${costTxt} <small>/ month</small></div>
+      ${body}</div>`;
+  }
+  host.innerHTML = html || `<p class="sub" style="margin:0">No services selected — tick a service above.</p>`;
 }
 
 // --- Region-aware sources & assumptions (covers BOTH charts) --------------

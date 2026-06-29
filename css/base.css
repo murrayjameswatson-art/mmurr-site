@@ -9,8 +9,12 @@
   --accent:#5bd1a6; --accent-ink:#0f1115; --warn:#e0b341; --link:#7db7ff; --hot:#ff6b57;
   --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:dark;   /* native form controls (month picker icon, popups, spinners) render dark */
 }
 *{box-sizing:border-box}
+/* The hidden attribute must beat class-level display rules (.more-body{display:flex},
+   .ro-grid{display:grid}) — without this those panels show even when hidden. */
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:15px}
 a{color:var(--link)}
 .wrap{max-width:980px;margin:0 auto;padding:24px 18px 80px}
@@ -28,9 +32,9 @@ h3{font-size:1rem;margin:0 0 4px}
 .badge.metered{color:var(--accent);border-color:var(--accent)}
 .badge.licensed{color:var(--warn);border-color:var(--warn)}
 label.f{display:block;font-size:.8rem;color:var(--muted);margin-bottom:3px}
-input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+input[type=number],input[type=month]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
   border-radius:7px;padding:8px 10px;font-family:var(--mono);font-size:.92rem}
-input[type=number]:focus{outline:2px solid var(--accent);outline-offset:0}
+input[type=number]:focus,input[type=month]:focus{outline:2px solid var(--accent);outline-offset:0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
 .stat .big{font-size:1.5rem;font-family:var(--mono);letter-spacing:-.02em}
 .stat .lab{font-size:.76rem;color:var(--muted);margin-top:2px}

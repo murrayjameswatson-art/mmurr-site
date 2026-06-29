@@ -28,6 +28,19 @@
 .chk-inline input{accent-color:var(--accent)}
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
 .chartbox{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+/* per-service "right now" snapshot: cost + footprint for every model, side by side */
+.snap-head{margin-top:16px}
+.snap{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+.snap-card{border:1px solid var(--line);border-radius:9px;padding:12px 13px;background:var(--panel)}
+.snap-card .nm{display:flex;align-items:center;gap:7px;font-weight:600;font-size:.9rem;margin-bottom:9px}
+.snap-card .cost{font-family:var(--mono);font-size:1.4rem;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.snap-card .cost small{font-size:.7rem;color:var(--faint);font-family:var(--sans);letter-spacing:0}
+.snap-fp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+.snap-fp div{display:flex;flex-direction:column;gap:2px}
+.snap-fp .k{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);display:flex;align-items:center;gap:4px}
+.snap-fp .k i{width:7px;height:7px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.snap-fp .v{font-family:var(--mono);font-size:.8rem;color:var(--ink);white-space:nowrap}
+.snap-note{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:.74rem;color:var(--muted)}
 canvas{width:100%!important;max-height:380px}
 @media(max-width:680px){
   .tracks{grid-template-columns:1fr}

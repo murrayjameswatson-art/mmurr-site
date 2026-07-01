@@ -8,7 +8,9 @@
 .basket-head{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-top:6px}
 .basket-head output{font-family:var(--mono);color:var(--warn);font-weight:600}
 /* compact, BI-style service cards */
-.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}
+/* align-items:start — grid rows stretch by default, so opening one card's
+   "More detail" would visually expand every card in the row */
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px;align-items:start}
 .svc{border:1px solid var(--line);border-radius:9px;padding:11px;background:var(--panel)}
 .svc .thead{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .svc input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
@@ -22,7 +24,10 @@
 .svc-sel{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:7px 9px;font-size:.85rem}
 .svc .chk{display:flex;gap:6px;align-items:center;font-size:.78rem;color:var(--muted);cursor:pointer}
 .svc .chk em{color:var(--ink);font-style:normal;font-weight:600}
-.ro-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+/* minmax(0,1fr) + min-width:0 let native month inputs shrink instead of
+   spilling out of narrow cards */
+.ro-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ro-grid input{min-width:0}
 .controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .chk-inline{display:flex;gap:6px;align-items:center;cursor:pointer}
 .chk-inline input{accent-color:var(--accent)}
@@ -44,6 +49,7 @@
 canvas{width:100%!important;max-height:380px}
 @media(max-width:680px){
   .tracks{grid-template-columns:1fr}
+  .ro-grid{grid-template-columns:1fr}
   .stat-row{grid-template-columns:1fr}
   .svc input[type=checkbox]{width:20px;height:20px}
   canvas{max-height:300px}

@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-   mmurr.ai — AI Price History · "Choose your stack" basket
+   mmurr.ai — AI Price History · "Blended Usage" basket
    Size each service by SEATS (or credits) and one shared headline of average
    prompts/user/day. Every model is assumed to answer the SAME standardised
    prompt, so the same task can be priced and footprinted as the engine under
@@ -86,14 +86,14 @@ function renderServices(){
   const host=document.getElementById('tracks'); host.innerHTML='';
   for(const [k,s] of Object.entries(SVC)){
     const seat = s.billing==='seat';
-    const qtyLabel = seat ? 'Seats' : 'Credits / month';
+    const qtyLabel = seat ? 'Licences' : 'Credits / month';
     const div=document.createElement('div'); div.className='svc'+(s.on?'':' off'); div.dataset.key=k;
     div.innerHTML = `
       <div class="thead">
         <input type="checkbox" ${s.on?'checked':''} data-on="${k}" aria-label="Include ${s.name}">
         <span class="dot" style="background:${s.color}"></span>
         <span class="nm">${s.name}</span>
-        <span class="badge ${seat?'licensed':'metered'}">${seat?'seat':'credits'}</span>
+        <span class="badge ${seat?'licensed':'metered'}">${seat?'licence':'credits'}</span>
       </div>
       <label class="f" for="q-${k}">${qtyLabel}</label>
       <input type="number" id="q-${k}" min="0" step="any" value="${s.qty}">
@@ -102,19 +102,19 @@ function renderServices(){
         ${seat ? `
         <label class="f" for="basis-${k}">Usage basis</label>
         <select id="basis-${k}" class="svc-sel">
-          <option value="prompts" selected>Prompts (seats × headline/day)</option>
+          <option value="prompts" selected>Prompts (licences × headline/day)</option>
           <option value="tokens">Direct — million tokens / month</option>
         </select>
         <div id="ppdwrap-${k}"><label class="f" for="ppd-${k}">Prompts / user / day override</label>
           <input type="number" id="ppd-${k}" min="0" step="any" placeholder="${ppd} (headline)"></div>
         <div id="tokwrap-${k}" hidden><label class="f" for="tok-${k}">Million tokens / month</label>
           <input type="number" id="tok-${k}" min="0" step="any" value="0"></div>
-        ${s.usageAddon ? `<label class="chk"><input type="checkbox" id="use-${k}"> Bill usage at API rates <em>on top</em> of the seat</label>` : ''}
+        ${s.usageAddon ? `<label class="chk"><input type="checkbox" id="use-${k}"> Bill usage at API rates <em>on top</em> of the licence</label>` : ''}
         ` : ''}
         <label class="chk"><input type="checkbox" id="ro-${k}"> Specify rollout (start → end)</label>
         <div id="rowrap-${k}" class="ro-grid" hidden>
-          <div><label class="f">Start ${seat?'seats':'credits'}</label><input type="number" id="ro-q0-${k}" min="0" step="any" value="0"></div>
-          <div><label class="f">End ${seat?'seats':'credits'}</label><input type="number" id="ro-q1-${k}" min="0" step="any" value="${s.qty}"></div>
+          <div><label class="f">Start ${seat?'licences':'credits'}</label><input type="number" id="ro-q0-${k}" min="0" step="any" value="0"></div>
+          <div><label class="f">End ${seat?'licences':'credits'}</label><input type="number" id="ro-q1-${k}" min="0" step="any" value="${s.qty}"></div>
           <div><label class="f">Start month</label><input type="month" id="ro-m0-${k}" min="${START}" max="${END}" value="2024-01"></div>
           <div><label class="f">End month</label><input type="month" id="ro-m1-${k}" min="${START}" max="${END}" value="${END}"></div>
         </div>
@@ -318,13 +318,16 @@ function renderSources(){
   const gemNow=gem[gem.length-1][1];
   const cred=MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US;
   const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
+  const LTs = MMURR_DATA.licenceTypes, SW = MMURR_DATA.subscriptionWindows;
   const rows = [
-    ['Pricing basis', `Microsoft, Google &amp; Snowflake are shown as <b>${R.label}</b> regional list/rate; Claude is USD list at the FX anchor (${R.cur} ${R.fx}/USD) because Anthropic bills USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
-    ['M365 Copilot seat', `${R.sym}${cop.toFixed(2)}/seat/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
-    ['Copilot price changes', `≤300-seat Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
-    ['Gemini (enterprise) seat', `${R.sym}${gemNow}/seat/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
-    ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/seat (Oct 2025)`, 'SOURCED', aLink(SRC.gemini,'Google')],
-    ['Claude (enterprise) seat', `$20/seat/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Pricing basis', `Microsoft, Google &amp; Snowflake are shown as <b>${R.label}</b> regional list/rate; Claude (enterprise licences and personal Pro/Max plans alike) is USD list at the FX anchor (${R.cur} ${R.fx}/USD) because Anthropic bills USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
+    ['M365 Copilot licence', `${R.sym}${cop.toFixed(2)}/licence/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
+    ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
+    ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
+    ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025)`, 'SOURCED', aLink(SRC.gemini,'Google')],
+    ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Claude Pro / Max (personal)', `$${LTs.claudePro.usd} · $${LTs.claudeMax5.usd} · $${LTs.claudeMax20.usd} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Personal plan token allowance', `est. M tokens per ${SW.windowHours}-hour window: Pro ${LTs.claudePro.windowMTok} · Max 5× ${LTs.claudeMax5.windowMTok} · Max 20× ${LTs.claudeMax20.windowMTok}. 100% usage = ${Math.floor(24/(SW.windowHours+SW.gapHours))} maxed windows/day (${SW.gapHours}h gap between windows); weekly caps can bind first`, 'ASSUMPTION', '(editable — Anthropic publishes no exact limits)'],
     ['Snowflake credit', `≈$${cred.toFixed(2)}/credit (Enterprise, ${R.label} region) at FX; ≈$3.00 US · ≈$3.60 EU · ≈$3.90 UK; stable`, 'VERIFY', aLink(SRC.snow,'Snowflake')],
     ['Standardised prompt', `${TPP} tokens (≈300-token answer + context; editable). Same task for every model so cost &amp; footprint compare like-for-like.`, 'ASSUMPTION', '—'],
     ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')],

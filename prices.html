@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Price History — mmurr.ai</title>
-<meta name="description" content="See how a fixed AI stack — Copilot, Gemini & Claude seats, Snowflake credits — has cost over time, and what the same usage would cost billed on raw API tokens. Runs in your browser.">
+<meta name="description" content="See how a fixed AI stack — Copilot, Gemini & Claude licences, Snowflake credits — has cost over time, and what the same usage would cost billed on raw API tokens. Covers enterprise licences and personal Claude Pro/Max plans. Runs in your browser.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/prices.css">
 </head>
@@ -15,7 +15,7 @@
     <div>
       <h1>AI Price History</h1>
       <p class="sub bright">How the cost — and energy — of a <em>fixed</em> AI &amp; data stack has changed since 2023,
-        even as the model behind each seat was swapped underneath you.</p>
+        even as the model behind each licence was swapped underneath you.</p>
     </div>
     <a class="back" href="index.html">← mmurr.ai</a>
   </header>
@@ -36,40 +36,36 @@
   <h2>Licence vs the model underneath</h2>
   <div class="panel">
     <details class="logic-disclose">
-      <summary>Seat logic</summary>
-      <p class="sub" style="margin:10px 0 0">A seat price barely moves while the model underneath it is swapped. Set your
-        profile and watch the backend markers step across a flat licence line. Your <strong>seats</strong> drive the
-        expected enterprise-agreement discount (≈20% at 5,000); set a real rate in <em>Seat override</em> to pin it.</p>
+      <summary>Licence logic</summary>
+      <p class="sub" style="margin:10px 0 0">A licence price barely moves while the model underneath it is swapped — the
+        markers carry that story. <strong>Enterprise types</strong> are regional list per licence; your licence count drives
+        the expected enterprise-agreement discount on the E5 add-on (≈20% at 5,000) — set a real rate in
+        <em>Licence price override</em> to pin it. <strong>Personal subscriptions</strong> (Claude Pro / Max) are flat USD
+        fees, FX-converted. Early access is now part of the licence type: the E7 Frontier Suite receives new models on
+        release day, standard enterprise licences ≈6 weeks later, and personal Claude plans on release day. (The free
+        Frontier <em>program</em> — early preview features — is not the paid E7 Frontier <em>Suite</em>; same name,
+        different thing.)</p>
     </details>
 
     <div class="lab-controls">
       <div>
-        <label class="f" for="lab-profile">Copilot Licence Profile</label>
-        <select id="lab-profile">
-          <option value="list" selected>E5 + Copilot add-on — enterprise list</option>
-          <option value="frontierE7">E7 Frontier Suite — model a renewal</option>
-          <option value="business">Business + Copilot — ≤300 employees</option>
-        </select>
+        <label class="f" for="lab-type">Licence type</label>
+        <select id="lab-type"></select>
       </div>
       <div>
-        <label class="f" for="lab-seats">Seats / headcount</label>
-        <input type="number" id="lab-seats" min="0" step="any" value="5000">
+        <label class="f" for="lab-seats">Licences</label>
+        <input type="number" id="lab-seats" min="0" step="any" value="1">
       </div>
       <div>
-        <label class="f" for="lab-override">Seat override (auto if blank)</label>
+        <label class="f" for="lab-override">Licence price override (auto if blank)</label>
         <input type="number" id="lab-override" min="0" step="any" placeholder="auto">
-      </div>
-      <div>
-        <label class="f" for="lab-cohort">Early-access cohort
-          <span class="vflag" title="The Frontier *program* (early preview features, Copilot-licence-gated) is NOT the E7 Frontier *Suite* (a paid E5+Copilot+Agent 365+Entra bundle). Same name, different thing. The cohort shifts WHEN models reach you, not the price.">(?)</span></label>
-        <select id="lab-cohort"></select>
       </div>
       <div>
         <label class="f" for="lab-model">Main model (your currency)</label>
         <select id="lab-model"></select>
       </div>
       <div>
-        <label class="f" for="lab-ppd">Prompts / user / day <output id="lab-ppdOut">20</output></label>
+        <label class="f" for="lab-ppd"><span id="lab-ppdLab">Prompts / user / day</span> <output id="lab-ppdOut">20</output></label>
         <input type="range" id="lab-ppd" min="2" max="120" value="20" style="width:100%;accent-color:var(--warn)">
       </div>
     </div>
@@ -97,12 +93,13 @@
       <span id="lab-lg-water" hidden><i style="border-color:#54c8e8"></i>Water mL/user/day</span>
     </div>
 
+    <p class="sub" id="lab-refnote" style="margin:14px 0 0"></p>
     <div class="lab-readout">
       <div><span class="lab-k">Licence / mo</span><span class="lab-v" id="lab-r-lic">—</span></div>
       <div><span class="lab-k">Same workload, API / mo</span><span class="lab-v" id="lab-r-api">—</span></div>
       <div><span class="lab-k">Break-even</span><span class="lab-v" id="lab-r-be">—</span></div>
-      <div><span class="lab-k">Effective seat rate</span><span class="lab-v" id="lab-r-seat">—</span></div>
-      <div><span class="lab-k">Backend model now</span><span class="lab-v" id="lab-r-model">—</span></div>
+      <div><span class="lab-k">Effective licence price</span><span class="lab-v" id="lab-r-seat">—</span></div>
+      <div><span class="lab-k">Model underneath now</span><span class="lab-v" id="lab-r-model">—</span></div>
       <div><span class="lab-k">Footprint / user / day</span><span class="lab-v" id="lab-r-fp">—</span></div>
     </div>
 
@@ -112,8 +109,8 @@
     </details>
   </div>
 
-  <!-- ============ BASKET (choose your stack) ============ -->
-  <h2>Choose your stack</h2>
+  <!-- ============ BASKET (blended usage) ============ -->
+  <h2>Blended Usage</h2>
 
   <div class="basket-head">
     <label class="f" for="ppd" style="display:flex;justify-content:space-between;align-items:center;gap:10px">

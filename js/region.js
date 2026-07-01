@@ -46,12 +46,13 @@ window.MMURR_REGION = (function(){
   // --- The "What changes?" assumption ledger (plan §8, the load-bearing bits)
   function ledgerHTML(){
     const R = data();
-    const seatTxt = `${R.sym}${(MMURR_DATA.seat.list[current] ?? MMURR_DATA.seat.list.UK).toFixed(2)}/seat`;
+    const seatTxt = `${R.sym}${(MMURR_DATA.seat.list[current] ?? MMURR_DATA.seat.list.UK).toFixed(2)}/licence`;
     return `
       <ul class="region-ledger">
-        <li><b>Seat prices are regional list, not currency conversions.</b>
+        <li><b>Licence prices are regional list, not currency conversions.</b>
             Microsoft &amp; Snowflake price per market — you see the local list
-            (${current==='Custom'?'your value':`${R.label} ≈ ${seatTxt}`}), not a converted figure.</li>
+            (${current==='Custom'?'your value':`${R.label} ≈ ${seatTxt}`}), not a converted figure.
+            Anthropic (enterprise licences and personal Pro/Max plans) bills USD worldwide — those are FX-converted.</li>
         <li><b>Token / API prices are USD list, FX-converted</b> at an editable anchor
             (${R.cur||'custom'} at ${R.fx}/USD). ${MMURR_DATA.fxNote}</li>
         <li><b>Carbon depends on where compute runs, not where you sit.</b>

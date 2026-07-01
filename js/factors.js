@@ -82,6 +82,40 @@ window.MMURR_DATA = {
     credit: { US:3.00, EU:3.60, UK:3.90 },
   },
 
+  // Licence types for the decision chart (js/pricelab.js). ONE dropdown spans
+  // enterprise per-licence SKUs and personal subscriptions:
+  //   kind:'enterprise'   — regional list price per licence (reads the seat
+  //                         table via seatKey); discount:true applies the
+  //                         headcount EA discount model.
+  //   kind:'subscription' — USD flat fee (Anthropic bills USD worldwide), FX-
+  //                         converted; from = launch month; windowMTok = est.
+  //                         million tokens usable per rolling window at full
+  //                         throttle. ASSUMPTION — Anthropic publishes no exact
+  //                         token limits; every value here is editable.
+  // lagDays: days after a model's release before this licence type receives it
+  // (replaces the old early-access cohort dropdown). lineage: which models.axis
+  // entry rides under the licence (markers, API line, footprint).
+  licenceTypes: {
+    list:        { label:'E5 + Copilot add-on — enterprise list', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto' },
+    frontierE7:  { label:'E7 Frontier Suite — early access', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto' },
+    business:    { label:'Business + Copilot — ≤300 employees', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto' },
+    claudePro:   { label:'Claude Pro — personal', group:'Personal subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:20,  from:'2023-09', lagDays:0, lineage:'an:sonnet', windowMTok:0.5 },
+    claudeMax5:  { label:'Claude Max 5× — personal', group:'Personal subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:100, from:'2025-04', lagDays:0, lineage:'an:sonnet', windowMTok:2.5 },
+    claudeMax20: { label:'Claude Max 20× — personal', group:'Personal subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:200, from:'2025-04', lagDays:0, lineage:'an:opus',  windowMTok:10 },
+  },
+
+  // Subscription usage benchmark: 100% usage = exhausting windowMTok in EVERY
+  // rolling window, restarting after the gap → floor(24/(window+gap)) maxed
+  // windows a day (5h + 1h → 4/day). Editable anchors; weekly caps can bind
+  // before this window maths does — flagged on-page in the Cost logic note.
+  subscriptionWindows: { windowHours: 5, gapHours: 1 },
+
   // Model lineage for the price-page decision chart (js/pricelab.js).
   // The licence price barely moves while the model underneath is swapped — the
   // markers carry that story. Token $ are blended 50/50 in/out, USD per 1M.
@@ -89,8 +123,7 @@ window.MMURR_DATA = {
   models: {
     tokPerPrompt: 1500,                 // tokens per standard prompt (editable, §4.5)
     defaultPpd: 20,                     // prompts / user / day (a standard working day)
-    tierLagDays: [0, 18, 42, 210],      // Frontier program / priority / standard / premium (§4.2)
-    cohorts: ['Frontier program (early)', 'Priority access', 'Standard access', 'M365 Premium (consumer)'],
+    // (early-access cohorts removed — release lag now lives on each licence type as lagDays)
 
     // Copilot/OpenAI backend that rides under the M365 licence (drives markers).
     // [date, label, blendedUSD/1M, Wh/prompt]

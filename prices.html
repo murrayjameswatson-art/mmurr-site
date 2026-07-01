@@ -47,11 +47,18 @@
         different thing.)</p>
     </details>
 
-    <div class="lab-controls">
+    <!-- top row: the two dropdowns, full-width so option text reads unopened -->
+    <div class="lab-controls lab-controls-top">
       <div>
         <label class="f" for="lab-type">Licence type</label>
         <select id="lab-type"></select>
       </div>
+      <div>
+        <label class="f" for="lab-model">Main model (your currency)</label>
+        <select id="lab-model"></select>
+      </div>
+    </div>
+    <div class="lab-controls">
       <div>
         <label class="f" for="lab-seats">Licences</label>
         <input type="number" id="lab-seats" min="0" step="any" value="1">
@@ -61,10 +68,6 @@
         <input type="number" id="lab-override" min="0" step="any" placeholder="auto">
       </div>
       <div>
-        <label class="f" for="lab-model">Main model (your currency)</label>
-        <select id="lab-model"></select>
-      </div>
-      <div>
         <label class="f" for="lab-ppd"><span id="lab-ppdLab">Prompts / user / day</span> <output id="lab-ppdOut">20</output></label>
         <input type="range" id="lab-ppd" min="2" max="120" value="20" style="width:100%;accent-color:var(--warn)">
       </div>
@@ -72,10 +75,10 @@
 
     <div class="lab-toggles" id="lab-toggles">
       <span class="sub" style="align-self:center;margin-right:4px">Cost:</span>
-      <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="false"><span class="dot" style="background:var(--link)"></span>Same workload on raw API (find break-even)</button>
+      <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="false"><span class="dot" style="background:var(--hot)"></span>Same workload on raw API (find break-even)</button>
       <span class="sub" style="align-self:center;margin:0 4px 0 10px">Footprint:</span>
       <button class="lab-chip" data-t="energy" aria-pressed="false"><span class="dot" style="background:var(--accent)"></span>Energy</button>
-      <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂</button>
+      <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂e</button>
       <button class="lab-chip" data-t="water" aria-pressed="false"><span class="dot" style="background:#54c8e8"></span>Water</button>
     </div>
 
@@ -86,11 +89,11 @@
     <p class="sub lab-hover" id="lab-hover">Hover the chart to read the values at any month.</p>
 
     <div class="lab-legend">
-      <span><i style="border-color:var(--warn)"></i>Licence (flat)</span>
-      <span id="lab-lg-api" hidden><i style="border-color:var(--link);border-top-style:dashed"></i>Same workload, raw API</span>
-      <span id="lab-lg-energy" hidden><i style="border-color:var(--accent)"></i>Energy Wh/user/day</span>
-      <span id="lab-lg-co2" hidden><i style="border-color:#b18cff"></i>CO₂ g/user/day</span>
-      <span id="lab-lg-water" hidden><i style="border-color:#54c8e8"></i>Water mL/user/day</span>
+      <span><i style="border-color:var(--warn)"></i>Licence fee (steps if changed)</span>
+      <span id="lab-lg-api" hidden><i style="border-color:var(--hot)"></i>Same workload, raw API</span>
+      <span id="lab-lg-energy" hidden><i style="border-color:var(--accent);border-top-style:dashed"></i>Energy Wh/user/day</span>
+      <span id="lab-lg-co2" hidden><i style="border-color:#b18cff;border-top-style:dotted"></i>CO₂e g/user/day</span>
+      <span id="lab-lg-water" hidden><i style="border-color:#54c8e8;border-top-style:dashed"></i>Water mL/user/day</span>
     </div>
 
     <p class="sub" id="lab-refnote" style="margin:14px 0 0"></p>
@@ -111,43 +114,39 @@
 
   <!-- ============ BASKET (blended usage) ============ -->
   <h2>Blended Usage</h2>
+  <details class="panel" id="blended" open>
+    <summary class="blended-summary"><strong>Build your stack</strong> <span class="sub">— open a card, tick “Include in
+      basket”, then set licences &amp; usage. Enterprise cards meter prompts/user/day; personal plans meter % of plan
+      capacity — the same logic as the chart above.</span></summary>
 
-  <div class="basket-head">
-    <label class="f" for="ppd" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <span>Average prompts / user / day — one standard task, applied to every service</span>
-      <output id="ppdOut">20</output>
-    </label>
-    <input type="range" id="ppd" min="2" max="120" value="20" style="width:100%;accent-color:var(--warn)">
-  </div>
+    <div class="tracks" id="tracks"></div>
 
-  <div class="tracks" id="tracks"></div>
-
-  <div class="controls">
-    <div>
-      <span class="sub">Show</span>
-      <div class="seg" id="metric" style="margin-left:8px">
-        <button data-m="cost" class="on">Cost</button>
-        <button data-m="energy">Energy</button>
-        <button data-m="co2">CO₂</button>
-        <button data-m="water">Water</button>
+    <div class="controls">
+      <div>
+        <span class="sub">Show</span>
+        <div class="seg" id="metric" style="margin-left:8px">
+          <button data-m="cost" class="on">Cost</button>
+          <button data-m="energy">Energy</button>
+          <button data-m="co2">CO₂e</button>
+          <button data-m="water">Water</button>
+        </div>
       </div>
+      <label class="sub chk-inline"><input type="checkbox" id="showTotal" checked> Show total</label>
+      <span id="apiWrap"><label class="sub chk-inline"><input type="checkbox" id="showApi"> Cost if billed on raw API</label></span>
     </div>
-    <label class="sub chk-inline"><input type="checkbox" id="showTotal" checked> Show total</label>
-    <span id="apiWrap"><label class="sub chk-inline"><input type="checkbox" id="showApi"> Cost if billed on raw API</label></span>
-    <label class="sub chk-inline"><input type="checkbox" id="showGemHist"> Show Gemini price history</label>
-  </div>
 
-  <div class="stat-row">
-    <div class="stat"><div class="big" id="sStart">$0</div><div class="lab"><span id="sStartLab">Monthly cost — </span><span id="sStartDate">start</span></div></div>
-    <div class="stat"><div class="big" id="sNow">$0</div><div class="lab" id="sNowLab">Monthly cost — now</div></div>
-    <div class="stat"><div class="big" id="sChange">—</div><div class="lab">Change over period</div></div>
-  </div>
+    <div class="stat-row">
+      <div class="stat"><div class="big" id="sStart">$0</div><div class="lab"><span id="sStartLab">Monthly cost — </span><span id="sStartDate">start</span></div></div>
+      <div class="stat"><div class="big" id="sNow">$0</div><div class="lab" id="sNowLab">Monthly cost — now</div></div>
+      <div class="stat"><div class="big" id="sChange">—</div><div class="lab">Change over period</div></div>
+    </div>
 
-  <div class="chartbox"><canvas id="chart"></canvas></div>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
 
-  <p class="sub snap-head">Each service right now — its monthly <strong>cost</strong> set against the <strong>environmental
-    footprint</strong> of the same workload, for every model in your stack at the current settings.</p>
-  <div class="snap" id="snap"></div>
+    <p class="sub snap-head">Each service right now — its monthly <strong>cost</strong> set against the <strong>environmental
+      footprint</strong> of the same workload, for every model in your stack at the current settings.</p>
+    <div class="snap" id="snap"></div>
+  </details>
 
   <h2>Sources &amp; assumptions</h2>
   <div class="panel" id="sourcesPanel"></div>

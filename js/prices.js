@@ -1,72 +1,99 @@
 /* ----------------------------------------------------------------------------
    mmurr.ai — AI Price History · "Blended Usage" basket
-   Size each service by SEATS (or credits) and one shared headline of average
-   prompts/user/day. Every model is assumed to answer the SAME standardised
-   prompt, so the same task can be priced and footprinted as the engine under
-   each licence changes. Seat fees are flat per user; prompts drive the optional
-   "cost if billed on raw API" line, the environmental view, and Claude's
-   optional metered usage — never the per-seat bill. Client-side except Chart.js.
+   Build a stack from ANY licence type on the page — the enterprise per-licence
+   services AND the personal/team subscriptions from the decision chart above.
+   Cards are collapsed expandables to keep the page uncluttered. Every service
+   carries its OWN usage control, matching the chart's logic: enterprise cards
+   meter prompts/user/day; subscription cards meter % of the plan's estimated
+   capacity (windowMTok × maxed rolling windows). Client-side except Chart.js.
 ---------------------------------------------------------------------------- */
 
-// --- Timeline -------------------------------------------------------------
+// --- Timeline (matched to the decision chart above) -------------------------
 function monthList(start, end){
   const out=[]; let [y,m]=start.split('-').map(Number); const [ey,em]=end.split('-').map(Number);
   while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} }
   return out;
 }
-const START='2023-03', END='2026-06';
+const START='2024-01', END='2026-06';
 const MONTHS = monthList(START,END);
 const D = s => { const [y,m]=s.split('-').map(Number); return new Date(y,m-1,1).getTime(); };
 const TS = MONTHS.map(D);
 
 const B   = MMURR_DATA.basket;
 const M   = MMURR_DATA.models;
+const LT  = MMURR_DATA.licenceTypes;
+const SW  = MMURR_DATA.subscriptionWindows;
+const WPD = Math.floor(24/(SW.windowHours+SW.gapHours));   // maxed windows / day
 const WD  = B.workdaysPerMonth;
 const TPP = M.tokPerPrompt;
 
-// --- Shared + per-service state ------------------------------------------
-let ppd = B.ppdDefault;                       // headline average prompts/user/day
+// --- Shared state ------------------------------------------------------------
 let metric = 'cost';                          // cost | energy | co2 | water
 let showApi = false;                          // "cost if billed on raw API" line
-let showGemHist = false;                      // overlay Gemini's seat-price history
 
-// Build editable service state from the single-sourced config.
+// --- Per-service state ---------------------------------------------------------
+// Existing basket services (licences default to 1; Snowflake keeps its credits)
 const SVC = {};
 for(const [k,c] of Object.entries(B.services)){
   SVC[k] = {
-    ...c, key:k, on:true, qty:c.defaultQty,
-    basis:'prompts',          // seat services: 'prompts' (seats×ppd) | 'tokens' (direct Mtokens/mo)
-    ppdOverride:0,            // 0 = use the shared headline
-    tokensMo:0,              // used when basis==='tokens'
-    usage:false,             // Claude: bill metered usage at API rates on top
-    ro:{on:false, q0:0, q1:0, m0:START, m1:END},   // rollout ramp
+    // Snowflake stays available but out of the default stack — 5,000 credits
+    // (~£15k/mo) would flatten every 1-licence line to the x-axis.
+    ...c, key:k, on: c.billing==='seat',
+    qty: c.billing==='seat' ? 1 : c.defaultQty,
+    ppd: B.ppdDefault,        // per-service prompts/user/day (enterprise cards)
+    basis:'prompts', tokensMo:0, usage:false,
+    ro:{on:false, q0:0, q1:0, m0:START, m1:END},
   };
 }
+// Every other licence type from the decision chart becomes a selectable card
+// (basketDup types are already represented by a card above).
+for(const [k,t] of Object.entries(LT)){
+  if(t.basketDup) continue;
+  const key = 'lt:'+k;
+  if(t.kind==='subscription'){
+    SVC[key] = { key, name:t.name, color:t.color, billing:'sub', lt:t,
+      on:false, qty:1, pct:50, ro:{on:false,q0:0,q1:0,m0:START,m1:END} };
+  } else {
+    SVC[key] = { key, name:t.name, color:t.color, billing:'seat',
+      seatFlat:t.seatKey, lineage:t.lineage,
+      on:false, qty:1, ppd:B.ppdDefault, basis:'prompts', tokensMo:0, usage:false,
+      ro:{on:false,q0:0,q1:0,m0:START,m1:END} };
+  }
+}
+const maxPpdSub = s => s.lt.windowMTok*1e6/TPP*WPD;                 // 100% usage, prompts/day
+const lineageOf = s => s.billing==='sub' ? s.lt.lineage : s.lineage;
 
-// --- Series helpers -------------------------------------------------------
+// --- Series helpers -----------------------------------------------------------
 // forward-fill [ [month,val], ... ] across every month; null before first point.
 function fill(points){
   const out={}; let last=null, pi=0;
   for(const mth of MONTHS){ while(pi<points.length && points[pi][0]<=mth){ last=points[pi][1]; pi++; } out[mth]=last; }
   return out;
 }
-// seat price (region currency) at each month for a service. 0 in the data = gap → null.
+// per-licence price (region currency) each month. 0 in the data = "not sold" →
+// null, so discontinued periods (e.g. Gemini Feb–Sep 2025) show as REAL GAPS.
 function seatFill(s, region){
-  let pts;
+  if(s.seatFlat){   // renewal-model SKUs (E7, Business, Gemini Ent): current list, held flat
+    const tbl = MMURR_DATA.seat[s.seatFlat]; const p = tbl[region] ?? tbl.UK;
+    return MONTHS.map(()=>p);
+  }
   if(s.seatRule==='fx'){
     const usd = fill(MMURR_DATA.seat.series.claudeUsd), fx = MMURR_REGION.data().fx;
     return MONTHS.map(m => usd[m]==null ? null : usd[m]*fx);
   }
   const tbl = MMURR_DATA.seat.series[s.seatKey];
-  pts = (tbl[region] || tbl.UK);
-  if(s.key==='gemini' && !showGemHist){ const cur = pts[pts.length-1][1]; pts=[[pts[0][0], cur]]; }  // flatten history
-  const f = fill(pts);
+  const f = fill(tbl[region] || tbl.UK);
   return MONTHS.map(m => (f[m]==null || f[m]===0) ? null : f[m]);
+}
+// subscription fee history (USD × FX); null before the plan launched.
+function subFill(s){
+  const fx = MMURR_REGION.data().fx, f = fill(s.lt.usd);
+  return MONTHS.map(m => f[m]==null ? null : f[m]*fx);
 }
 // latest lineage step ≤ t (clamped to first). [date,label,blended$/1M,Wh/prompt]
 function stepAt(key, t){ const st=M.axis[key].steps; let c=st[0]; for(const s of st){ if(D(s[0])<=t) c=s; } return c; }
 
-// quantity (seats/credits) at month index i — flat, or a linear rollout ramp.
+// quantity (licences/credits) at month index i — flat, or a linear rollout ramp.
 function qtyAt(s, i){
   if(!s.ro.on) return s.qty;
   const a=Math.max(0,MONTHS.indexOf(s.ro.m0)), b=Math.max(a,MONTHS.indexOf(s.ro.m1));
@@ -74,86 +101,102 @@ function qtyAt(s, i){
   if(i>=b) return s.ro.q1;
   return s.ro.q0 + (s.ro.q1-s.ro.q0)*(i-a)/(b-a||1);
 }
-// prompts / month for a seat service at month index i (for API line, footprint, usage).
-function promptsAt(s, i, t){
+// prompts / month at month index i. Subscriptions run the window logic on
+// calendar days (the rolling windows don't stop at weekends); enterprise
+// licences use workdays, as before.
+function promptsAt(s, i){
+  if(s.billing==='sub') return qtyAt(s,i) * (s.pct/100*maxPpdSub(s)) * 30;
   if(s.basis==='tokens') return s.tokensMo*1e6 / TPP;
-  const p = s.ppdOverride>0 ? s.ppdOverride : ppd;
-  return qtyAt(s,i) * p * WD;
+  return qtyAt(s,i) * s.ppd * WD;
 }
 
-// --- Render the service cards --------------------------------------------
+// --- Render the service cards (collapsed expandables) ------------------------
 function renderServices(){
   const host=document.getElementById('tracks'); host.innerHTML='';
   for(const [k,s] of Object.entries(SVC)){
-    const seat = s.billing==='seat';
-    const qtyLabel = seat ? 'Licences' : 'Credits / month';
-    const div=document.createElement('div'); div.className='svc'+(s.on?'':' off'); div.dataset.key=k;
-    div.innerHTML = `
-      <div class="thead">
-        <input type="checkbox" ${s.on?'checked':''} data-on="${k}" aria-label="Include ${s.name}">
+    const kind = s.billing;   // 'seat' | 'sub' | 'credits'
+    const qtyLabel = kind==='credits' ? 'Credits / month' : 'Licences';
+    const slider = kind==='seat' ? `
+        <label class="f" for="sl-${k}">Prompts / user / day <output id="slo-${k}">${s.ppd}</output></label>
+        <input type="range" id="sl-${k}" min="2" max="120" value="${s.ppd}" class="svc-range">`
+      : kind==='sub' ? `
+        <label class="f" for="sl-${k}">Usage — % of plan capacity <output id="slo-${k}">${s.pct}% ≈ ${Math.round(s.pct/100*maxPpdSub(s)).toLocaleString()}/day</output></label>
+        <input type="range" id="sl-${k}" min="0" max="100" value="${s.pct}" class="svc-range">`
+      : '';
+    const d=document.createElement('details'); d.className='svc'+(s.on?'':' off'); d.dataset.key=k;
+    d.innerHTML = `
+      <summary class="thead">
         <span class="dot" style="background:${s.color}"></span>
         <span class="nm">${s.name}</span>
-        <span class="badge ${seat?'licensed':'metered'}">${seat?'licence':'credits'}</span>
-      </div>
-      <label class="f" for="q-${k}">${qtyLabel}</label>
-      <input type="number" id="q-${k}" min="0" step="any" value="${s.qty}">
-      <button type="button" class="more" data-more="${k}" aria-expanded="false">More detail ▾</button>
-      <div class="more-body" id="more-${k}" hidden>
-        ${seat ? `
-        <label class="f" for="basis-${k}">Usage basis</label>
-        <select id="basis-${k}" class="svc-sel">
-          <option value="prompts" selected>Prompts (licences × headline/day)</option>
-          <option value="tokens">Direct — million tokens / month</option>
-        </select>
-        <div id="ppdwrap-${k}"><label class="f" for="ppd-${k}">Prompts / user / day override</label>
-          <input type="number" id="ppd-${k}" min="0" step="any" placeholder="${ppd} (headline)"></div>
-        <div id="tokwrap-${k}" hidden><label class="f" for="tok-${k}">Million tokens / month</label>
-          <input type="number" id="tok-${k}" min="0" step="any" value="0"></div>
-        ${s.usageAddon ? `<label class="chk"><input type="checkbox" id="use-${k}"> Bill usage at API rates <em>on top</em> of the licence</label>` : ''}
-        ` : ''}
-        <label class="chk"><input type="checkbox" id="ro-${k}"> Specify rollout (start → end)</label>
-        <div id="rowrap-${k}" class="ro-grid" hidden>
-          <div><label class="f">Start ${seat?'licences':'credits'}</label><input type="number" id="ro-q0-${k}" min="0" step="any" value="0"></div>
-          <div><label class="f">End ${seat?'licences':'credits'}</label><input type="number" id="ro-q1-${k}" min="0" step="any" value="${s.qty}"></div>
-          <div><label class="f">Start month</label><input type="month" id="ro-m0-${k}" min="${START}" max="${END}" value="2024-01"></div>
-          <div><label class="f">End month</label><input type="month" id="ro-m1-${k}" min="${START}" max="${END}" value="${END}"></div>
+        <span class="badge ${kind==='credits'?'metered':'licensed'}">${kind==='sub'?'personal':kind==='credits'?'credits':'licence'}</span>
+        <span class="inflag" id="in-${k}">${s.on?'in stack':''}</span>
+      </summary>
+      <div class="svc-inner">
+        <label class="chk"><input type="checkbox" ${s.on?'checked':''} data-on="${k}" aria-label="Include ${s.name}"> Include in basket</label>
+        <label class="f" for="q-${k}">${qtyLabel}</label>
+        <input type="number" id="q-${k}" min="0" step="any" value="${s.qty}">
+        ${slider}
+        <button type="button" class="more" data-more="${k}" aria-expanded="false">More detail ▾</button>
+        <div class="more-body" id="more-${k}" hidden>
+          ${kind==='seat' ? `
+          <label class="f" for="basis-${k}">Usage basis</label>
+          <select id="basis-${k}" class="svc-sel">
+            <option value="prompts" selected>Prompts (licences × slider/day)</option>
+            <option value="tokens">Direct — million tokens / month</option>
+          </select>
+          <div id="tokwrap-${k}" hidden><label class="f" for="tok-${k}">Million tokens / month</label>
+            <input type="number" id="tok-${k}" min="0" step="any" value="0"></div>
+          ${s.usageAddon ? `<label class="chk"><input type="checkbox" id="use-${k}"> Bill usage at API rates <em>on top</em> of the licence</label>` : ''}
+          ` : ''}
+          <label class="chk"><input type="checkbox" id="ro-${k}"> Specify rollout (start → end)</label>
+          <div id="rowrap-${k}" class="ro-grid" hidden>
+            <div><label class="f">Start ${kind==='credits'?'credits':'licences'}</label><input type="number" id="ro-q0-${k}" min="0" step="any" value="0"></div>
+            <div><label class="f">End ${kind==='credits'?'credits':'licences'}</label><input type="number" id="ro-q1-${k}" min="0" step="any" value="${s.qty}"></div>
+            <div><label class="f">Start month</label><input type="month" id="ro-m0-${k}" min="${START}" max="${END}" value="${START}"></div>
+            <div><label class="f">End month</label><input type="month" id="ro-m1-${k}" min="${START}" max="${END}" value="${END}"></div>
+          </div>
         </div>
       </div>`;
-    host.appendChild(div);
+    host.appendChild(d);
   }
 }
 
-// --- Compute series -------------------------------------------------------
+// --- Compute series -----------------------------------------------------------
 function metricFromEnergyWh(wh, R){
   const kwh = wh/1000;
   if(metric==='energy') return wh;                 // Wh / month
-  if(metric==='co2')    return kwh*R.pue*R.grid;    // kg / month
-  if(metric==='water')  return kwh*R.wue;           // L  / month
+  if(metric==='co2')    return kwh*R.pue*R.grid;    // kg CO₂e / month
+  if(metric==='water')  return kwh*R.wue;           // L / month
   return 0;
+}
+// per-licence price row for a service (null months = not sold / not launched)
+function priceRow(s, region){
+  if(s.billing==='credits') return null;
+  return s.billing==='sub' ? subFill(s) : seatFill(s, region);
 }
 function compute(){
   const R=MMURR_REGION.data(), region=MMURR_REGION.get();
   const datasets=[]; const totals=MONTHS.map(()=>0);
-  let apiSeries=null, apiMax=0;
+  const rows={}; for(const [k,s] of Object.entries(SVC)) rows[k]=priceRow(s,region);
+  let apiSeries=null;
 
   for(const [k,s] of Object.entries(SVC)){
     if(!s.on) continue;
     let series;
     if(metric==='cost'){
-      if(s.billing==='seat'){
-        const price = seatFill(s, region);
-        series = MONTHS.map((m,i)=>{ const p=price[i]; if(p==null) return null;
-          let c = qtyAt(s,i)*p;
-          if(s.usage && s.usageAddon){ const Mt=promptsAt(s,i,TS[i])*TPP/1e6; c += Mt*stepAt(s.lineage,TS[i])[2]*R.fx; }
-          return +c.toFixed(2); });
-      } else { // credits — USD regional rate, shown at the FX anchor
+      if(s.billing==='credits'){
         const rate = (MMURR_DATA.seat.credit[region] ?? MMURR_DATA.seat.credit.US) * R.fx;
         series = MONTHS.map((m,i)=> +(qtyAt(s,i)*rate).toFixed(2));
+      } else {
+        series = MONTHS.map((m,i)=>{ const p=rows[k][i]; if(p==null) return null;
+          let c = qtyAt(s,i)*p;
+          if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; c += Mt*stepAt(s.lineage,TS[i])[2]*R.fx; }
+          return +c.toFixed(2); });
       }
-    } else { // environmental — prompt-driven seat services only
-      if(s.billing!=='seat'){ continue; }
-      series = MONTHS.map((m,i)=>{ const price=seatFill(s,region)[i]; if(price==null) return null;
-        const wh = promptsAt(s,i,TS[i]) * stepAt(s.lineage,TS[i])[3];
+    } else { // environmental — prompt-driven services only
+      if(s.billing==='credits'){ continue; }
+      series = MONTHS.map((m,i)=>{ if(rows[k][i]==null) return null;
+        const wh = promptsAt(s,i) * stepAt(lineageOf(s),TS[i])[3];
         return +metricFromEnergyWh(wh,R).toFixed(metric==='energy'?0:2); });
     }
     series.forEach((v,i)=>{ if(v!=null) totals[i]+=v; });
@@ -161,14 +204,13 @@ function compute(){
       fill:false, stack:'basket', tension:.15, pointRadius:0, borderWidth:2, spanGaps:false });
   }
 
-  // "cost if billed on raw API" — the same prompt volume metered, vs paying per seat.
+  // "cost if billed on raw API" — the same prompt volume metered, vs the licences.
   if(metric==='cost' && showApi){
     apiSeries = MONTHS.map((m,i)=>{ let c=0, any=false;
-      for(const s of Object.values(SVC)){ if(!s.on || s.billing!=='seat') continue;
-        if(seatFill(s,region)[i]==null) continue; any=true;
-        c += promptsAt(s,i,TS[i])*TPP/1e6 * stepAt(s.lineage,TS[i])[2] * R.fx; }
+      for(const [k,s] of Object.entries(SVC)){ if(!s.on || s.billing==='credits') continue;
+        if(rows[k][i]==null) continue; any=true;
+        c += promptsAt(s,i)*TPP/1e6 * stepAt(lineageOf(s),TS[i])[2] * R.fx; }
       return any ? +c.toFixed(2) : null; });
-    apiMax = Math.max(0, ...apiSeries.filter(v=>v!=null));
     datasets.push({ label:'Cost if billed on raw API', data:apiSeries, borderColor:'#7db7ff',
       backgroundColor:'transparent', fill:false, stack:'api', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:.15 });
   }
@@ -177,11 +219,10 @@ function compute(){
     datasets.push({ label:'Total', data:totals.map(v=>+v.toFixed(2)), borderColor:'#ffffff',
       backgroundColor:'transparent', fill:false, stack:'total', borderDash:[5,4], borderWidth:2, pointRadius:0, tension:.15 });
   }
-  return {datasets, totals, apiMax};
+  return {datasets, totals};
 }
 
-// --- Stats + axis labelling ----------------------------------------------
-const UNIT = { cost:r=>r.sym, energy:()=>'', co2:()=>'', water:()=>'' };
+// --- Stats + axis labelling ----------------------------------------------------
 function fmtVal(v){
   const R=MMURR_REGION.data();
   if(metric==='cost')  return R.sym+Math.round(v).toLocaleString();
@@ -193,11 +234,11 @@ function yLabel(){
   const R=MMURR_REGION.data();
   return metric==='cost' ? `Monthly cost (${R.cur||'local'})`
        : metric==='energy'? 'Energy — Wh / month'
-       : metric==='co2'  ? 'CO₂ — kg / month'
+       : metric==='co2'  ? 'CO₂e — kg / month'
        :                    'Water — L / month';
 }
 function setStats(totals){
-  const lab = metric==='cost'?'cost':metric==='energy'?'energy':metric==='co2'?'CO₂':'water';
+  const lab = metric==='cost'?'cost':metric==='energy'?'energy':metric==='co2'?'CO₂e':'water';
   document.getElementById('sStartLab').textContent = `Monthly ${lab} — `;
   document.getElementById('sNowLab').textContent   = `Monthly ${lab} — now`;
   const valid=totals.map((v,i)=>[MONTHS[i],v]).filter(([,v])=>v>0);
@@ -211,24 +252,12 @@ function setStats(totals){
   document.getElementById('sChange').style.color = pct<=0?'var(--accent)':'var(--warn)';
 }
 
-// --- Draw (stacked area only) --------------------------------------------
+// --- Draw ----------------------------------------------------------------------
 let chart;
 function draw(){
   const R=MMURR_REGION.data();
-  const {datasets,totals,apiMax}=compute();
+  const {datasets,totals}=compute();
   setStats(totals);
-  // Anchor the y-axis to a FIXED prompts reference (slider max) rather than the
-  // live values — so seat lines stay put and the API / footprint lines visibly
-  // climb as you slide prompts/day up, instead of the axis rescaling under them.
-  const tmax = Math.max(0, ...totals);
-  let yMax;
-  if(metric==='cost'){
-    let ref = tmax;
-    if(apiMax>0) ref = Math.max(ref, apiMax*(120/Math.max(1,ppd)));   // API at max prompts
-    yMax = ref>0 ? ref*1.15 : undefined;
-  } else {
-    yMax = tmax>0 ? tmax*(120/Math.max(1,ppd))*1.1 : undefined;        // footprint at max prompts
-  }
   const cfg={
     type:'line', data:{labels:MONTHS, datasets},
     options:{
@@ -239,7 +268,7 @@ function draw(){
       },
       scales:{
         x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
-        y:{stacked:false, beginAtZero:true, max:yMax, ticks:{color:'#6b7280',font:{size:10},
+        y:{stacked:false, beginAtZero:true, ticks:{color:'#6b7280',font:{size:10},
              callback:v=> metric==='cost' ? R.sym+(v>=1000?(+(v/1000).toFixed(1))+'k':v) : v.toLocaleString()},
            grid:{color:'#222732'},title:{display:true,text:yLabel(),color:'#9aa3b2',font:{size:11}}},
       },
@@ -250,10 +279,7 @@ function draw(){
   renderSnapshot();   // keep the per-service cost/footprint cards in sync with the chart
 }
 
-// --- Per-service snapshot: cost vs footprint for every model, at "now" ----
-// Independent of the metric toggle, so cost AND environmental impact are both
-// visible for the whole stack at once. Reuses the same series helpers as the
-// chart, read at the last month; colours match the decision chart's overlays.
+// --- Per-service snapshot: cost vs footprint for every model, at "now" --------
 function fmtEnergy(wh){
   if(wh>=1e6)  return (wh/1e6).toLocaleString(undefined,{maximumFractionDigits:1})+' MWh';
   if(wh>=1000) return (wh/1000).toLocaleString(undefined,{maximumFractionDigits:1})+' kWh';
@@ -266,25 +292,25 @@ function renderSnapshot(){
   for(const [k,s] of Object.entries(SVC)){
     if(!s.on) continue;
     let cost=null, wh=null;
-    if(s.billing==='seat'){
-      const price=seatFill(s,region)[i];
+    if(s.billing==='credits'){
+      cost=qtyAt(s,i)*((MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US)*R.fx);
+    } else {
+      const price=priceRow(s,region)[i];
       if(price!=null){
         cost=qtyAt(s,i)*price;
-        if(s.usage && s.usageAddon){ const Mt=promptsAt(s,i,t)*TPP/1e6; cost+=Mt*stepAt(s.lineage,t)[2]*R.fx; }
-        wh=promptsAt(s,i,t)*stepAt(s.lineage,t)[3];     // Wh / month
+        if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; cost+=Mt*stepAt(s.lineage,t)[2]*R.fx; }
+        wh=promptsAt(s,i)*stepAt(lineageOf(s),t)[3];     // Wh / month
       }
-    } else { // credits — infrastructure, not per-prompt: cost only
-      cost=qtyAt(s,i)*((MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US)*R.fx);
     }
     const costTxt = cost==null ? '—' : R.sym+Math.round(cost).toLocaleString();
     let body;
     if(wh==null){
       body = `<div class="snap-note">Infrastructure credits — footprint depends on the workloads you run, not a per-prompt rate, so it isn't counted here.</div>`;
     } else {
-      const kg = wh/1000*R.pue*R.grid, L = wh/1000*R.wue;   // CO₂ kg/mo · water L/mo
+      const kg = wh/1000*R.pue*R.grid, L = wh/1000*R.wue;   // CO₂e kg/mo · water L/mo
       body = `<div class="snap-fp">
         <div><span class="k"><i style="background:var(--accent)"></i>Energy</span><span class="v">${fmtEnergy(wh)}</span></div>
-        <div><span class="k"><i style="background:#b18cff"></i>CO₂</span><span class="v">${kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})} kg</span></div>
+        <div><span class="k"><i style="background:#b18cff"></i>CO₂e</span><span class="v">${kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})} kg</span></div>
         <div><span class="k"><i style="background:#54c8e8"></i>Water</span><span class="v">${Math.round(L).toLocaleString()} L</span></div>
       </div>`;
     }
@@ -293,15 +319,19 @@ function renderSnapshot(){
       <div class="cost">${costTxt} <small>/ month</small></div>
       ${body}</div>`;
   }
-  host.innerHTML = html || `<p class="sub" style="margin:0">No services selected — tick a service above.</p>`;
+  host.innerHTML = html || `<p class="sub" style="margin:0">No services selected — open a card above and tick “Include in basket”.</p>`;
 }
 
-// --- Region-aware sources & assumptions (covers BOTH charts) --------------
+// --- Region-aware sources & assumptions (covers BOTH charts) -------------------
 const SRC = {
   openai:'https://openai.com/api/pricing/',
   gemini:'https://ai.google.dev/gemini-api/docs/pricing',
   geminiEnt:'https://cloud.google.com/blog/products/ai-machine-learning/gemini-enterprise-launch',
+  googleOne:'https://blog.google/products-and-platforms/products/google-one/google-ai-subscriptions/',
   anthropic:'https://claude.com/pricing',
+  xai:'https://x.ai/grok',
+  xaiApi:'https://docs.x.ai/docs/models',
+  mistral:'https://mistral.ai/pricing/',
   ms:'https://www.microsoft.com/en-gb/microsoft-365-copilot/pricing',
   snow:'https://www.snowflake.com/en/data-cloud/pricing-options/',
   gEnergy:'https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference/',
@@ -318,22 +348,24 @@ function renderSources(){
   const gemNow=gem[gem.length-1][1];
   const cred=MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US;
   const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
-  const LTs = MMURR_DATA.licenceTypes, SW = MMURR_DATA.subscriptionWindows;
   const rows = [
-    ['Pricing basis', `Microsoft, Google &amp; Snowflake are shown as <b>${R.label}</b> regional list/rate; Claude (enterprise licences and personal Pro/Max plans alike) is USD list at the FX anchor (${R.cur} ${R.fx}/USD) because Anthropic bills USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
+    ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate; Claude (enterprise and personal) and all personal/team subscriptions are USD list at the FX anchor (${R.cur} ${R.fx}/USD) because those vendors bill USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
     ['M365 Copilot licence', `${R.sym}${cop.toFixed(2)}/licence/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
     ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
-    ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025)`, 'SOURCED', aLink(SRC.gemini,'Google')],
+    ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025). The discontinued period is shown as a REAL GAP in the chart.`, 'SOURCED', aLink(SRC.gemini,'Google')],
     ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
-    ['Claude Pro / Max (personal)', `$${LTs.claudePro.usd} · $${LTs.claudeMax5.usd} · $${LTs.claudeMax20.usd} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
-    ['Personal plan token allowance', `est. M tokens per ${SW.windowHours}-hour window: Pro ${LTs.claudePro.windowMTok} · Max 5× ${LTs.claudeMax5.windowMTok} · Max 20× ${LTs.claudeMax20.windowMTok}. 100% usage = ${Math.floor(24/(SW.windowHours+SW.gapHours))} maxed windows/day (${SW.gapHours}h gap between windows); weekly caps can bind first`, 'ASSUMPTION', '(editable — Anthropic publishes no exact limits)'],
+    ['Claude Pro / Max (personal)', `$${LT.claudePro.usd[0][1]} · $${LT.claudeMax5.usd[0][1]} · $${LT.claudeMax20.usd[0][1]} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['Google AI Pro / Ultra (personal)', `AI Premium $19.99/mo (Feb 2024) → renamed Google AI Pro (Apr 2026, price held) · Ultra $249.99/mo (May 2025) → $200 (May 2026; a new $100 mid-tier is not modelled). Shown ${fxLine}`, 'SOURCED', aLink(SRC.googleOne,'Google')],
+    ['SuperGrok / Heavy (personal)', `SuperGrok $30/mo (≈Feb 2025, with Grok 3) · Heavy $300/mo (9 Jul 2025). Shown ${fxLine}`, 'VERIFY', aLink(SRC.xai,'xAI')],
+    ['Le Chat Pro / Team (Mistral)', `Pro $14.99/mo (Feb 2025) · Team $24.99/user/mo; Enterprise is custom-quoted. Shown ${fxLine}`, 'SOURCED', aLink(SRC.mistral,'Mistral pricing')],
+    ['Plan token allowances', `est. M tokens per ${SW.windowHours}-hour window per plan (Claude Pro ${LT.claudePro.windowMTok} · Max 20× ${LT.claudeMax20.windowMTok} · AI Ultra ${LT.geminiUltra.windowMTok} · full list in factors.js), scaled ≈ with price. 100% usage = ${WPD} maxed windows/day (${SW.gapHours}h gap between windows); rolling/weekly caps can bind first`, 'ASSUMPTION', '(editable — vendors publish no exact limits)'],
     ['Snowflake credit', `≈$${cred.toFixed(2)}/credit (Enterprise, ${R.label} region) at FX; ≈$3.00 US · ≈$3.60 EU · ≈$3.90 UK; stable`, 'VERIFY', aLink(SRC.snow,'Snowflake')],
     ['Standardised prompt', `${TPP} tokens (≈300-token answer + context; editable). Same task for every model so cost &amp; footprint compare like-for-like.`, 'ASSUMPTION', '—'],
-    ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')],
+    ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
     ['Copilot energy', `0.31 Wh / prompt`, 'SOURCED', 'Microsoft disclosure (2026)'],
-    ['Gemini energy', `0.24 Wh / prompt`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
-    ['Anthropic energy', `per-query Wh not published — labelled assumption`, 'ASSUMPTION', '(vendor publishes none)'],
+    ['Gemini energy', `0.24 Wh / prompt (fleet median)`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
+    ['Anthropic / xAI / Mistral / Gemini-Pro energy', `per-query Wh not published — labelled assumptions`, 'ASSUMPTION', '(vendors publish none)'],
     ['Grid intensity', `${R.label} ≈ ${R.grid} kgCO₂e/kWh — ${R.gridNote}`, R.gridConf, aLink(SRC.grid,'DESNZ/Defra (2025)')],
   ];
   host.innerHTML = `
@@ -346,7 +378,7 @@ function renderSources(){
       editable FX anchor; no network calls. Runs entirely in your browser.</p>`;
 }
 
-// --- Wire up --------------------------------------------------------------
+// --- Wire up --------------------------------------------------------------------
 function init(){
   renderServices();
   renderSources();
@@ -355,10 +387,11 @@ function init(){
   tracks.addEventListener('change',e=>{
     const t=e.target;
     if(t.dataset.on){ const k=t.dataset.on; SVC[k].on=t.checked;
-      t.closest('.svc').classList.toggle('off',!t.checked); draw(); return; }
+      const card=t.closest('.svc'); card.classList.toggle('off',!t.checked);
+      const flag=document.getElementById('in-'+k); if(flag) flag.textContent=t.checked?'in stack':'';
+      draw(); return; }
     const id=t.id||'';
     if(id.startsWith('basis-')){ const k=id.slice(6); SVC[k].basis=t.value;
-      document.getElementById('ppdwrap-'+k).hidden = t.value!=='prompts';
       document.getElementById('tokwrap-'+k).hidden = t.value!=='tokens'; draw(); return; }
     if(id.startsWith('use-')){ SVC[id.slice(4)].usage=t.checked; draw(); return; }
     if(id.startsWith('ro-')&&!id.includes('-q')&&!id.includes('-m')){ const k=id.slice(3);
@@ -367,7 +400,11 @@ function init(){
   tracks.addEventListener('input',e=>{
     const t=e.target, id=t.id||'', v=parseFloat(t.value)||0;
     if(id.startsWith('q-')){ SVC[id.slice(2)].qty=v; draw(); }
-    else if(id.startsWith('ppd-')){ SVC[id.slice(4)].ppdOverride=v; draw(); }
+    else if(id.startsWith('sl-')){ const k=id.slice(3), s=SVC[k];
+      if(s.billing==='sub'){ s.pct=v;
+        document.getElementById('slo-'+k).textContent = `${v}% ≈ ${Math.round(v/100*maxPpdSub(s)).toLocaleString()}/day`; }
+      else { s.ppd=v; document.getElementById('slo-'+k).textContent=v; }
+      draw(); }
     else if(id.startsWith('tok-')){ SVC[id.slice(4)].tokensMo=v; draw(); }
     else if(id.startsWith('ro-q0-')){ SVC[id.slice(6)].ro.q0=v; draw(); }
     else if(id.startsWith('ro-q1-')){ SVC[id.slice(6)].ro.q1=v; draw(); }
@@ -380,10 +417,6 @@ function init(){
     body.hidden=!open; b.setAttribute('aria-expanded',open); b.textContent='More detail '+(open?'▴':'▾');
   });
 
-  document.getElementById('ppd').addEventListener('input',e=>{
-    ppd=+e.target.value; document.getElementById('ppdOut').textContent=ppd;
-    document.querySelectorAll('[id^="ppd-"]').forEach(el=>el.placeholder=ppd+' (headline)'); draw();
-  });
   document.getElementById('metric').addEventListener('click',e=>{
     if(!e.target.dataset.m) return;
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
@@ -393,7 +426,9 @@ function init(){
   });
   document.getElementById('showTotal').addEventListener('change',draw);
   document.getElementById('showApi').addEventListener('change',e=>{ showApi=e.target.checked; draw(); });
-  document.getElementById('showGemHist').addEventListener('change',e=>{ showGemHist=e.target.checked; draw(); });
+  // Chart.js can't size a canvas inside a closed <details> — redraw on open.
+  const blended=document.getElementById('blended');
+  if(blended) blended.addEventListener('toggle',()=>{ if(blended.open) draw(); });
 
   MMURR_REGION.onChange(()=>{ draw(); renderSources(); });
   draw();

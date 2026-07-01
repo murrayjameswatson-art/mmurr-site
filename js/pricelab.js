@@ -61,7 +61,7 @@
   // --- date + scale helpers ------------------------------------------------
   const D = s => { const [y,m] = s.split('-'); return new Date(+y, +m-1, 1).getTime(); };
   const addDays = (t,d) => t + d*864e5;
-  const T0 = D('2023-09'), T1 = D('2026-08');
+  const T0 = D('2024-01'), T1 = D('2026-06');   // matched to the Blended Usage chart's timeline
   const NS = 'http://www.w3.org/2000/svg';
   const W=760, H=320, PL=52, PR=46, PT=22, PB=34;
   const x = t => PL + (t-T0)/(T1-T0)*(W-PL-PR);
@@ -73,12 +73,13 @@
 
   // --- licence price --------------------------------------------------------
   // Enterprise types read the SKU's regional LIST price ('list' also gets the
-  // volume EA discount); subscriptions are flat USD fees × the FX anchor
-  // (Anthropic bills USD worldwide). A manual override beats everything.
-  function licencePrice(){
+  // volume EA discount); subscriptions carry a USD fee HISTORY × the FX anchor
+  // (billed USD worldwide). A manual override beats everything.
+  const usdAt = (series, tt) => { let v=null; for(const [m,p] of series){ if(D(m)<=tt) v=p; } return v; };
+  function licencePrice(tt = T1){
     const t = LT[type];
     if(override > 0) return override;
-    if(t.kind === 'subscription') return t.usd * MMURR_REGION.data().fx;
+    if(t.kind === 'subscription'){ const u = usdAt(t.usd, tt); return u==null ? null : u * MMURR_REGION.data().fx; }
     const tbl = MMURR_DATA.seat[t.seatKey] || MMURR_DATA.seat.list;
     const base = tbl[MMURR_REGION.get()] ?? tbl.UK;
     return t.discount ? base*(1 - seatDiscount(licences)) : base;
@@ -134,9 +135,10 @@
     // backend for enterprise types, the plan's own model line for Claude plans
     const markers = isSub() ? M.axis[t.lineage].steps : M.backend;
     svg.innerHTML='';
-    const price = licencePrice();
+    const price = licencePrice();          // at T1, for the readouts
     const lic = licences * price;
-    const licStart = isSub() ? Math.max(T0, D(t.from)) : T0;
+    const licAt = tt => { const p = licencePrice(tt); return p==null ? null : licences*p; };
+    const licSeries = PTS.map(licAt);      // null before a subscription's launch
 
     // same workload metered on the raw API, per month, in region currency (§4.5)
     const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * mdlAt(tt)[2] * R.fx;
@@ -185,20 +187,28 @@
     if(on.api){
       path(apiSeries,'ser-api',yC);
       for(let i=1;i<apiSeries.length;i++){
-        if((apiSeries[i-1]-lic)*(apiSeries[i]-lic)<0){ const xx=x(PTS[i]);
+        const l0=licSeries[i-1], l1=licSeries[i];
+        if(l0==null || l1==null) continue;
+        if((apiSeries[i-1]-l0)*(apiSeries[i]-l1)<0){ const xx=x(PTS[i]);
           svg.appendChild(el('line',{class:'lab-be',x1:xx,x2:xx,y1:PT,y2:H-PB}));
           svg.appendChild(txt('lab-belab',xx+4,PT+10,null,'break-even')); break; }
       }
     }
 
-    // flat licence line (subscriptions start at the plan's launch month)
-    svg.appendChild(el('line',{class:'ser-lic',x1:x(licStart),x2:W-PR,y1:yC(lic),y2:yC(lic)}));
+    // licence fee line — flat for enterprise; subscriptions start at launch and
+    // step where the fee changed (the usd history in factors.js)
+    { let d='';
+      PTS.forEach((tt,i)=>{ const v=licSeries[i]; if(v==null) return; d += (d?'L':'M')+x(tt)+' '+yC(v); });
+      if(d) svg.appendChild(el('path',{class:'ser-lic',d}));
+    }
 
     // model-transition markers on the licence line
     markers.forEach(m=>{
       const tt = addDays(D(m[0]), t.lagDays);
-      if(tt<licStart || tt>T1) return;
-      const xx=x(tt), yy=yC(lic), g=el('g',{}); g.style.cursor='pointer';
+      if(tt<T0 || tt>T1) return;
+      const licHere = licAt(tt);
+      if(licHere==null) return;            // before the subscription launched
+      const xx=x(tt), yy=yC(licHere), g=el('g',{}); g.style.cursor='pointer';
       g.appendChild(el('circle',{class:'lab-mk',cx:xx,cy:yy,r:5}));
       g.appendChild(txt('lab-mklab',xx,yy-11,'middle',m[1]));
       const reach = fmtMonth(tt);
@@ -238,10 +248,11 @@
     if(override>0){
       note = `Licence price fixed at your <b>${R.sym}${override.toFixed(2)}</b> override.`;
     } else if(isSub()){
-      note = `Fee = <b>$${t.usd} USD × ${R.fx} FX → ${R.sym}${price.toFixed(2)}</b>/mo (Anthropic bills USD worldwide). `+
+      note = `Fee = <b>$${usdAt(t.usd,T1)} USD × ${R.fx} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`+
+             (t.usd.length>1 ? ` — the fee has changed over time; the steps are plotted on the line. ` : `. `)+
              `<b>100% usage</b> = exhausting the plan's estimated <b>${t.windowMTok}M tokens per ${SW.windowHours}-hour window</b>, `+
              `restarting after a ${SW.gapHours}-hour gap → ${windowsPerDay} maxed windows/day ≈ <b>${Math.round(t.windowMTok*windowsPerDay*30).toLocaleString()}M tokens/mo</b>. `+
-             `The per-window allowance is an <b>editable assumption</b> — Anthropic publishes no exact token limits, and weekly caps can bind before the window maths does. `+
+             `The per-window allowance is an <b>editable assumption</b> — vendors publish no exact token limits, and rolling/weekly caps can bind before the window maths does. `+
              `You are at <b>${usagePct}%</b> ≈ ${Math.round(promptsDay()).toLocaleString()} prompts/day.`;
     } else if(type==='list'){
       note = `Licence = ${R.sym}${(MMURR_DATA.seat.list[MMURR_REGION.get()]??MMURR_DATA.seat.list.UK).toFixed(2)} list − <b>${Math.round(disc*100)}%</b> expected EA discount at ${licences.toLocaleString()} licences.`;
@@ -268,7 +279,7 @@
             `; one standardised text prompt (reasoning/image/video are far higher). All figures sourced below.`;
     document.getElementById('lab-disc').innerHTML = note;
 
-    ctx = { R, mdlAt, lic, cursor };   // stash for the hover handler
+    ctx = { R, mdlAt, lic, licAt, cursor };   // stash for the hover handler
   }
 
   // --- interactive hover: vertical cursor + on-page caption ----------------
@@ -283,7 +294,8 @@
     const R = ctx.R;
     const api = licences*promptsDay()*30*tokPerPrompt/1e6*ctx.mdlAt(t)[2]*R.fx;
     const fp  = footprint(ctx.mdlAt(t)[3], R);
-    let s = `<b>${fmtMonth(t)}</b> · Licence ${R.sym}${Math.round(ctx.lic).toLocaleString()}`;
+    const licHere = ctx.licAt(t);
+    let s = `<b>${fmtMonth(t)}</b> · Licence ${licHere==null ? 'not launched' : R.sym+Math.round(licHere).toLocaleString()}`;
     if(on.api)    s += ` · API ${R.sym}${Math.round(api).toLocaleString()}`;
     if(on.energy) s += ` · ${fp.energy.toFixed(1)} Wh`;
     if(on.co2)    s += ` · ${fp.co2.toFixed(1)} g`;
@@ -336,6 +348,6 @@
     const dashboard = (p*wh)/1000 * R.pue * R.grid * 1000;   // dashboard's formula
     console.assert(Math.abs(got - dashboard) < 1e-9, 'price/dashboard CO2 per day reconcile');
     console.assert(windowsPerDay === 4, '5h window + 1h gap → 4 maxed windows/day');
-    console.assert(Math.abs(LT.claudePro.usd*R.fx - 15.60) < 1e-9, 'Claude Pro UK ≈ £15.60/mo at FX 0.78');
+    console.assert(Math.abs(LT.claudePro.usd[0][1]*R.fx - 15.60) < 1e-9, 'Claude Pro UK ≈ £15.60/mo at FX 0.78');
   }
 })();

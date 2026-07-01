@@ -59,6 +59,7 @@ window.MMURR_DATA = {
     list:        { UK:24.70, US:30.00, EU:28.10 },   // enterprise add-on, regional list
     business:    { UK:18.50, US:21.00, EU:21.50 },   // ≤300-employee SKU
     frontierE7:  { UK:78.00, US:99.00, EU:90.00 },   // E7 'Frontier Suite' (model-a-renewal)
+    geminiEnt:   { UK:25.00, US:30.00, EU:28.00 },   // Gemini Enterprise list (since Oct 2025)
     businessCap: 300,                                // employee cap on Business SKU
     // Expected EA discount by company headcount. Microsoft discounts ~15-30%
     // on 5,000+ seat enterprise agreements; anchors are editable. (§4.2)
@@ -82,32 +83,52 @@ window.MMURR_DATA = {
     credit: { US:3.00, EU:3.60, UK:3.90 },
   },
 
-  // Licence types for the decision chart (js/pricelab.js). ONE dropdown spans
-  // enterprise per-licence SKUs and personal subscriptions:
+  // Licence types for the decision chart (js/pricelab.js) AND the Blended
+  // Usage basket (js/prices.js). ONE list spans enterprise per-licence SKUs
+  // and personal/team subscriptions:
   //   kind:'enterprise'   — regional list price per licence (reads the seat
   //                         table via seatKey); discount:true applies the
   //                         headcount EA discount model.
-  //   kind:'subscription' — USD flat fee (Anthropic bills USD worldwide), FX-
-  //                         converted; from = launch month; windowMTok = est.
-  //                         million tokens usable per rolling window at full
-  //                         throttle. ASSUMPTION — Anthropic publishes no exact
-  //                         token limits; every value here is editable.
+  //   kind:'subscription' — USD flat fee (vendors bill USD worldwide), FX-
+  //                         converted. usd is a price HISTORY
+  //                         [[month, USD/mo], ...] so fee changes plot over
+  //                         time. windowMTok = est. million tokens usable per
+  //                         rolling window at full throttle. ASSUMPTION —
+  //                         vendors publish no exact token limits; editable.
   // lagDays: days after a model's release before this licence type receives it
   // (replaces the old early-access cohort dropdown). lineage: which models.axis
   // entry rides under the licence (markers, API line, footprint).
+  // name/color: how the type appears as a Blended Usage card; basketDup marks
+  // types already represented by an existing basket service (no extra card).
   licenceTypes: {
-    list:        { label:'E5 + Copilot add-on — enterprise list', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto' },
-    frontierE7:  { label:'E7 Frontier Suite — early access', group:'Enterprise (per licence)',
+    list:        { label:'M365 Copilot (E5 add-on) — enterprise list', name:'M365 Copilot', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto', basketDup:true },
+    frontierE7:  { label:'E7 Frontier Suite — early access', name:'E7 Frontier Suite', color:'#f2d38c', group:'Enterprise (per licence)',
                    kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto' },
-    business:    { label:'Business + Copilot — ≤300 employees', group:'Enterprise (per licence)',
+    business:    { label:'Business + Copilot — ≤300 employees', name:'Business + Copilot', color:'#c9973f', group:'Enterprise (per licence)',
                    kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto' },
-    claudePro:   { label:'Claude Pro — personal', group:'Personal subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:20,  from:'2023-09', lagDays:0, lineage:'an:sonnet', windowMTok:0.5 },
-    claudeMax5:  { label:'Claude Max 5× — personal', group:'Personal subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:100, from:'2025-04', lagDays:0, lineage:'an:sonnet', windowMTok:2.5 },
-    claudeMax20: { label:'Claude Max 20× — personal', group:'Personal subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:200, from:'2025-04', lagDays:0, lineage:'an:opus',  windowMTok:10 },
+    gemEnterprise:{ label:'Gemini Enterprise — per licence', name:'Gemini Enterprise', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'geminiEnt', lagDays:0, lineage:'gm:flash', basketDup:true },
+    claudePro:   { label:'Claude Pro — personal', name:'Claude Pro', color:'#3fb489', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5 },
+    claudeMax5:  { label:'Claude Max 5× — personal', name:'Claude Max 5×', color:'#8fe3c4', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5 },
+    claudeMax20: { label:'Claude Max 20× — personal', name:'Claude Max 20×', color:'#2e8f6f', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10 },
+    geminiPro:   { label:'Google AI Pro — personal', name:'Google AI Pro', color:'#d3b3ff', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5 },
+                   // Google One AI Premium (Feb 2024) → renamed Google AI Pro (Apr 2026); price held
+    geminiUltra: { label:'Google AI Ultra — personal', name:'Google AI Ultra', color:'#9a6cf0', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-05',249.99],['2026-05',200]], lagDays:0, lineage:'gm:pro', windowMTok:6 },
+                   // top tier shown; the extra $100 Ultra tier added May 2026 is not modelled
+    grokSuper:   { label:'SuperGrok (xAI) — personal', name:'SuperGrok', color:'#e8e8e8', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-02',30]], lagDays:0, lineage:'xa:grok', windowMTok:0.6 },
+    grokHeavy:   { label:'SuperGrok Heavy (xAI) — personal', name:'SuperGrok Heavy', color:'#9aa3b2', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-07',300]], lagDays:0, lineage:'xa:grok', windowMTok:6 },
+    mistralPro:  { label:'Le Chat Pro (Mistral) — personal', name:'Le Chat Pro', color:'#ff9d45', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-02',14.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4 },
+    mistralTeam: { label:'Le Chat Team (Mistral) — per user', name:'Le Chat Team', color:'#ffbf80', group:'Personal & team subscriptions (USD, FX-converted)',
+                   kind:'subscription', usd:[['2025-05',24.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4 },
   },
 
   // Subscription usage benchmark: 100% usage = exhausting windowMTok in EVERY
@@ -147,6 +168,12 @@ window.MMURR_DATA = {
         steps:[['2025-01','o3-mini',2.8,0.2],['2025-04','o4-mini',2.8,0.2],['2025-08','GPT-5 mini',1.1,0.15],['2026-03','GPT-5 mini',1.1,0.15]]},
       'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[0.30,2.50,'Gemini 2.5 Flash'],
         steps:[['2024-05','1.5 Flash',0.70,0.30],['2024-08','1.5 Flash-002',0.19,0.24],['2025-06','2.5 Flash',1.40,0.24],['2026-05','2.5 Flash',5.25,0.24]]},
+      'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
+        steps:[['2024-02','1.5 Pro',7.0,0.6],['2025-03','2.5 Pro',5.6,0.4],['2025-11','3 Pro',7.0,0.4],['2026-05','3.1 Pro',7.0,0.4]]},
+      'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[1.25,2.50,'Grok 4.3'],
+        steps:[['2025-02','Grok 3',9.0,0.4],['2025-07','Grok 4',9.0,0.4],['2026-03','Grok 4.3',1.9,0.35]]},
+      'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Large 3'],
+        steps:[['2024-07','Large 2',4.0,0.3],['2025-05','Medium 3',1.2,0.25],['2025-12','Large 3',4.0,0.3]]},
       'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
         steps:[['2024-03','Haiku 3',0.75,0.25],['2025-10','Haiku 4.5',3.0,0.3]]},
       'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],
@@ -224,7 +251,7 @@ window.effectiveSeat = function(region, headcount, override){
 // locally (file:// or localhost), never in production.
 if(['localhost','127.0.0.1',''].includes(location.hostname)){
   console.assert(Math.abs(seatDiscount(5000) - 0.20) < 1e-9, 'discount@5000 = 20%');
-  console.assert(seatDiscount(50) === 0, 'no discount below first anchor');
+  console.assert(seatDiscount(1) === 0, 'no discount at the first anchor (1 licence)');
   console.assert(seatDiscount(50000) === 0.30, 'discount floors at max');
   console.assert(Math.abs(effectiveSeat('UK',5000,0) - 19.76) < 1e-9, 'UK 5k seat ≈ £19.76');
   console.assert(effectiveSeat('UK',5000,15.5) === 15.5, 'manual override wins');

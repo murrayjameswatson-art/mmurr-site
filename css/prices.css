@@ -4,15 +4,22 @@
 /* shared "Seat logic / Cost logic" disclosures (mirror the region one) */
 .logic-disclose{font-size:.84rem;color:var(--muted)}
 .logic-disclose summary{cursor:pointer;color:var(--link);width:max-content}
-/* headline prompts/day control above the service cards */
-.basket-head{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-top:6px}
-.basket-head output{font-family:var(--mono);color:var(--warn);font-weight:600}
-/* compact, BI-style service cards */
+/* Blended Usage wrapper + collapsed service cards */
+.blended-summary{cursor:pointer}
+.blended-summary .sub{font-size:.84rem}
+/* compact, BI-style service cards (each card is a <details> expandable) */
 /* align-items:start — grid rows stretch by default, so opening one card's
    "More detail" would visually expand every card in the row */
 .tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px;align-items:start}
-.svc{border:1px solid var(--line);border-radius:9px;padding:11px;background:var(--panel)}
-.svc .thead{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.svc{border:1px solid var(--line);border-radius:9px;padding:0;background:var(--panel2)}
+.svc summary.thead{display:flex;align-items:center;gap:8px;padding:10px 11px;cursor:pointer;list-style:none}
+.svc summary.thead::-webkit-details-marker{display:none}
+.svc summary.thead::after{content:'▾';margin-left:auto;color:var(--faint);font-size:.7rem}
+.svc[open] summary.thead::after{content:'▴'}
+.svc .inflag{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.svc-inner{display:flex;flex-direction:column;gap:6px;padding:0 11px 11px;border-top:1px dashed var(--line);padding-top:9px}
+.svc-range{width:100%;accent-color:var(--warn)}
+.svc-inner output{font-family:var(--mono);color:var(--warn)}
 .svc input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
 .svc .nm{font-weight:600;font-size:.9rem}
 .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
@@ -58,17 +65,21 @@ canvas{width:100%!important;max-height:380px}
 
 /* ---- decision chart (js/pricelab.js): licence vs model + footprint ---- */
 .lab-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0}
+/* top row: the two dropdowns get a full half-width each so their option text
+   is readable without opening them (must come after .lab-controls to win) */
+.lab-controls-top{grid-template-columns:1fr 1fr;margin:14px 0 0}
 .lab-controls select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem}
 .lab-chartbox{position:relative}
 .lab-chartbox svg{width:100%;height:auto;display:block;overflow:visible;max-height:none}
 .vflag{border-bottom:1px dotted var(--faint);cursor:help}
 .lab-gridline{stroke:#222732}
 .lab-axis{fill:var(--faint);font-size:10px}
+/* cost lines SOLID; footprint overlays dashed (each a different dash type) */
 .ser-lic{stroke:var(--warn);fill:none;stroke-width:2.5}
-.ser-api{stroke:var(--link);fill:none;stroke-width:2;stroke-dasharray:5 4}
-.ser-energy{stroke:var(--accent);fill:none;stroke-width:1.6}
-.ser-co2{stroke:#b18cff;fill:none;stroke-width:1.6}
-.ser-water{stroke:#54c8e8;fill:none;stroke-width:1.6}
+.ser-api{stroke:var(--hot);fill:none;stroke-width:2.2}
+.ser-energy{stroke:var(--accent);fill:none;stroke-width:1.6;stroke-dasharray:7 4}
+.ser-co2{stroke:#b18cff;fill:none;stroke-width:1.6;stroke-dasharray:2 4}
+.ser-water{stroke:#54c8e8;fill:none;stroke-width:1.6;stroke-dasharray:10 4 2 4}
 .lab-mk{fill:var(--panel);stroke:var(--warn);stroke-width:2;cursor:pointer}
 .lab-mklab{fill:var(--muted);font-size:9.5px}
 .lab-band{fill:rgba(224,179,65,.07);stroke:rgba(224,179,65,.25);stroke-dasharray:3 3}
@@ -87,7 +98,7 @@ canvas{width:100%!important;max-height:380px}
 .lab-readout div{display:flex;flex-direction:column}
 .lab-k{font-size:.72rem;color:var(--faint)}
 .lab-v{font-size:1.15rem;font-family:var(--mono);color:var(--ink)}
-.lab-chip-cost[aria-pressed=true]{border-color:var(--link);background:rgba(125,183,255,.12);color:var(--ink)}
+.lab-chip-cost[aria-pressed=true]{border-color:var(--hot);background:rgba(255,107,87,.12);color:var(--ink)}
 .lab-cursor{stroke:var(--faint);stroke-dasharray:2 3}
 .lab-hover{margin:8px 2px 0;min-height:1.2em;font-family:var(--mono);font-size:.82rem;color:var(--ink)}
 /* confidence tags + sources */
@@ -95,4 +106,4 @@ canvas{width:100%!important;max-height:380px}
 .conf.sourced{color:var(--accent);border-color:var(--accent)}
 .conf.verify{color:var(--warn);border-color:var(--warn)}
 .conf.assumption{color:#b98cff;border-color:#b98cff}
-@media(max-width:680px){ .lab-controls{grid-template-columns:1fr 1fr} }
+@media(max-width:680px){ .lab-controls{grid-template-columns:1fr 1fr} .lab-controls-top{grid-template-columns:1fr} }

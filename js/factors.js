@@ -101,34 +101,59 @@ window.MMURR_DATA = {
   // name/color: how the type appears as a Blended Usage card; basketDup marks
   // types already represented by an existing basket service (no extra card).
   licenceTypes: {
-    list:        { label:'M365 Copilot (E5 add-on) — enterprise list', name:'M365 Copilot', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto', basketDup:true },
-    frontierE7:  { label:'E7 Frontier Suite — early access', name:'E7 Frontier Suite', color:'#f2d38c', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto' },
-    business:    { label:'Business + Copilot — ≤300 employees', name:'Business + Copilot', color:'#c9973f', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto' },
-    gemEnterprise:{ label:'Gemini Enterprise — per licence', name:'Gemini Enterprise', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'geminiEnt', lagDays:0, lineage:'gm:flash', basketDup:true },
-    claudePro:   { label:'Claude Pro — personal', name:'Claude Pro', color:'#3fb489', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5 },
-    claudeMax5:  { label:'Claude Max 5× — personal', name:'Claude Max 5×', color:'#8fe3c4', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5 },
-    claudeMax20: { label:'Claude Max 20× — personal', name:'Claude Max 20×', color:'#2e8f6f', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10 },
-    geminiPro:   { label:'Google AI Pro — personal', name:'Google AI Pro', color:'#d3b3ff', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5 },
+    // models: axis lineages ACCESSIBLE under this licence — the Main-model
+    //   dropdown greys out everything else. (Copilot includes Anthropic
+    //   options since Sep 2025 — Microsoft 365 blog.)
+    // local: optional fee history in a region's OWN currency, used when the
+    //   vendor genuinely bills local list there (Google UK — sourced; Mistral
+    //   EU — VERIFY €). Absent region → USD × FX (Anthropic & xAI bill USD
+    //   worldwide — checked claude.com/pricing, USD-only + tax at checkout).
+    // provider: groups the Blended Usage cards.
+    list:        { label:'M365 Copilot (E5 add-on) — enterprise list', name:'M365 Copilot', provider:'Microsoft', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto', basketDup:true,
+                   models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
+    frontierE7:  { label:'E7 Frontier Suite — early access', name:'E7 Frontier Suite', provider:'Microsoft', color:'#f2d38c', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto',
+                   models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
+    business:    { label:'Business + Copilot — ≤300 employees', name:'Business + Copilot', provider:'Microsoft', color:'#c9973f', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto',
+                   models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
+    gemEnterprise:{ label:'Gemini Enterprise — per licence', name:'Gemini Enterprise', provider:'Google', group:'Enterprise (per licence)',
+                   kind:'enterprise', seatKey:'geminiEnt', lagDays:0, lineage:'gm:flash', basketDup:true,
+                   models:['gm:flash','gm:pro'] },
+    claudePro:   { label:'Claude Pro — personal', name:'Claude Pro', provider:'Anthropic', color:'#3fb489', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5,
+                   models:['an:haiku','an:sonnet','an:opus'] },
+    claudeMax5:  { label:'Claude Max 5× — personal', name:'Claude Max 5×', provider:'Anthropic', color:'#8fe3c4', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5,
+                   models:['an:haiku','an:sonnet','an:opus'] },
+    claudeMax20: { label:'Claude Max 20× — personal', name:'Claude Max 20×', provider:'Anthropic', color:'#2e8f6f', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10,
+                   models:['an:haiku','an:sonnet','an:opus'] },
+    geminiPro:   { label:'Google AI Pro — personal', name:'Google AI Pro', provider:'Google', color:'#d3b3ff', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5,
+                   local:{ UK:[['2024-02',18.99]] },                     // gemini.google UK list (SOURCED Jul 2026)
+                   models:['gm:flash','gm:pro'] },
                    // Google One AI Premium (Feb 2024) → renamed Google AI Pro (Apr 2026); price held
-    geminiUltra: { label:'Google AI Ultra — personal', name:'Google AI Ultra', color:'#9a6cf0', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-05',249.99],['2026-05',200]], lagDays:0, lineage:'gm:pro', windowMTok:6 },
-                   // top tier shown; the extra $100 Ultra tier added May 2026 is not modelled
-    grokSuper:   { label:'SuperGrok (xAI) — personal', name:'SuperGrok', color:'#e8e8e8', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-02',30]], lagDays:0, lineage:'xa:grok', windowMTok:0.6 },
-    grokHeavy:   { label:'SuperGrok Heavy (xAI) — personal', name:'SuperGrok Heavy', color:'#9aa3b2', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-07',300]], lagDays:0, lineage:'xa:grok', windowMTok:6 },
-    mistralPro:  { label:'Le Chat Pro (Mistral) — personal', name:'Le Chat Pro', color:'#ff9d45', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-02',14.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4 },
-    mistralTeam: { label:'Le Chat Team (Mistral) — per user', name:'Le Chat Team', color:'#ffbf80', group:'Personal & team subscriptions (USD, FX-converted)',
-                   kind:'subscription', usd:[['2025-05',24.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4 },
+    geminiUltra: { label:'Google AI Ultra — personal', name:'Google AI Ultra', provider:'Google', color:'#9a6cf0', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-05',249.99],['2026-05',200]], lagDays:0, lineage:'gm:pro', windowMTok:6,
+                   local:{ UK:[['2025-05',234.99],['2026-05',189.99]] },  // £189.99 now SOURCED; £234.99 launch VERIFY
+                   models:['gm:flash','gm:pro'] },
+                   // top tier shown; the 5× Ultra tier (£79.99/$100, May 2026) is not modelled
+    grokSuper:   { label:'SuperGrok (xAI) — personal', name:'SuperGrok', provider:'xAI', color:'#e8e8e8', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-02',30]], lagDays:0, lineage:'xa:grok', windowMTok:0.6,
+                   models:['xa:grok'] },
+    grokHeavy:   { label:'SuperGrok Heavy (xAI) — personal', name:'SuperGrok Heavy', provider:'xAI', color:'#9aa3b2', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-07',300]], lagDays:0, lineage:'xa:grok', windowMTok:6,
+                   models:['xa:grok'] },
+    mistralPro:  { label:'Le Chat Pro (Mistral) — personal', name:'Le Chat Pro', provider:'Mistral', color:'#ff9d45', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-02',14.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4,
+                   local:{ EU:[['2025-02',14.99]] },                     // EUR toggle on mistral.ai (VERIFY €)
+                   models:['mi:large'] },
+    mistralTeam: { label:'Le Chat Team (Mistral) — per user', name:'Le Chat Team', provider:'Mistral', color:'#ffbf80', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2025-05',24.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4,
+                   local:{ EU:[['2025-05',24.99]] },                     // EUR toggle on mistral.ai (VERIFY €)
+                   models:['mi:large'] },
   },
 
   // Subscription usage benchmark: 100% usage = exhausting windowMTok in EVERY
@@ -198,10 +223,10 @@ window.MMURR_DATA = {
     // seatRule: 'regional' = region's own-currency list; 'fx' = USD list × FX anchor.
     // lineage: which models.axis entry prices the "same task on raw API" line + footprint.
     services: {
-      copilot:  { name:'M365 Copilot',       billing:'seat',    color:'#e0b341', lineage:'oa:auto',  seatRule:'regional', seatKey:'copilot',  defaultQty:1000 },
-      gemini:   { name:'Gemini (enterprise)',billing:'seat',    color:'#b98cff', lineage:'gm:flash', seatRule:'regional', seatKey:'gemini',   defaultQty:70, history:true },
-      claude:   { name:'Claude (enterprise)',billing:'seat',    color:'#5bd1a6', lineage:'an:sonnet',seatRule:'fx',       seatKey:'claudeUsd',defaultQty:50, usageAddon:true },
-      snowflake:{ name:'Snowflake (Enterprise)', billing:'credits', color:'#7db7ff', defaultQty:5000 },
+      copilot:  { name:'M365 Copilot',       provider:'Microsoft', billing:'seat',    color:'#e0b341', lineage:'oa:auto',  seatRule:'regional', seatKey:'copilot',  defaultQty:1000 },
+      gemini:   { name:'Gemini (enterprise)',provider:'Google',    billing:'seat',    color:'#b98cff', lineage:'gm:flash', seatRule:'regional', seatKey:'gemini',   defaultQty:70 },
+      claude:   { name:'Claude (enterprise)',provider:'Anthropic', billing:'seat',    color:'#5bd1a6', lineage:'an:sonnet',seatRule:'fx',       seatKey:'claudeUsd',defaultQty:50, usageAddon:true },
+      snowflake:{ name:'Snowflake (Enterprise)', provider:'Snowflake', billing:'credits', color:'#7db7ff', defaultQty:5000 },
     },
     // Single-sourced "what changed over time" copy, surfaced in the page dropdowns + sources.
     notes: {
@@ -222,6 +247,22 @@ window.MMURR_DATA = {
     ghPagesLimits: '1 GB storage · 100 GB/mo bandwidth',
   },
 };
+
+// --- Referenced current API prices (js/data/api-prices.js, optional) --------
+// The lineage steps in models.axis are hand-set HISTORY; when the weekly-
+// refreshed feed is present (script tag loaded before this file), overwrite
+// each lineage's LATEST price point and the io[] display prices with the
+// referenced values. Same 50/50 in/out blend basis. Feed absent → anchors
+// stand unchanged (file:// safe).
+(function(){
+  const ref = window.MMURR_API_PRICES;
+  if(!ref || !ref.models) return;
+  for(const [k, p] of Object.entries(ref.models)){
+    const ax = MMURR_DATA.models.axis[k]; if(!ax) continue;
+    ax.io[0] = p.in; ax.io[1] = p.out;
+    ax.steps[ax.steps.length-1][2] = +((p.in + p.out)/2).toFixed(2);
+  }
+})();
 
 // --- Seat-price helpers -----------------------------------------------------
 // Expected EA discount fraction (0..discountMax) for a given headcount.
@@ -255,4 +296,10 @@ if(['localhost','127.0.0.1',''].includes(location.hostname)){
   console.assert(seatDiscount(50000) === 0.30, 'discount floors at max');
   console.assert(Math.abs(effectiveSeat('UK',5000,0) - 19.76) < 1e-9, 'UK 5k seat ≈ £19.76');
   console.assert(effectiveSeat('UK',5000,15.5) === 15.5, 'manual override wins');
+  // licence→model compatibility map must reference real lineages
+  for(const [k,t] of Object.entries(MMURR_DATA.licenceTypes)){
+    console.assert(MMURR_DATA.models.axis[t.lineage], `licence ${k}: lineage exists in axis`);
+    console.assert((t.models||[]).length>0 && t.models.every(m=>MMURR_DATA.models.axis[m]), `licence ${k}: models[] all exist in axis`);
+    console.assert(t.models.includes(t.lineage), `licence ${k}: default lineage is allowed on the licence`);
+  }
 }

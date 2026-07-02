@@ -9,15 +9,16 @@
 
    Built up across phases:
      P3 (here)  — controls, flat licence line, backend markers, volume discount
-     P4 (added) — energy / CO2 / water footprint overlay + reconciliation check
+     P4 (added) — energy / CO2e / water footprint overlay + reconciliation check
      P5/P6      — same-workload-on-API line + break-even
      (rework)   — header + cost notes moved into Licence/Cost-logic dropdowns
      (rework 2) — one "Licence type" dropdown spans enterprise SKUs AND personal
-                  Claude subscriptions; the early-access cohort dropdown folded
-                  into the licence type (lagDays); the usage slider reads
-                  prompts/user/day for enterprise and % of plan capacity for
-                  subscriptions; static readouts carry their fixed reference
-                  date so they aren't mistaken for live figures.
+                  subscriptions; lag folded into the type; dual-mode slider
+     (rework 3) — licence→model compatibility greys out the Main-model options;
+                  x-axis scales to the licence's lifetime (no pre-launch API or
+                  footprint correlations); break-even shaded zones; regional
+                  local list prices where the vendor bills them; current API
+                  $/token referenced weekly from LiteLLM (js/data/api-prices.js)
 ---------------------------------------------------------------------------- */
 (function(){
   const svg = document.getElementById('labChart');
@@ -39,7 +40,7 @@
   // Subscription benchmark: 100% usage = exhausting the plan's estimated
   // tokens in EVERY rolling window, restarting after the gap → 4 maxed
   // windows/day at 5h + 1h. windowMTok per plan is an editable ASSUMPTION
-  // anchor in factors.js (Anthropic publishes no exact token limits).
+  // anchor in factors.js (vendors publish no exact token limits).
   const SW = MMURR_DATA.subscriptionWindows;
   const windowsPerDay = Math.floor(24 / (SW.windowHours + SW.gapHours));
   const maxPpdSub = () => LT[type].windowMTok*1e6 / tokPerPrompt * windowsPerDay;
@@ -53,7 +54,7 @@
     const energyWh = promptsDay() * wh;              // Wh / user / day
     return {
       energy: energyWh,
-      co2:   energyWh/1000 * R.pue * R.grid * 1000,  // g  / user / day
+      co2:   energyWh/1000 * R.pue * R.grid * 1000,  // g CO2e / user / day
       water: energyWh/1000 * R.wue * 1000,           // mL / user / day
     };
   }
@@ -61,10 +62,9 @@
   // --- date + scale helpers ------------------------------------------------
   const D = s => { const [y,m] = s.split('-'); return new Date(+y, +m-1, 1).getTime(); };
   const addDays = (t,d) => t + d*864e5;
-  const T0 = D('2024-01'), T1 = D('2026-06');   // matched to the Blended Usage chart's timeline
+  const T0 = D('2024-01'), T1 = D('2026-06');   // matched to the Blended Usage chart
   const NS = 'http://www.w3.org/2000/svg';
   const W=760, H=320, PL=52, PR=46, PT=22, PB=34;
-  const x = t => PL + (t-T0)/(T1-T0)*(W-PL-PR);
   const el = (n,a) => { const e=document.createElementNS(NS,n); for(const k in a) e.setAttribute(k,a[k]); return e; };
   const txt = (cls,x,y,anchor,s) => { const e=el('text',{class:cls,x,y}); if(anchor) e.setAttribute('text-anchor',anchor); e.textContent=s; return e; };
   // latest lineage step at time t, shifted by this licence type's release lag
@@ -73,13 +73,21 @@
 
   // --- licence price --------------------------------------------------------
   // Enterprise types read the SKU's regional LIST price ('list' also gets the
-  // volume EA discount); subscriptions carry a USD fee HISTORY × the FX anchor
-  // (billed USD worldwide). A manual override beats everything.
+  // volume EA discount). Subscriptions use the vendor's LOCAL list history for
+  // the region when one exists (t.local — e.g. Google bills £ in the UK);
+  // otherwise the USD fee history × the FX anchor (Anthropic & xAI bill USD
+  // worldwide). A manual override beats everything.
   const usdAt = (series, tt) => { let v=null; for(const [m,p] of series){ if(D(m)<=tt) v=p; } return v; };
+  const feeSeries = t => (t.local && t.local[MMURR_REGION.get()]) || t.usd;
+  const feeIsLocal = t => !!(t.local && t.local[MMURR_REGION.get()]);
   function licencePrice(tt = T1){
     const t = LT[type];
     if(override > 0) return override;
-    if(t.kind === 'subscription'){ const u = usdAt(t.usd, tt); return u==null ? null : u * MMURR_REGION.data().fx; }
+    if(t.kind === 'subscription'){
+      const u = usdAt(feeSeries(t), tt);
+      if(u == null) return null;
+      return feeIsLocal(t) ? u : u * MMURR_REGION.data().fx;
+    }
     const tbl = MMURR_DATA.seat[t.seatKey] || MMURR_DATA.seat.list;
     const base = tbl[MMURR_REGION.get()] ?? tbl.UK;
     return t.discount ? base*(1 - seatDiscount(licences)) : base;
@@ -95,13 +103,18 @@
       if(k===type) o.selected=true; og.appendChild(o);
     }
   }
+  // Models NOT accessible under the selected licence are greyed out (disabled),
+  // so the API/footprint comparison always pairs a licence with a model it can
+  // actually run.
   function buildModelSelect(){
     const sel = document.getElementById('lab-model'); const R = MMURR_REGION.data();
+    const allowed = LT[type].models;
     sel.innerHTML=''; let og=null, lastG=null;
     for(const k in M.axis){ const m=M.axis[k];
       if(m.group!==lastG){ og=document.createElement('optgroup'); og.label=m.group; sel.appendChild(og); lastG=m.group; }
       const o=document.createElement('option'); o.value=k;
       o.textContent=`${m.label} — ${m.io[2]} (${R.sym}${(m.io[0]*R.fx).toFixed(2)}/${R.sym}${(m.io[1]*R.fx).toFixed(2)} per 1M)`;
+      if(!allowed.includes(k)){ o.disabled=true; o.title='Not available on this licence'; }
       if(k===mainModel) o.selected=true; og.appendChild(o);
     }
   }
@@ -124,21 +137,28 @@
   }
 
   // --- draw ----------------------------------------------------------------
-  const PTS = (()=>{ const a=[]; for(let t=T0;t<=T1;t=addDays(t,30)) a.push(t); return a; })();
-
   function draw(){
     const R = MMURR_REGION.data();
     const t = LT[type];
     const am = M.axis[mainModel];
     const mdlAt = tt => stepAt(am.steps, tt);
     // markers show the lineage riding under THIS licence: the Copilot/GPT
-    // backend for enterprise types, the plan's own model line for Claude plans
+    // backend for enterprise types, the plan's own model line for subscriptions
     const markers = isSub() ? M.axis[t.lineage].steps : M.backend;
     svg.innerHTML='';
+
+    // Scaling x-axis: the domain starts where the licence's data starts, so a
+    // late-launching plan (e.g. SuperGrok Heavy, Jul 2025) fills the chart
+    // instead of leaving dead space — and the API/footprint lines can't show
+    // correlations for months when the licence didn't exist.
+    const t0 = isSub() ? Math.max(T0, D(feeSeries(t)[0][0])) : T0;
+    const x = tt => PL + (tt-t0)/(T1-t0)*(W-PL-PR);
+    const PTS = (()=>{ const a=[]; for(let tt=t0;tt<=T1;tt=addDays(tt,30)) a.push(tt); return a; })();
+
     const price = licencePrice();          // at T1, for the readouts
     const lic = licences * price;
     const licAt = tt => { const p = licencePrice(tt); return p==null ? null : licences*p; };
-    const licSeries = PTS.map(licAt);      // null before a subscription's launch
+    const licSeries = PTS.map(licAt);
 
     // same workload metered on the raw API, per month, in region currency (§4.5)
     const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * mdlAt(tt)[2] * R.fx;
@@ -147,7 +167,7 @@
     // Cost-axis anchor: enterprise anchors to the LICENCE (fixed) so the flat
     // line never moves as the slider slides; subscriptions anchor to the API
     // value at 100% usage (also a fixed reference) because that line can dwarf
-    // the small flat fee. Clamp so a line above the top rides the edge.
+    // the small fee. Clamp so a line above the top rides the edge.
     let maxCost = (lic * 2.6) || 1;
     if(isSub()){
       const maxRate = Math.max(...am.steps.map(s=>s[2]));
@@ -160,8 +180,43 @@
     for(let i=0;i<=4;i++){ const yy=PT+i*(H-PT-PB)/4;
       svg.appendChild(el('line',{class:'lab-gridline',x1:PL,x2:W-PR,y1:yy,y2:yy}));
       svg.appendChild(txt('lab-axis',PL-6,yy+3,'end', R.sym+Math.round(maxCost*(1-i/4)).toLocaleString())); }
-    for(const yr of ['2024','2025','2026']){ const xx=x(D(yr+'-01'));
-      svg.appendChild(txt('lab-axis',xx,H-PB+16,'middle',yr)); }
+    // x ticks: years for long spans, quarters when the domain is short
+    const spanMonths = (T1-t0)/2592e6;
+    if(spanMonths >= 20){
+      for(const yr of ['2024','2025','2026']){ const tt=D(yr+'-01');
+        if(tt>=t0 && tt<=T1) svg.appendChild(txt('lab-axis',x(tt),H-PB+16,'middle',yr)); }
+    } else {
+      const d=new Date(t0);
+      while(d.getTime()<=T1){
+        if([0,3,6,9].includes(d.getMonth()))
+          svg.appendChild(txt('lab-axis',x(d.getTime()),H-PB+16,'middle',
+            d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})));
+        d.setMonth(d.getMonth()+1);
+      }
+    }
+
+    // break-even shaded zones (behind everything): where the metered API is
+    // cheaper than the licence vs where the licence wins
+    if(on.api){
+      const sign = i => { const l=licSeries[i]; return l==null ? 0 : (apiSeries[i]<l ? -1 : 1); };
+      const zones=[]; let runStart=0, cur=sign(0);
+      for(let i=1;i<=PTS.length;i++){
+        const s = i<PTS.length ? sign(i) : NaN;
+        if(s!==cur){ if(cur!==0 && i-1>runStart-0) zones.push([runStart,i-1,cur]); runStart=i; cur=s; }
+      }
+      for(const [a,b,sg] of zones){
+        const x1=x(PTS[a]), x2=x(PTS[b]);
+        if(x2-x1 < 2) continue;
+        svg.appendChild(el('rect',{class: sg<0?'lab-zone-api':'lab-zone-lic', x:x1, y:PT, width:x2-x1, height:H-PT-PB}));
+      }
+      const widest = sg => zones.filter(z=>z[2]===sg)
+        .sort((p,q)=>(x(PTS[q[1]])-x(PTS[q[0]]))-(x(PTS[p[1]])-x(PTS[p[0]])))[0];
+      const za=widest(-1), zl=widest(1);
+      if(za && x(PTS[za[1]])-x(PTS[za[0]]) > 80)
+        svg.appendChild(txt('lab-zonelab zapi',(x(PTS[za[0]])+x(PTS[za[1]]))/2,H-PB-8,'middle','raw API cheaper'));
+      if(zl && x(PTS[zl[1]])-x(PTS[zl[0]]) > 80)
+        svg.appendChild(txt('lab-zonelab zlic',(x(PTS[zl[0]])+x(PTS[zl[1]]))/2,PT+12,'middle','licence wins'));
+    }
 
     // footprint overlay (secondary scale, drawn behind the cost lines). Wh/prompt
     // steps at the MAIN MODEL's own dates (§4.4) — switching model moves it.
@@ -196,7 +251,7 @@
     }
 
     // licence fee line — flat for enterprise; subscriptions start at launch and
-    // step where the fee changed (the usd history in factors.js)
+    // step where the fee changed (the fee history in factors.js)
     { let d='';
       PTS.forEach((tt,i)=>{ const v=licSeries[i]; if(v==null) return; d += (d?'L':'M')+x(tt)+' '+yC(v); });
       if(d) svg.appendChild(el('path',{class:'ser-lic',d}));
@@ -205,7 +260,7 @@
     // model-transition markers on the licence line
     markers.forEach(m=>{
       const tt = addDays(D(m[0]), t.lagDays);
-      if(tt<T0 || tt>T1) return;
+      if(tt<t0 || tt>T1) return;
       const licHere = licAt(tt);
       if(licHere==null) return;            // before the subscription launched
       const xx=x(tt), yy=yC(licHere), g=el('g',{}); g.style.cursor='pointer';
@@ -248,8 +303,12 @@
     if(override>0){
       note = `Licence price fixed at your <b>${R.sym}${override.toFixed(2)}</b> override.`;
     } else if(isSub()){
-      note = `Fee = <b>$${usdAt(t.usd,T1)} USD × ${R.fx} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`+
-             (t.usd.length>1 ? ` — the fee has changed over time; the steps are plotted on the line. ` : `. `)+
+      const fees = feeSeries(t);
+      const feeTxt = feeIsLocal(t)
+        ? `<b>${R.sym}${price.toFixed(2)}</b>/mo — the vendor's own ${R.label} list price`
+        : `<b>$${usdAt(t.usd,T1)} USD × ${R.fx} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`;
+      note = `Fee = ${feeTxt}`+
+             (fees.length>1 ? ` — the fee has changed over time; the steps are plotted on the line. ` : `. `)+
              `<b>100% usage</b> = exhausting the plan's estimated <b>${t.windowMTok}M tokens per ${SW.windowHours}-hour window</b>, `+
              `restarting after a ${SW.gapHours}-hour gap → ${windowsPerDay} maxed windows/day ≈ <b>${Math.round(t.windowMTok*windowsPerDay*30).toLocaleString()}M tokens/mo</b>. `+
              `The per-window allowance is an <b>editable assumption</b> — vendors publish no exact token limits, and rolling/weekly caps can bind before the window maths does. `+
@@ -265,7 +324,7 @@
       const usageTxt = isSub() ? `${usagePct}% usage` : `${ppd} prompts/user/day`;
       const verdict = apiNow<lic ? `the metered API is <b>cheaper</b> than the licence at ${usageTxt}`
                                  : `the flat licence <b>wins</b> at ${usageTxt}`;
-      note += ` At your usage, ${verdict}; break-even ≈ <b>${beTxt}</b>. `+
+      note += ` At your usage, ${verdict}; break-even ≈ <b>${beTxt}</b>. The shaded bands mark where each side wins. `+
               (isSub()
                 ? `A subscription also buys the apps, projects and priority access — the API line prices tokens only, so this isn't strictly like-for-like.`
                 : `A Copilot licence also buys Graph grounding, security and the in-app surfaces — the API line prices tokens only, so this isn't strictly like-for-like.`);
@@ -275,11 +334,15 @@
         : ` Markers are the Copilot backend swapping underneath; the line stays flat. Toggle <b>Same workload on raw API</b> to find where metering overtakes the licence.`;
     }
     note += ` Footprint follows <b>${am.group} ${am.label}</b>` +
-            (am.assumedWh?` <span class="vflag" title="Anthropic publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') +
-            `; one standardised text prompt (reasoning/image/video are far higher). All figures sourced below.`;
+            (am.assumedWh?` <span class="vflag" title="This vendor publishes no per-query energy — its Wh values are labelled assumptions.">(Wh assumed)</span>`:'') +
+            `; one standardised text prompt (reasoning/image/video are far higher).`;
+    const ref = window.MMURR_API_PRICES;
+    if(ref && ref.models && ref.models[mainModel])
+      note += ` Current API $/token referenced from the LiteLLM registry, fetched ${ref.fetched}.`;
+    note += ` All figures sourced below.`;
     document.getElementById('lab-disc').innerHTML = note;
 
-    ctx = { R, mdlAt, lic, licAt, cursor };   // stash for the hover handler
+    ctx = { R, mdlAt, lic, licAt, cursor, t0, x };   // stash for the hover handler
   }
 
   // --- interactive hover: vertical cursor + on-page caption ----------------
@@ -289,7 +352,7 @@
     const rect = svg.getBoundingClientRect();
     let px = (clientX-rect.left)/rect.width*W;
     px = Math.max(PL, Math.min(W-PR, px));
-    const t = T0 + (px-PL)/(W-PL-PR)*(T1-T0);
+    const t = ctx.t0 + (px-PL)/(W-PL-PR)*(T1-ctx.t0);
     ctx.cursor.setAttribute('x1',px); ctx.cursor.setAttribute('x2',px); ctx.cursor.setAttribute('opacity',1);
     const R = ctx.R;
     const api = licences*promptsDay()*30*tokPerPrompt/1e6*ctx.mdlAt(t)[2]*R.fx;
@@ -298,7 +361,7 @@
     let s = `<b>${fmtMonth(t)}</b> · Licence ${licHere==null ? 'not launched' : R.sym+Math.round(licHere).toLocaleString()}`;
     if(on.api)    s += ` · API ${R.sym}${Math.round(api).toLocaleString()}`;
     if(on.energy) s += ` · ${fp.energy.toFixed(1)} Wh`;
-    if(on.co2)    s += ` · ${fp.co2.toFixed(1)} g`;
+    if(on.co2)    s += ` · ${fp.co2.toFixed(1)} g CO₂e`;
     if(on.water)  s += ` · ${fp.water.toFixed(1)} mL`;
     s += ` · ${isSub()?'model':'backend'} ${ctx.mdlAt(t)[1]}`;
     hoverEl.innerHTML = s;
@@ -311,7 +374,9 @@
   const onNum = (id, set) => document.getElementById(id).addEventListener('input', e=>{ set(parseFloat(e.target.value)||0); draw(); });
   document.getElementById('lab-type').addEventListener('change', e=>{
     type = e.target.value;
-    if(isSub()){ mainModel = LT[type].lineage; buildModelSelect(); }   // plan's own line by default
+    // model no longer accessible under this licence → jump to its default line
+    if(!LT[type].models.includes(mainModel)) mainModel = LT[type].lineage;
+    buildModelSelect();     // refresh greyed-out options for the new licence
     syncSlider(); draw();
   });
   onNum('lab-seats', v=>licences=v);
@@ -346,8 +411,9 @@
     const wh = 0.31, p = promptsDay();     // enterprise default at load → ppd
     const got = footprint(wh, R).co2;
     const dashboard = (p*wh)/1000 * R.pue * R.grid * 1000;   // dashboard's formula
-    console.assert(Math.abs(got - dashboard) < 1e-9, 'price/dashboard CO2 per day reconcile');
+    console.assert(Math.abs(got - dashboard) < 1e-9, 'price/dashboard CO2e per day reconcile');
     console.assert(windowsPerDay === 4, '5h window + 1h gap → 4 maxed windows/day');
     console.assert(Math.abs(LT.claudePro.usd[0][1]*R.fx - 15.60) < 1e-9, 'Claude Pro UK ≈ £15.60/mo at FX 0.78');
+    console.assert(LT.geminiPro.local.UK[0][1] === 18.99, 'Google AI Pro UK local list £18.99');
   }
 })();

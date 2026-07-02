@@ -51,10 +51,10 @@ for(const [k,t] of Object.entries(LT)){
   if(t.basketDup) continue;
   const key = 'lt:'+k;
   if(t.kind==='subscription'){
-    SVC[key] = { key, name:t.name, color:t.color, billing:'sub', lt:t,
+    SVC[key] = { key, name:t.name, color:t.color, provider:t.provider, billing:'sub', lt:t,
       on:false, qty:1, pct:50, ro:{on:false,q0:0,q1:0,m0:START,m1:END} };
   } else {
-    SVC[key] = { key, name:t.name, color:t.color, billing:'seat',
+    SVC[key] = { key, name:t.name, color:t.color, provider:t.provider, billing:'seat',
       seatFlat:t.seatKey, lineage:t.lineage,
       on:false, qty:1, ppd:B.ppdDefault, basis:'prompts', tokensMo:0, usage:false,
       ro:{on:false,q0:0,q1:0,m0:START,m1:END} };
@@ -85,10 +85,13 @@ function seatFill(s, region){
   const f = fill(tbl[region] || tbl.UK);
   return MONTHS.map(m => (f[m]==null || f[m]===0) ? null : f[m]);
 }
-// subscription fee history (USD × FX); null before the plan launched.
+// subscription fee history; null before the plan launched. Uses the vendor's
+// LOCAL list history when one exists for this region (e.g. Google bills £ in
+// the UK), otherwise USD × FX (Anthropic & xAI bill USD worldwide).
 function subFill(s){
-  const fx = MMURR_REGION.data().fx, f = fill(s.lt.usd);
-  return MONTHS.map(m => f[m]==null ? null : f[m]*fx);
+  const loc = s.lt.local && s.lt.local[MMURR_REGION.get()];
+  const fx = MMURR_REGION.data().fx, f = fill(loc || s.lt.usd);
+  return MONTHS.map(m => f[m]==null ? null : (loc ? f[m] : f[m]*fx));
 }
 // latest lineage step ≤ t (clamped to first). [date,label,blended$/1M,Wh/prompt]
 function stepAt(key, t){ const st=M.axis[key].steps; let c=st[0]; for(const s of st){ if(D(s[0])<=t) c=s; } return c; }
@@ -113,7 +116,13 @@ function promptsAt(s, i){
 // --- Render the service cards (collapsed expandables) ------------------------
 function renderServices(){
   const host=document.getElementById('tracks'); host.innerHTML='';
-  for(const [k,s] of Object.entries(SVC)){
+  // cards grouped by provider, matching the colour families
+  const ORDER=['Microsoft','Google','Anthropic','xAI','Mistral','Snowflake'];
+  const groups={}; for(const [k,s] of Object.entries(SVC)) (groups[s.provider||'Other'] ??= []).push([k,s]);
+  for(const prov of [...ORDER, ...Object.keys(groups).filter(p=>!ORDER.includes(p))]){
+    if(!groups[prov]) continue;
+    const gh=document.createElement('div'); gh.className='trk-group'; gh.textContent=prov; host.appendChild(gh);
+    for(const [k,s] of groups[prov]){
     const kind = s.billing;   // 'seat' | 'sub' | 'credits'
     const qtyLabel = kind==='credits' ? 'Credits / month' : 'Licences';
     const slider = kind==='seat' ? `
@@ -129,7 +138,7 @@ function renderServices(){
         <span class="dot" style="background:${s.color}"></span>
         <span class="nm">${s.name}</span>
         <span class="badge ${kind==='credits'?'metered':'licensed'}">${kind==='sub'?'personal':kind==='credits'?'credits':'licence'}</span>
-        <span class="inflag" id="in-${k}">${s.on?'in stack':''}</span>
+        <span class="inflag" id="in-${k}" title="in the basket">${s.on?'✓':''}</span>
       </summary>
       <div class="svc-inner">
         <label class="chk"><input type="checkbox" ${s.on?'checked':''} data-on="${k}" aria-label="Include ${s.name}"> Include in basket</label>
@@ -157,7 +166,8 @@ function renderServices(){
           </div>
         </div>
       </div>`;
-    host.appendChild(d);
+      host.appendChild(d);
+    }
   }
 }
 
@@ -237,11 +247,11 @@ function yLabel(){
        : metric==='co2'  ? 'CO₂e — kg / month'
        :                    'Water — L / month';
 }
-function setStats(totals){
+function setStats(totals, labels){
   const lab = metric==='cost'?'cost':metric==='energy'?'energy':metric==='co2'?'CO₂e':'water';
   document.getElementById('sStartLab').textContent = `Monthly ${lab} — `;
   document.getElementById('sNowLab').textContent   = `Monthly ${lab} — now`;
-  const valid=totals.map((v,i)=>[MONTHS[i],v]).filter(([,v])=>v>0);
+  const valid=totals.map((v,i)=>[labels[i],v]).filter(([,v])=>v>0);
   if(!valid.length){ ['sStart','sNow','sChange'].forEach(id=>document.getElementById(id).textContent='—'); return; }
   const [d0,v0]=valid[0], [,vN]=valid[valid.length-1];
   document.getElementById('sStart').textContent=fmtVal(v0);
@@ -257,9 +267,19 @@ let chart;
 function draw(){
   const R=MMURR_REGION.data();
   const {datasets,totals}=compute();
-  setStats(totals);
+  // scaling x-axis: trim leading months where NO enabled service has data yet,
+  // so a stack of late-launching plans fills the chart instead of leaving dead
+  // space. Totals (and the "start" stat) follow the trimmed range.
+  let first=MONTHS.length-1;
+  for(const d of datasets){ if(d.stack!=='basket') continue;
+    const i=d.data.findIndex(v=>v!=null); if(i>=0 && i<first) first=i; }
+  if(!datasets.some(d=>d.stack==='basket')) first=0;
+  const labels=MONTHS.slice(first);
+  for(const d of datasets) d.data=d.data.slice(first);
+  const totalsT=totals.slice(first);
+  setStats(totalsT, labels);
   const cfg={
-    type:'line', data:{labels:MONTHS, datasets},
+    type:'line', data:{labels, datasets},
     options:{
       responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{
@@ -324,6 +344,7 @@ function renderSnapshot(){
 
 // --- Region-aware sources & assumptions (covers BOTH charts) -------------------
 const SRC = {
+  litellm:'https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json',
   openai:'https://openai.com/api/pricing/',
   gemini:'https://ai.google.dev/gemini-api/docs/pricing',
   geminiEnt:'https://cloud.google.com/blog/products/ai-machine-learning/gemini-enterprise-launch',
@@ -348,21 +369,24 @@ function renderSources(){
   const gemNow=gem[gem.length-1][1];
   const cred=MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US;
   const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
+  const ref = window.MMURR_API_PRICES;
   const rows = [
-    ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate; Claude (enterprise and personal) and all personal/team subscriptions are USD list at the FX anchor (${R.cur} ${R.fx}/USD) because those vendors bill USD worldwide.`, 'VERIFY', '(editable anchor — no live feed)'],
+    ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate. Personal/team plans use the vendor's OWN local list where one is billed (Google UK £, Mistral EU €); Anthropic and xAI bill USD worldwide, so those convert at the FX anchor (${R.cur} ${R.fx}/USD).`, 'VERIFY', '(editable anchors)'],
     ['M365 Copilot licence', `${R.sym}${cop.toFixed(2)}/licence/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
     ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
     ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025). The discontinued period is shown as a REAL GAP in the chart.`, 'SOURCED', aLink(SRC.gemini,'Google')],
     ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
     ['Claude Pro / Max (personal)', `$${LT.claudePro.usd[0][1]} · $${LT.claudeMax5.usd[0][1]} · $${LT.claudeMax20.usd[0][1]} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
-    ['Google AI Pro / Ultra (personal)', `AI Premium $19.99/mo (Feb 2024) → renamed Google AI Pro (Apr 2026, price held) · Ultra $249.99/mo (May 2025) → $200 (May 2026; a new $100 mid-tier is not modelled). Shown ${fxLine}`, 'SOURCED', aLink(SRC.googleOne,'Google')],
+    ['Google AI Pro / Ultra (personal)', `AI Premium $19.99/mo (Feb 2024) → renamed Google AI Pro (Apr 2026, price held) · Ultra $249.99/mo (May 2025) → $200 (May 2026; the 5× Ultra tier is not modelled). UK shows Google's own £ list (Pro £18.99 · Ultra £189.99); other regions ${fxLine}`, 'SOURCED', aLink(SRC.googleOne,'Google')],
     ['SuperGrok / Heavy (personal)', `SuperGrok $30/mo (≈Feb 2025, with Grok 3) · Heavy $300/mo (9 Jul 2025). Shown ${fxLine}`, 'VERIFY', aLink(SRC.xai,'xAI')],
-    ['Le Chat Pro / Team (Mistral)', `Pro $14.99/mo (Feb 2025) · Team $24.99/user/mo; Enterprise is custom-quoted. Shown ${fxLine}`, 'SOURCED', aLink(SRC.mistral,'Mistral pricing')],
+    ['Le Chat Pro / Team (Mistral)', `Pro $14.99/mo (Feb 2025) · Team $24.99/user/mo; Enterprise is custom-quoted. EU shows Mistral's € list (same digits, VERIFY); other regions ${fxLine}`, 'SOURCED', aLink(SRC.mistral,'Mistral pricing')],
     ['Plan token allowances', `est. M tokens per ${SW.windowHours}-hour window per plan (Claude Pro ${LT.claudePro.windowMTok} · Max 20× ${LT.claudeMax20.windowMTok} · AI Ultra ${LT.geminiUltra.windowMTok} · full list in factors.js), scaled ≈ with price. 100% usage = ${WPD} maxed windows/day (${SW.gapHours}h gap between windows); rolling/weekly caps can bind first`, 'ASSUMPTION', '(editable — vendors publish no exact limits)'],
     ['Snowflake credit', `≈$${cred.toFixed(2)}/credit (Enterprise, ${R.label} region) at FX; ≈$3.00 US · ≈$3.60 EU · ≈$3.90 UK; stable`, 'VERIFY', aLink(SRC.snow,'Snowflake')],
     ['Standardised prompt', `${TPP} tokens (≈300-token answer + context; editable). Same task for every model so cost &amp; footprint compare like-for-like.`, 'ASSUMPTION', '—'],
-    ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}`, 'SOURCED', aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
+    ['API token $ (the "if billed on API" line)', `blended 50/50 in/out per model, USD/1M, shown ${fxLine}. `+(ref
+        ? `<b>Current</b> prices are referenced from the LiteLLM community registry, fetched <b>${ref.fetched}</b> (auto-refreshed weekly by a repo Action); history steps are hand-set anchors.`
+        : `Referenced price feed not loaded — hand-set anchors in use.`), 'SOURCED', aLink(SRC.litellm,'LiteLLM registry')+' · '+aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
     ['Copilot energy', `0.31 Wh / prompt`, 'SOURCED', 'Microsoft disclosure (2026)'],
     ['Gemini energy', `0.24 Wh / prompt (fleet median)`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
     ['Anthropic / xAI / Mistral / Gemini-Pro energy', `per-query Wh not published — labelled assumptions`, 'ASSUMPTION', '(vendors publish none)'],
@@ -388,7 +412,7 @@ function init(){
     const t=e.target;
     if(t.dataset.on){ const k=t.dataset.on; SVC[k].on=t.checked;
       const card=t.closest('.svc'); card.classList.toggle('off',!t.checked);
-      const flag=document.getElementById('in-'+k); if(flag) flag.textContent=t.checked?'in stack':'';
+      const flag=document.getElementById('in-'+k); if(flag) flag.textContent=t.checked?'✓':'';
       draw(); return; }
     const id=t.id||'';
     if(id.startsWith('basis-')){ const k=id.slice(6); SVC[k].basis=t.value;

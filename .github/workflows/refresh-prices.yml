@@ -1,0 +1,32 @@
+# Weekly refresh of js/data/api-prices.js from the LiteLLM community registry.
+# Manual run: Actions tab → "Refresh API prices" → Run workflow.
+name: Refresh API prices
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node tools/refresh-prices.mjs
+      - name: Commit if changed
+        run: |
+          if ! git diff --quiet js/data/api-prices.js; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add js/data/api-prices.js
+            git commit -m "*CLAUDE CODE* Weekly API price refresh (LiteLLM registry)"
+            git push
+          else
+            echo "No price changes this week."
+          fi

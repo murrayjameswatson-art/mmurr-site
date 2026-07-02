@@ -4,7 +4,7 @@
    these values to overwrite each lineage's LATEST price point. Absent
    file / absent key → factors.js anchors are used unchanged. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-07-01",
+  "fetched": "2026-07-02",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {

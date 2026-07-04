@@ -294,7 +294,9 @@
     document.getElementById('lab-r-lic').textContent  = R.sym+Math.round(lic).toLocaleString();
     document.getElementById('lab-r-api').textContent  = on.api ? R.sym+Math.round(apiNow).toLocaleString() : 'toggle on';
     document.getElementById('lab-r-be').textContent   = on.api ? beTxt : 'toggle on';
-    document.getElementById('lab-r-seat').textContent = `${R.sym}${price.toFixed(2)}` + (disc>0?` (−${Math.round(disc*100)}%)`:'');
+    const modeChip = window.MMURR_MODE_CHIP ? MMURR_MODE_CHIP(t.pricing_mode) : '';
+    document.getElementById('lab-r-seat').innerHTML =
+      `${R.sym}${price.toFixed(2)}` + (disc>0?` (−${Math.round(disc*100)}%)`:'') + (modeChip?' '+modeChip:'');
     document.getElementById('lab-r-model').textContent = stepAt(markers,T1)[1];
     document.getElementById('lab-r-fp').textContent = `${fpNow.energy.toFixed(1)} Wh · ${fpNow.co2.toFixed(1)} g · ${fpNow.water.toFixed(1)} mL`;
 

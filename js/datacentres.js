@@ -55,13 +55,18 @@ function drawCap(){
 }
 
 // --- Footprint calculator -------------------------------------------------
+// Hardware embodied: default anchors PER MW OF IT LOAD (1,100 tCO2e/MW,
+// CIBSE TM65-based via ADW, range 750–1,500); the old servers/MW × per-server
+// mass method (Google LCA) stays available as the labelled alternative preset.
+function hwMode(){ const b=document.querySelector('#hwMethod .on'); return b ? b.dataset.hw : 'permw'; }
 function calc(){
   const GW=n('gw'), MW=GW*1000;
   const load=n('load'), con=n('con'), spm=n('spm'), sec=n('sec'), ref=n('ref'),
         pue=n('pue'), grid=n('grid'), wue=n('wue');
 
   const constructionT = MW*con;                              // one-time, tCO2e
-  const hardwareT = ref>0 ? MW*spm*(sec/1000)/ref : 0;       // tCO2e / year (amortised)
+  const hwYearT = hwMode()==='permw' ? MW*n('hpm') : MW*spm*(sec/1000);
+  const hardwareT = ref>0 ? hwYearT/ref : 0;                 // tCO2e / year (amortised)
   const annual_kWh = MW*1000 * 8760 * load;                  // kWh / year
   const facility_kWh = annual_kWh * pue;
   const operationalT = facility_kWh * grid / 1000;           // tCO2e / year
@@ -123,6 +128,15 @@ function init(){
   if(wp) wp.addEventListener('click',e=>{
     if(!e.target.dataset.wue) return;
     $('wue').value=e.target.dataset.wue; syncWuePreset(parseFloat(e.target.dataset.wue)); calc();
+  });
+  $('hwMethod').addEventListener('click',e=>{
+    if(!e.target.dataset.hw) return;
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    const servers = e.target.dataset.hw==='servers';
+    $('hwPermw').hidden = servers;
+    document.querySelectorAll('.hw-servers').forEach(d=>d.hidden=!servers);
+    calc();
   });
 }
 document.addEventListener('DOMContentLoaded',init);

@@ -21,9 +21,24 @@ window.MMURR_BASES = {
   grid:  0.177,   // kgCO2e/kWh — UK location-based grid intensity (DESNZ/Defra 2025)
   car:   0.17,    // kgCO2e/km  — UK average car, all fuels (Defra 2025)
   phone: 0.0082,  // kgCO2e     — one full smartphone charge (US-grid basis, US EPA equivalencies)
+  // Per-token energy, API-METERED VIEW ONLY (Gemini basis, ported from the old
+  // dashboard). Never multiply by the per-prompt Wh figures — the two bases are
+  // alternatives, not factors of each other (handbook §3).
+  whPer1kTok: 0.70,
   // Water (WUE) defaults live on the region profiles below (UK 0.5 / EU 0.6 /
   // US 1.9) so every page reads the same figure. 1.9 stays available as the
   // labelled "global evaporative average" scenario on the data-centres page.
+};
+
+// --- Facility build-out anchors (data-centres page) --------------------------
+// Hardware embodied is anchored PER MW OF IT LOAD (CIBSE TM65-based assessment
+// via ADW Developments: 750–1,500 tCO2e/MW, midpoint 1,100; AI-dense halls
+// likely >1,500). The old servers/MW × per-server method is kept as a labelled
+// alternative preset — AI-accelerator servers ≈1.8–3.3 t each (Google LCA 2025).
+window.MMURR_FACILITY = {
+  hwEmbodiedPerMw: 1100,      // tCO2e per MW IT (SOURCED — ADW/CIBSE TM65; range 750–1500)
+  refreshYears: 4,            // hardware refresh cycle (3–5 yr literature range)
+  legacy: { serversPerMw: 1000, serverEmbodiedKg: 2500 },  // 'AI-accelerator servers × mass (Google LCA)' preset
 };
 
 // --- Region / currency profiles --------------------------------------------
@@ -48,12 +63,12 @@ window.MMURR_DATA = {
           gridNote:'UK location-based grid (DESNZ/Defra 2025)', gridConf:'SOURCED',
           wueNote:'EED-derived European average (WRc/MOSL 2026) / CNDCP 0.4 midpoint', wueConf:'SOURCED' },
     US: { label:'US', flag:'🇺🇸', cur:'USD', sym:'$', fx:1.00,
-          grid:0.37, wue:1.9, pue:1.0,
-          gridNote:'US mixed/Azure-East grid average', gridConf:'VERIFY',
+          grid:0.36, wue:1.9, pue:1.0,
+          gridNote:'US national output rate (EPA eGRID 2023 Rev 2; 2024 prelim −1.8%)', gridConf:'SOURCED',
           wueNote:'global evaporative-cooling average (Green Grid via EESI)', wueConf:'VERIFY' },
     EU: { label:'EU', flag:'🇪🇺', cur:'EUR', sym:'€', fx:0.92,
-          grid:0.23, wue:0.6, pue:1.0,
-          gridNote:'EU average grid', gridConf:'VERIFY',
+          grid:0.19, wue:0.6, pue:1.0,
+          gridNote:'EU average grid (EEA 2024 early estimate, −9% YoY)', gridConf:'SOURCED',
           wueNote:'EED-reported European average ≈0.58 (WRc/MOSL 2026)', wueConf:'SOURCED' },
   },
 
@@ -116,49 +131,58 @@ window.MMURR_DATA = {
     //   EU — VERIFY €). Absent region → USD × FX (Anthropic & xAI bill USD
     //   worldwide — checked claude.com/pricing, USD-only + tax at checkout).
     // provider: groups the Blended Usage cards.
+    // pricing_mode: how the £/€ figure arises —
+    //   'regional_list' = the vendor bills a per-market list price (a point);
+    //   'usd_fx'        = billed USD worldwide, lands at card FX (+ VAT for
+    //                     consumer plans) — display as a BAND, not a point;
+    //   'usd_metered'   = USD per unit, metered (API tokens, credits).
     list:        { label:'M365 Copilot (E5 add-on) — enterprise list', name:'M365 Copilot', provider:'Microsoft', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto', basketDup:true,
+                   kind:'enterprise', seatKey:'list', discount:true, lagDays:42, lineage:'oa:auto', basketDup:true, pricing_mode:'regional_list',
                    models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
     frontierE7:  { label:'E7 Frontier Suite — early access', name:'E7 Frontier Suite', provider:'Microsoft', color:'#f2d38c', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto',
+                   kind:'enterprise', seatKey:'frontierE7', lagDays:0, lineage:'oa:auto', pricing_mode:'regional_list',
                    models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
     business:    { label:'Business + Copilot — ≤300 employees', name:'Business + Copilot', provider:'Microsoft', color:'#c9973f', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto',
+                   kind:'enterprise', seatKey:'business', lagDays:42, lineage:'oa:auto', pricing_mode:'regional_list',
                    models:['oa:auto','oa:think','oa:mini','an:sonnet','an:opus'] },
     gemEnterprise:{ label:'Gemini Enterprise — per licence', name:'Gemini Enterprise', provider:'Google', group:'Enterprise (per licence)',
-                   kind:'enterprise', seatKey:'geminiEnt', lagDays:0, lineage:'gm:flash', basketDup:true,
+                   kind:'enterprise', seatKey:'geminiEnt', lagDays:0, lineage:'gm:flash', basketDup:true, pricing_mode:'regional_list',
                    models:['gm:flash','gm:pro'] },
+    chatgptPlus: { label:'ChatGPT Plus — personal', name:'ChatGPT Plus', provider:'OpenAI', color:'#9fd0ff', group:'Personal & team subscriptions',
+                   kind:'subscription', usd:[['2023-02',20]], lagDays:0, lineage:'oa:auto', windowMTok:0.5, pricing_mode:'regional_list',
+                   local:{ UK:[['2023-02',20]] },                        // fixed ≈£20 incl VAT at UK checkout (SOURCED)
+                   models:['oa:auto','oa:think','oa:mini'] },
     claudePro:   { label:'Claude Pro — personal', name:'Claude Pro', provider:'Anthropic', color:'#3fb489', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5,
+                   kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5, pricing_mode:'usd_fx',
                    models:['an:haiku','an:sonnet','an:opus'] },
     claudeMax5:  { label:'Claude Max 5× — personal', name:'Claude Max 5×', provider:'Anthropic', color:'#8fe3c4', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5,
+                   kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5, pricing_mode:'usd_fx',
                    models:['an:haiku','an:sonnet','an:opus'] },
     claudeMax20: { label:'Claude Max 20× — personal', name:'Claude Max 20×', provider:'Anthropic', color:'#2e8f6f', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10,
+                   kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10, pricing_mode:'usd_fx',
                    models:['an:haiku','an:sonnet','an:opus'] },
     geminiPro:   { label:'Google AI Pro — personal', name:'Google AI Pro', provider:'Google', color:'#d3b3ff', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5,
+                   kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5, pricing_mode:'regional_list',
                    local:{ UK:[['2024-02',18.99]] },                     // gemini.google UK list (SOURCED Jul 2026)
                    models:['gm:flash','gm:pro'] },
                    // Google One AI Premium (Feb 2024) → renamed Google AI Pro (Apr 2026); price held
     geminiUltra: { label:'Google AI Ultra — personal', name:'Google AI Ultra', provider:'Google', color:'#9a6cf0', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-05',249.99],['2026-05',200]], lagDays:0, lineage:'gm:pro', windowMTok:6,
+                   kind:'subscription', usd:[['2025-05',249.99],['2026-05',200]], lagDays:0, lineage:'gm:pro', windowMTok:6, pricing_mode:'regional_list',
                    local:{ UK:[['2025-05',234.99],['2026-05',189.99]] },  // £189.99 now SOURCED; £234.99 launch VERIFY
                    models:['gm:flash','gm:pro'] },
                    // top tier shown; the 5× Ultra tier (£79.99/$100, May 2026) is not modelled
     grokSuper:   { label:'SuperGrok (xAI) — personal', name:'SuperGrok', provider:'xAI', color:'#e8e8e8', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-02',30]], lagDays:0, lineage:'xa:grok', windowMTok:0.6,
+                   kind:'subscription', usd:[['2025-02',30]], lagDays:0, lineage:'xa:grok', windowMTok:0.6, pricing_mode:'usd_fx',
                    models:['xa:grok'] },
     grokHeavy:   { label:'SuperGrok Heavy (xAI) — personal', name:'SuperGrok Heavy', provider:'xAI', color:'#9aa3b2', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-07',300]], lagDays:0, lineage:'xa:grok', windowMTok:6,
+                   kind:'subscription', usd:[['2025-07',300]], lagDays:0, lineage:'xa:grok', windowMTok:6, pricing_mode:'usd_fx',
                    models:['xa:grok'] },
     mistralPro:  { label:'Le Chat Pro (Mistral) — personal', name:'Le Chat Pro', provider:'Mistral', color:'#ff9d45', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-02',14.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4,
+                   kind:'subscription', usd:[['2025-02',14.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4, pricing_mode:'usd_fx',
                    local:{ EU:[['2025-02',14.99]] },                     // EUR toggle on mistral.ai (VERIFY €)
                    models:['mi:large'] },
     mistralTeam: { label:'Le Chat Team (Mistral) — per user', name:'Le Chat Team', provider:'Mistral', color:'#ffbf80', group:'Personal & team subscriptions',
-                   kind:'subscription', usd:[['2025-05',24.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4,
+                   kind:'subscription', usd:[['2025-05',24.99]], lagDays:0, lineage:'mi:large', windowMTok:0.4, pricing_mode:'usd_fx',
                    local:{ EU:[['2025-05',24.99]] },                     // EUR toggle on mistral.ai (VERIFY €)
                    models:['mi:large'] },
   },
@@ -234,10 +258,10 @@ window.MMURR_DATA = {
     // seatRule: 'regional' = region's own-currency list; 'fx' = USD list × FX anchor.
     // lineage: which models.axis entry prices the "same task on raw API" line + footprint.
     services: {
-      copilot:  { name:'M365 Copilot',       provider:'Microsoft', billing:'seat',    color:'#e0b341', lineage:'oa:auto',  seatRule:'regional', seatKey:'copilot',  defaultQty:1000 },
-      gemini:   { name:'Gemini (enterprise)',provider:'Google',    billing:'seat',    color:'#b98cff', lineage:'gm:flash', seatRule:'regional', seatKey:'gemini',   defaultQty:70 },
-      claude:   { name:'Claude (enterprise)',provider:'Anthropic', billing:'seat',    color:'#5bd1a6', lineage:'an:sonnet',seatRule:'fx',       seatKey:'claudeUsd',defaultQty:50, usageAddon:true },
-      snowflake:{ name:'Snowflake (Enterprise)', provider:'Snowflake', billing:'credits', color:'#7db7ff', defaultQty:5000 },
+      copilot:  { name:'M365 Copilot',       provider:'Microsoft', billing:'seat',    color:'#e0b341', lineage:'oa:auto',  seatRule:'regional', seatKey:'copilot',  defaultQty:1000, pricing_mode:'regional_list' },
+      gemini:   { name:'Gemini (enterprise)',provider:'Google',    billing:'seat',    color:'#b98cff', lineage:'gm:flash', seatRule:'regional', seatKey:'gemini',   defaultQty:70, pricing_mode:'regional_list' },
+      claude:   { name:'Claude (enterprise)',provider:'Anthropic', billing:'seat',    color:'#5bd1a6', lineage:'an:sonnet',seatRule:'fx',       seatKey:'claudeUsd',defaultQty:50, usageAddon:true, pricing_mode:'usd_fx' },
+      snowflake:{ name:'Snowflake (Enterprise)', provider:'Snowflake', billing:'credits', color:'#7db7ff', defaultQty:5000, pricing_mode:'usd_metered' },
     },
     // Single-sourced "what changed over time" copy, surfaced in the page dropdowns + sources.
     notes: {

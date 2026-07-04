@@ -63,6 +63,19 @@ for(const [k,t] of Object.entries(LT)){
 const maxPpdSub = s => s.lt.windowMTok*1e6/TPP*WPD;                 // 100% usage, prompts/day
 const lineageOf = s => s.billing==='sub' ? s.lt.lineage : s.lineage;
 
+// Pricing-mode chip (§0.3): how the local price arises — regional list price,
+// USD billed worldwide landing at card FX (a band, not a point), or metered USD.
+function modeChip(mode){
+  if(!mode) return '';
+  const M = {
+    regional_list:['regional list','The vendor bills a per-market list price — a point, not an FX conversion.'],
+    usd_fx:      ['USD×FX','Billed USD worldwide; the local price lands at card FX (+VAT for consumer plans) — a band, not a point.'],
+    usd_metered: ['USD metered','Metered in USD per unit (tokens/credits), converted for display.'],
+  }[mode];
+  return M ? `<span class="badge mode-${mode}" title="${M[1]}">${M[0]}</span>` : '';
+}
+window.MMURR_MODE_CHIP = modeChip;   // reused by the decision chart (pricelab.js)
+
 // --- Series helpers -----------------------------------------------------------
 // forward-fill [ [month,val], ... ] across every month; null before first point.
 function fill(points){
@@ -117,7 +130,7 @@ function promptsAt(s, i){
 function renderServices(){
   const host=document.getElementById('tracks'); host.innerHTML='';
   // cards grouped by provider, matching the colour families
-  const ORDER=['Microsoft','Google','Anthropic','xAI','Mistral','Snowflake'];
+  const ORDER=['Microsoft','OpenAI','Google','Anthropic','xAI','Mistral','Snowflake'];
   const groups={}; for(const [k,s] of Object.entries(SVC)) (groups[s.provider||'Other'] ??= []).push([k,s]);
   for(const prov of [...ORDER, ...Object.keys(groups).filter(p=>!ORDER.includes(p))]){
     if(!groups[prov]) continue;
@@ -138,6 +151,7 @@ function renderServices(){
         <span class="dot" style="background:${s.color}"></span>
         <span class="nm">${s.name}</span>
         <span class="badge ${kind==='credits'?'metered':'licensed'}">${kind==='sub'?'personal':kind==='credits'?'credits':'licence'}</span>
+        ${modeChip(s.billing==='sub' ? s.lt.pricing_mode : s.pricing_mode)}
         <span class="inflag" id="in-${k}" title="in the basket">${s.on?'✓':''}</span>
       </summary>
       <div class="svc-inner">
@@ -377,6 +391,7 @@ function renderSources(){
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
     ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025). The discontinued period is shown as a REAL GAP in the chart.`, 'SOURCED', aLink(SRC.gemini,'Google')],
     ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
+    ['ChatGPT Plus (personal)', `$20 USD/mo since Feb 2023; the UK checkout price is a fixed ≈£20 incl VAT — a regional list price, not an FX conversion`, 'SOURCED', aLink(SRC.openai,'OpenAI')],
     ['Claude Pro / Max (personal)', `$${LT.claudePro.usd[0][1]} · $${LT.claudeMax5.usd[0][1]} · $${LT.claudeMax20.usd[0][1]} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
     ['Google AI Pro / Ultra (personal)', `AI Premium $19.99/mo (Feb 2024) → renamed Google AI Pro (Apr 2026, price held) · Ultra $249.99/mo (May 2025) → $200 (May 2026; the 5× Ultra tier is not modelled). UK shows Google's own £ list (Pro £18.99 · Ultra £189.99); other regions ${fxLine}`, 'SOURCED', aLink(SRC.googleOne,'Google')],
     ['SuperGrok / Heavy (personal)', `SuperGrok $30/mo (≈Feb 2025, with Grok 3) · Heavy $300/mo (9 Jul 2025). Shown ${fxLine}`, 'VERIFY', aLink(SRC.xai,'xAI')],

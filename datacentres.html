@@ -17,7 +17,7 @@
       <p class="sub">The capacity being built, what it delivers, and the sourced footprint of constructing and
         running it — CO₂e, water and hardware lifecycle.</p>
     </div>
-    <a class="back" href="index.html">← mmurr.ai</a>
+    <div><a class="back" href="handbook.html">Impact Handbook</a> · <a class="back" href="index.html">← mmurr.ai</a></div>
   </header>
 
   <div id="region-bar"></div>
@@ -52,9 +52,16 @@
           <div><label class="f" for="gw">Capacity (GW)</label><input type="number" id="gw" step="any" value="1.6"></div>
           <div><label class="f" for="load">Load factor</label><input type="number" id="load" step="any" value="0.8"></div>
           <div><label class="f" for="con">Construction (tCO₂e/MW)</label><input type="number" id="con" step="any" value="200"></div>
-          <div><label class="f" for="spm">Servers / MW</label><input type="number" id="spm" step="any" value="1000"></div>
-          <div><label class="f" for="sec">Server embodied (kgCO₂e)</label><input type="number" id="sec" step="any" value="2500"></div>
           <div><label class="f" for="ref">Refresh cycle (years)</label><input type="number" id="ref" step="any" value="4"></div>
+          <div style="grid-column:1/-1"><label class="f">Hardware embodied method</label>
+            <div class="seg" id="hwMethod">
+              <button type="button" data-hw="permw" class="on" title="CIBSE TM65-based assessment (ADW): 750–1,500 tCO₂e per MW of IT load; AI-dense halls likely >1,500">Per MW IT (TM65 / ADW)</button>
+              <button type="button" data-hw="servers" title="Google, Life-Cycle Emissions of AI Hardware (2025): AI-accelerator servers ≈1.8–3.3 tCO₂e each">AI-accelerator servers × mass (Google LCA)</button>
+            </div>
+          </div>
+          <div id="hwPermw"><label class="f" for="hpm">HW embodied (tCO₂e/MW IT)</label><input type="number" id="hpm" step="any" value="1100"></div>
+          <div class="hw-servers" hidden><label class="f" for="spm">Servers / MW</label><input type="number" id="spm" step="any" value="1000"></div>
+          <div class="hw-servers" hidden><label class="f" for="sec">Server embodied (kgCO₂e)</label><input type="number" id="sec" step="any" value="2500"></div>
           <div><label class="f" for="pue">PUE</label><input type="number" id="pue" step="any" value="1.2"></div>
           <div><label class="f" for="grid">Grid (kgCO₂e/kWh)</label><input type="number" id="grid" step="any" value="0.177"></div>
           <div><label class="f" for="wue">WUE (L/kWh)</label><input type="number" id="wue" step="any" value="0.5">
@@ -93,8 +100,10 @@
           <td><a href="https://www.oxfordeconomics.com/resource/the-uks-data-centre-boom-growth-trends-drivers-and-the-rising-power-challenge/" target="_blank" rel="noopener">Oxford Economics (2026)</a></td></tr>
         <tr><td>Construction embodied carbon</td><td class="v">~200 tCO₂e/MW (10 MW ≈ 1–2 kt concrete CO₂)</td>
           <td><a href="https://arxiv.org/pdf/2509.21312" target="_blank" rel="noopener">Texas DC LCA, arXiv (2025)</a> · <a href="https://arxiv.org/pdf/2505.08530" target="_blank" rel="noopener">ATLAS (200–800 kg/m²)</a></td></tr>
-        <tr><td>Server embodied carbon</td><td class="v">~1.8–3.3 tCO₂e/server</td>
-          <td><a href="https://arxiv.org/pdf/2502.01671" target="_blank" rel="noopener">Google, Life-Cycle Emissions of AI Hardware (2025)</a></td></tr>
+        <tr><td>Hardware embodied (per MW IT)</td><td class="v">1,100 tCO₂e/MW · range 750–1,500 · AI-dense halls likely &gt;1,500</td>
+          <td><a href="https://adwdevelopments.com/sustainability/technical-information-paper-embodied-carbon-in-enterprise-data-centre-it-equipment/" target="_blank" rel="noopener">ADW / CIBSE TM65 (2025)</a></td></tr>
+        <tr><td>Server embodied carbon (alt. preset)</td><td class="v">~1.8–3.3 tCO₂e/server × servers/MW</td>
+          <td><a href="https://arxiv.org/pdf/2502.01671" target="_blank" rel="noopener">Google, Life-Cycle Emissions of AI Hardware (2025)</a> — note AI-accelerator servers draw &gt;1 kW, so AI halls run ~100–200 servers/MW, not 1,000</td></tr>
         <tr><td>Hardware refresh cycle</td><td class="v">3–5 years</td>
           <td><a href="https://arxiv.org/pdf/2501.01990" target="_blank" rel="noopener">Sustainable LLM Serving (2025)</a></td></tr>
         <tr><td>Water (WUE)</td><td class="v">UK ≈0.5 · EU ≈0.6 · global evap ≈1.9 L/kWh · 1 MW evap ≈ 26 ML/yr</td>

@@ -373,7 +373,7 @@ function renderSources(){
   const rows = [
     ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate. Personal/team plans use the vendor's OWN local list where one is billed (Google UK £, Mistral EU €); Anthropic and xAI bill USD worldwide, so those convert at the FX anchor (${R.cur} ${R.fx}/USD).`, 'VERIFY', '(editable anchors)'],
     ['M365 Copilot licence', `${R.sym}${cop.toFixed(2)}/licence/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
-    ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
+    ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025; an $18 promo runs to late 2026); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
     ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025). The discontinued period is shown as a REAL GAP in the chart.`, 'SOURCED', aLink(SRC.gemini,'Google')],
     ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],

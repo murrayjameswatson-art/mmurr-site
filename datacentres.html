@@ -28,6 +28,9 @@
     <div class="stat"><div class="big">6 GW</div><div class="lab">Gov AI-capable target by 2030</div></div>
     <div class="stat"><div class="big">266</div><div class="lab">Data centres (up from 52 in 2000)</div></div>
   </div>
+  <p class="note">Capacity estimates range <b>1.6–2.9 GW</b> depending on methodology (EPC-derived vs IT-power
+    estimates — Oxford Economics' IT-power method gives 2.9 GW today with 6.2 GW to be added by 2030); this page uses
+    the Computer Weekly / Barbour ABI basis throughout for internal consistency.</p>
 
   <h2>Capacity over time</h2>
   <div class="chartbox"><canvas id="capChart"></canvas></div>
@@ -54,7 +57,12 @@
           <div><label class="f" for="ref">Refresh cycle (years)</label><input type="number" id="ref" step="any" value="4"></div>
           <div><label class="f" for="pue">PUE</label><input type="number" id="pue" step="any" value="1.2"></div>
           <div><label class="f" for="grid">Grid (kgCO₂e/kWh)</label><input type="number" id="grid" step="any" value="0.177"></div>
-          <div><label class="f" for="wue">WUE (L/kWh)</label><input type="number" id="wue" step="any" value="1.9"></div>
+          <div><label class="f" for="wue">WUE (L/kWh)</label><input type="number" id="wue" step="any" value="0.5">
+            <div class="seg" id="wuePreset" style="margin-top:6px">
+              <button type="button" data-wue="0.5" class="on" title="EED-derived European average (WRc/MOSL 2026); CNDCP targets 0.4 for new builds in cool climates">UK/EU avg 0.5</button>
+              <button type="button" data-wue="1.9" title="Global evaporative-cooling average (Green Grid via EESI)">Global evap 1.9</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="out" id="out"></div>
@@ -89,8 +97,15 @@
           <td><a href="https://arxiv.org/pdf/2502.01671" target="_blank" rel="noopener">Google, Life-Cycle Emissions of AI Hardware (2025)</a></td></tr>
         <tr><td>Hardware refresh cycle</td><td class="v">3–5 years</td>
           <td><a href="https://arxiv.org/pdf/2501.01990" target="_blank" rel="noopener">Sustainable LLM Serving (2025)</a></td></tr>
-        <tr><td>Water (WUE)</td><td class="v">~1.9 L/kWh avg · 1 MW evap ≈ 26 ML/yr</td>
-          <td><a href="https://www.eesi.org/articles/view/data-centers-and-water-consumption" target="_blank" rel="noopener">EESI / Green Grid</a> · <a href="https://assets.publishing.service.gov.uk/media/688cb407dc6688ed50878367/Water_use_in_data_centre_and_AI_report.pdf" target="_blank" rel="noopener">UK Gov water report (2025)</a></td></tr>
+        <tr><td>Water (WUE)</td><td class="v">UK ≈0.5 · EU ≈0.6 · global evap ≈1.9 L/kWh · 1 MW evap ≈ 26 ML/yr</td>
+          <td><a href="https://mosl.co.uk/" target="_blank" rel="noopener">WRc for MOSL (2026)</a> · <a href="https://www.eesi.org/articles/view/data-centers-and-water-consumption" target="_blank" rel="noopener">EESI / Green Grid</a> · <a href="https://blog.policy.manchester.ac.uk/sci-tech/2025/08/too-hot-to-ignore-fixing-the-infrastructure-gap-in-data-centre-cooling/" target="_blank" rel="noopener">Univ. of Manchester (2025)</a> · <a href="https://assets.publishing.service.gov.uk/media/688cb407dc6688ed50878367/Water_use_in_data_centre_and_AI_report.pdf" target="_blank" rel="noopener">UK Gov water report (2025)</a></td></tr>
+        <tr><td>What the water figures exclude</td><td class="v">off-site water · seasonality</td>
+          <td>On-site WUE only: water consumed generating the electricity (thermal-plant cooling) typically exceeds
+            on-site cooling water severalfold. And the UK concern is <b>peak coincidence</b> — hybrid-cooled sites draw
+            water during heatwaves exactly when domestic demand peaks (WRc/MOSL) — which annual averages hide.</td></tr>
+        <tr><td>UK demand vs supply (NESO)</td><td class="v">~5.2 GW connected by 2030 · ~20 TWh demand · &gt;70 GW connection requests</td>
+          <td><a href="https://www.neso.energy/" target="_blank" rel="noopener">NESO</a> — the 70 GW connection queue
+            against the ~8 GW realistic pipeline is the hype-vs-steel gap.</td></tr>
       </tbody>
     </table>
     <p class="foot">All factors are editable and represent academic/industry approximations — the literature spans wide

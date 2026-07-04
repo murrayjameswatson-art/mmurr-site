@@ -23,7 +23,7 @@ const FACTORS = {
   pue:         {label:'PUE (facility overhead)',      val:1.0,  note:'Facility energy ÷ IT energy. 1.0 here because the Gemini figure is already all-in.'},
   gemini_wh:   {label:'Gemini (Wh/prompt)',           val:0.24, note:'Median Gemini text prompt, all-in facility measurement (Google 2025).'},
   gemini_wh1k: {label:'Gemini (Wh/1k tokens)',        val:0.70, note:'Per-token LLM-inference basis, aligned to Gemini’s measured figure.'},
-  copilot_wh:  {label:'Copilot (Wh/message)',         val:0.34, note:'OpenAI’s stated average query, used as a Copilot proxy (Microsoft publishes none).'},
+  copilot_wh:  {label:'Copilot (Wh/message)',         val:0.31, note:'Microsoft production disclosure (Jun 2026): median 0.31 Wh, range 0.16–0.60. Previously proxied by OpenAI’s 0.34 Wh.'},
   snow_wh:     {label:'Snowflake (Wh/credit)',        val:500,  note:'1 credit ≈ 1 node-hour of compute; mid-range server draw. Own estimate.'},
   cortex_wh1k: {label:'Cortex/Coco (Wh/1k tokens)',   val:0.70, note:'LLM-inference basis, aligned to Gemini per-token.'},
   pa_wh:       {label:'Copilot Credit (Wh/credit)',   val:10,   note:'Coarse estimate per Copilot Credit / AI Builder credit. AI Builder→Copilot Credits dual-mode runs to Nov 2026; no auto-conversion between the two.'},

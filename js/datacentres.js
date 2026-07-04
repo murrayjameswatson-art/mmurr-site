@@ -97,7 +97,13 @@ function applyRegion(){
   const R = MMURR_REGION.data();
   $('grid').value = R.grid;
   $('wue').value  = R.wue;
+  syncWuePreset(R.wue);
   calc();
+}
+// Highlight the matching WUE preset chip (UK/EU average vs global evaporative).
+function syncWuePreset(v){
+  const box = $('wuePreset'); if(!box) return;
+  [...box.children].forEach(b=>b.classList.toggle('on', parseFloat(b.dataset.wue)===v));
 }
 
 // --- Wire -----------------------------------------------------------------
@@ -112,6 +118,11 @@ function init(){
     if(!e.target.dataset.gw) return;
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
     e.target.classList.add('on'); $('gw').value=e.target.dataset.gw; calc();
+  });
+  const wp=$('wuePreset');
+  if(wp) wp.addEventListener('click',e=>{
+    if(!e.target.dataset.wue) return;
+    $('wue').value=e.target.dataset.wue; syncWuePreset(parseFloat(e.target.dataset.wue)); calc();
   });
 }
 document.addEventListener('DOMContentLoaded',init);

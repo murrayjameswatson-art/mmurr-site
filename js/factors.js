@@ -20,10 +20,10 @@
 window.MMURR_BASES = {
   grid:  0.177,   // kgCO2e/kWh — UK location-based grid intensity (DESNZ/Defra 2025)
   car:   0.17,    // kgCO2e/km  — UK average car, all fuels (Defra 2025)
-  phone: 0.0082,  // kgCO2e     — one full smartphone charge (US EPA equivalencies)
-  // Water (WUE) is page-specific by design and documented inline where used:
-  //   dashboard  = 1.8 L/kWh (on-site cooling WUE)
-  //   datacentres = 1.9 L/kWh (fleet-average WUE)
+  phone: 0.0082,  // kgCO2e     — one full smartphone charge (US-grid basis, US EPA equivalencies)
+  // Water (WUE) defaults live on the region profiles below (UK 0.5 / EU 0.6 /
+  // US 1.9) so every page reads the same figure. 1.9 stays available as the
+  // labelled "global evaporative average" scenario on the data-centres page.
 };
 
 // --- Region / currency profiles --------------------------------------------
@@ -38,16 +38,23 @@ window.MMURR_BASES = {
 window.MMURR_DATA = {
   defaultRegion: 'UK',
 
+  // WUE defaults: UK/EU reflect EED-reported European averages (WRc/MOSL 2026
+  // ≈0.58; CNDCP target 0.4 for new builds in cool climates → 0.5 midpoint;
+  // EU 0.6). 1.8–1.9 L/kWh is the GLOBAL evaporative-cooling average (Green
+  // Grid via EESI) and remains the US default. All editable.
   regions: {
     UK: { label:'UK — London', flag:'🇬🇧', cur:'GBP', sym:'£', fx:0.78,
-          grid:0.177, wue:1.9, pue:1.0,
-          gridNote:'UK location-based grid (DESNZ/Defra 2025)', gridConf:'SOURCED' },
+          grid:0.177, wue:0.5, pue:1.0,
+          gridNote:'UK location-based grid (DESNZ/Defra 2025)', gridConf:'SOURCED',
+          wueNote:'EED-derived European average (WRc/MOSL 2026) / CNDCP 0.4 midpoint', wueConf:'SOURCED' },
     US: { label:'US', flag:'🇺🇸', cur:'USD', sym:'$', fx:1.00,
           grid:0.37, wue:1.9, pue:1.0,
-          gridNote:'US mixed/Azure-East grid average', gridConf:'VERIFY' },
+          gridNote:'US mixed/Azure-East grid average', gridConf:'VERIFY',
+          wueNote:'global evaporative-cooling average (Green Grid via EESI)', wueConf:'VERIFY' },
     EU: { label:'EU', flag:'🇪🇺', cur:'EUR', sym:'€', fx:0.92,
-          grid:0.23, wue:1.9, pue:1.0,
-          gridNote:'EU average grid', gridConf:'VERIFY' },
+          grid:0.23, wue:0.6, pue:1.0,
+          gridNote:'EU average grid', gridConf:'VERIFY',
+          wueNote:'EED-reported European average ≈0.58 (WRc/MOSL 2026)', wueConf:'SOURCED' },
   },
 
   // FX = local currency per 1 USD. Editable anchors, NOT a live feed. (§7.5)
@@ -176,29 +183,33 @@ window.MMURR_DATA = {
     backend: [
       ['2023-11','GPT-4 Turbo',20,3.0],['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],
       ['2025-08','GPT-5',5.6,0.34],['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],
-      ['2026-05','GPT-5.5',8.75,0.31],
+      // GPT-5.5 launched 23 Apr 2026 at $5/$30 — a straight 2× on GPT-5.4 ($2.50/$15).
+      // The feed never touches backend, so this anchor must carry the real price.
+      ['2026-04','GPT-5.5',17.5,0.31],
     ],
 
     // Main-model axis: which lineage drives the API line + footprint overlay.
     // io=[inUSD/1M, outUSD/1M, current-model label]; steps=[date,label,blendedUSD/1M,Wh]
     defaultAxis: 'oa:auto',
     axis: {
-      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[1.25,10,'GPT-5.5 (Auto)'],
+      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[5,30,'GPT-5.5 (Auto)'],
         steps:[['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],['2025-08','GPT-5',5.6,0.34],
-               ['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],['2026-05','GPT-5.5',8.75,0.31]]},
+               ['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],['2026-04','GPT-5.5',17.5,0.31]]},
       'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[1.25,10,'GPT-5.5 Thinking'],
         steps:[['2024-12','o1',30,3.4],['2025-04','o3',20,3.0],['2025-08','GPT-5 Thinking',6.5,3.1],
                ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1]]},
       'oa:mini':  {group:'OpenAI', label:'Mini / o4', conf:'VERIFY', io:[0.25,2,'o4 / GPT-5 mini'],
         steps:[['2025-01','o3-mini',2.8,0.2],['2025-04','o4-mini',2.8,0.2],['2025-08','GPT-5 mini',1.1,0.15],['2026-03','GPT-5 mini',1.1,0.15]]},
       'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[0.30,2.50,'Gemini 2.5 Flash'],
-        steps:[['2024-05','1.5 Flash',0.70,0.30],['2024-08','1.5 Flash-002',0.19,0.24],['2025-06','2.5 Flash',1.40,0.24],['2026-05','2.5 Flash',5.25,0.24]]},
+        steps:[['2024-05','1.5 Flash',0.70,0.30],['2024-08','1.5 Flash-002',0.19,0.24],['2025-06','2.5 Flash',1.40,0.24],['2026-05','2.5 Flash',1.40,0.24]]},
       'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
         steps:[['2024-02','1.5 Pro',7.0,0.6],['2025-03','2.5 Pro',5.6,0.4],['2025-11','3 Pro',7.0,0.4],['2026-05','3.1 Pro',7.0,0.4]]},
       'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[1.25,2.50,'Grok 4.3'],
         steps:[['2025-02','Grok 3',9.0,0.4],['2025-07','Grok 4',9.0,0.4],['2026-03','Grok 4.3',1.9,0.35]]},
-      'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Large 3'],
-        steps:[['2024-07','Large 2',4.0,0.3],['2025-05','Medium 3',1.2,0.25],['2025-12','Large 3',4.0,0.3]]},
+      'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[0.50,1.50,'Large 3'],
+        // Large 3 (Dec 2025) lists $0.50/$1.50 — mistral.ai/pricing agrees with the
+        // LiteLLM feed; the old 4.0 anchor carried Large 2's price forward.
+        steps:[['2024-07','Large 2',4.0,0.3],['2025-05','Medium 3',1.2,0.25],['2025-12','Large 3',1.0,0.3]]},
       'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
         steps:[['2024-03','Haiku 3',0.75,0.25],['2025-10','Haiku 4.5',3.0,0.3]]},
       'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],

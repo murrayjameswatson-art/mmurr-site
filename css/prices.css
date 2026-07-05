@@ -123,11 +123,9 @@ canvas{width:100%!important;max-height:380px}
 .badge.mode-usd_fx{color:#7db7ff;border-color:#7db7ff}
 .badge.mode-usd_metered{color:var(--accent);border-color:var(--accent)}
 .lab-v .badge{font-size:.56rem;vertical-align:3px;margin-left:4px}
-/* traffic-mix slider + per-prompt impact strip */
+/* input/output ratio chips + per-prompt impact strip */
 .mix-panel{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:12px}
 .mix-panel .mix-lab{font-size:.82rem;color:var(--muted)}
-.mix-panel input[type=range]{flex:1 1 220px;accent-color:var(--warn)}
-.mix-panel output{font-family:var(--mono);font-size:.85rem;color:var(--ink);min-width:86px}
 .env-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
 .env-strip .cell{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
 .env-strip .k{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}

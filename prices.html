@@ -25,9 +25,7 @@
   <!-- Global assumptions: traffic mix (§2), served-from carbon basis (§4), T&D losses (§3) -->
   <div class="panel">
     <div class="mix-panel">
-      <span class="mix-lab"><strong>Traffic mix</strong> — input share</span>
-      <input type="range" id="mix" min="10" max="90" step="5" value="50" aria-label="Input share of traffic, percent">
-      <output id="mixOut">50/50</output>
+      <span class="mix-lab"><strong>Input / output ratio</strong></span>
       <div class="seg" id="mixPreset">
         <button type="button" data-mix="50" class="on">50/50</button>
         <button type="button" data-mix="70">70/30 context-heavy</button>
@@ -36,20 +34,14 @@
     </div>
     <div class="host-row">
       <div><label class="f" for="hosting">Served from — carbon basis</label>
-        <select id="hosting">
-          <option value="vendor" selected>Vendor fleet (default)</option>
-          <option value="UK">UK</option>
-          <option value="EU">EU</option>
-          <option value="US">US</option>
-          <option value="FR">France</option>
-          <option value="custom">Custom kgCO₂e/kWh</option>
-        </select></div>
+        <select id="hosting"></select></div><!-- options built in prices.js from gridFactor (no hard-coded factors) -->
       <div id="hostCustomWrap" hidden><label class="f" for="hostCustom">Custom kgCO₂e/kWh</label>
         <input type="number" id="hostCustom" min="0" step="any"></div>
       <label class="chk-td" id="tdWrap" title="Only source-backed T&D adders are applied — pick a country basis with one (UK) to enable"><input type="checkbox" id="tdToggle" disabled>
         Include transmission &amp; distribution losses (+10.5% UK)</label>
     </div>
     <p class="env-note" id="mixNote"></p>
+    <p class="env-note" id="hostNote"></p>
   </div>
 
   <details class="panel logic-disclose">
@@ -107,7 +99,7 @@
 
     <div class="lab-toggles" id="lab-toggles">
       <span class="sub" style="align-self:center;margin-right:4px">Cost:</span>
-      <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="false"><span class="dot" style="background:var(--hot)"></span>Same workload on raw API (find break-even)</button>
+      <button class="lab-chip lab-chip-cost" data-t="api" aria-pressed="true"><span class="dot" style="background:var(--hot)"></span>Same workload on raw API (find break-even)</button>
       <span class="sub" style="align-self:center;margin:0 4px 0 10px">Footprint:</span>
       <button class="lab-chip" data-t="energy" aria-pressed="false"><span class="dot" style="background:var(--accent)"></span>Energy</button>
       <button class="lab-chip" data-t="co2" aria-pressed="false"><span class="dot" style="background:#b18cff"></span>CO₂e</button>
@@ -120,13 +112,13 @@
     </div>
     <p class="sub lab-hover" id="lab-hover">Hover the chart to read the values at any month.</p>
 
-    <p class="sub" style="margin:10px 0 0">Seat pricing is insensitive to your traffic mix; API pricing is not — the
-      slider above moves the API line and the break-even, never the licence line. That asymmetry is part of what the
-      seat premium buys.</p>
+    <p class="sub" style="margin:10px 0 0">Seat pricing is insensitive to your input/output ratio; API pricing is
+      not — the ratio control above moves the API line and the break-even, never the licence line. That asymmetry is
+      part of what the seat premium buys.</p>
 
     <div class="lab-legend">
       <span><i style="border-color:var(--warn)"></i>Licence fee (steps if changed)</span>
-      <span id="lab-lg-api" hidden><i style="border-color:var(--hot)"></i>Same workload, raw API</span>
+      <span id="lab-lg-api"><i style="border-color:var(--hot)"></i>Same workload, raw API</span>
       <span id="lab-lg-energy" hidden><i style="border-color:var(--accent);border-top-style:dashed"></i>Energy Wh/user/day</span>
       <span id="lab-lg-co2" hidden><i style="border-color:#b18cff;border-top-style:dotted"></i>CO₂e g/user/day</span>
       <span id="lab-lg-water" hidden><i style="border-color:#54c8e8;border-top-style:dashed"></i>Water mL/user/day</span>

@@ -199,7 +199,6 @@ function renderServices(){
         <span class="dot" style="background:${s.color}"></span>
         <span class="nm">${s.name}</span>
         <span class="badge ${kind==='credits'?'metered':'licensed'}">${kind==='sub'?'personal':kind==='credits'?'credits':'licence'}</span>
-        ${modeChip(s.billing==='sub' ? s.lt.pricing_mode : s.pricing_mode)}
         <span class="inflag" id="in-${k}" title="in the basket">${s.on?'✓':''}</span>
       </summary>
       <div class="svc-inner">
@@ -370,6 +369,17 @@ function fmtEnergy(wh){
   if(wh>=1000) return (wh/1000).toLocaleString(undefined,{maximumFractionDigits:1})+' kWh';
   return Math.round(wh).toLocaleString()+' Wh';
 }
+// adaptive units so small footprints never display as a bare "0"
+function fmtKg(kg){
+  if(kg>=1000) return (kg/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' t';
+  if(kg>=1)    return kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})+' kg';
+  return Math.round(kg*1000).toLocaleString()+' g';
+}
+function fmtL(L){
+  if(L>=1000) return (L/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' m³';
+  if(L>=1)    return Math.round(L).toLocaleString()+' L';
+  return Math.round(L*1000).toLocaleString()+' mL';
+}
 function renderSnapshot(){
   const host=document.getElementById('snap'); if(!host) return;
   const R=MMURR_REGION.data(), region=MMURR_REGION.get(), i=MONTHS.length-1, t=TS[i];
@@ -395,13 +405,13 @@ function renderSnapshot(){
       const kg = wh/1000*R.pue*MMURR_ENV.ci(s.provider), L = wh/1000*R.wue;   // CO₂e kg/mo · water L/mo
       body = `<div class="snap-fp">
         <div><span class="k"><i style="background:var(--accent)"></i>Energy</span><span class="v">${fmtEnergy(wh)}</span></div>
-        <div><span class="k"><i style="background:#b18cff"></i>CO₂e</span><span class="v">${kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})} kg</span></div>
-        <div><span class="k"><i style="background:#54c8e8"></i>Water</span><span class="v">${Math.round(L).toLocaleString()} L</span></div>
+        <div><span class="k"><i style="background:#b18cff"></i>CO₂e</span><span class="v">${fmtKg(kg)}</span></div>
+        <div><span class="k"><i style="background:#54c8e8"></i>Water</span><span class="v">${fmtL(L)}</span></div>
       </div>`;
     }
     html += `<div class="snap-card">
       <div class="nm"><span class="dot" style="background:${s.color}"></span>${s.name}</div>
-      <div class="cost">${costTxt} <small>/ month</small></div>
+      <div class="cost">${costTxt} <small>/ month</small> ${modeChip(s.billing==='sub' ? s.lt.pricing_mode : s.pricing_mode)}</div>
       ${body}</div>`;
   }
   host.innerHTML = html || `<p class="sub" style="margin:0">No services selected — open a card above and tick “Include in basket”.</p>`;
@@ -458,7 +468,7 @@ function renderSources(){
     ['Plan token allowances', `est. M tokens per ${SW.windowHours}-hour window per plan (Claude Pro ${LT.claudePro.windowMTok} · Max 20× ${LT.claudeMax20.windowMTok} · AI Ultra ${LT.geminiUltra.windowMTok} · full list in factors.js), scaled ≈ with price. 100% usage = ${WPD} maxed windows/day (${SW.gapHours}h gap between windows); rolling/weekly caps can bind first`, 'ASSUMPTION', '(editable — vendors publish no exact limits)'],
     ['Snowflake credit', `≈$${cred.toFixed(2)}/credit (Enterprise, ${R.label} region) at FX; ≈$3.00 US · ≈$3.60 EU · ≈$3.90 UK; stable`, 'VERIFY', aLink(SRC.snow,'Snowflake')],
     ['Standardised prompt', `${TPP} tokens (≈300-token answer + context; editable). Same task for every model so cost &amp; footprint compare like-for-like.`, 'ASSUMPTION', '—'],
-    ['Traffic mix', `Prices blended at <b>${mixIn}/${mixOut}</b> input/output (the slider at the top; default 50/50). Historical steps without a sourced in/out pair are mix-locked at 50/50 and flagged in tooltips. Energy &amp; water are per-prompt figures and do not react to the mix.`, 'SOURCED', '(your setting)'],
+    ['Input / output ratio', `Prices blended at <b>${mixIn}/${mixOut}</b> input/output (the ratio control at the top; default 50/50). Historical steps without a sourced in/out pair are locked at 50/50 and flagged in tooltips. Energy &amp; water are per-prompt figures and do not react to the ratio.`, 'SOURCED', '(your setting)'],
     ['API token $ (the "if billed on API" line)', `blended <b>${mixIn}/${mixOut}</b> in/out per model, USD/1M, shown ${fxLine}. `+(ref
         ? `<b>Current</b> prices are referenced from the LiteLLM community registry, fetched <b>${ref.fetched}</b> (auto-refreshed weekly by a repo Action); history steps are hand-set anchors.`
         : `Referenced price feed not loaded — hand-set anchors in use.`), 'SOURCED', aLink(SRC.litellm,'LiteLLM registry')+' · '+aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
@@ -515,7 +525,7 @@ window.renderEnvStrip = function(){
     `or <b>${(kgPer1k/MMURR_BASES.car).toFixed(1)} km</b> of average car driving. `+
     `Carbon basis: ${MMURR_ENV.basisLabel(ax.group)}; water at ${R.label} WUE ${R.wue} L/kWh`+
     `${ax.assumedWh?' — this vendor publishes no per-query Wh, so the energy figure is a labelled assumption':''}. `+
-    `Per-prompt figures: the traffic-mix slider never moves these. Alternative API-metered basis: `+
+    `Per-prompt figures: the input/output ratio never moves these. Alternative API-metered basis: `+
     `${MMURR_BASES.whPer1kTok} Wh/1k tokens ≈ ${(MMURR_BASES.whPer1kTok*TPP/1000).toFixed(2)} Wh per standardised prompt (kept separate, never blended).`;
 };
 
@@ -524,25 +534,32 @@ function init(){
   renderServices();
   renderSources();
 
-  // Global assumption controls: traffic mix (§2), served-from (§4), T&D (§3)
-  const mixEl=document.getElementById('mix'), mixOutEl=document.getElementById('mixOut'),
-        mixPreset=document.getElementById('mixPreset');
+  // Global assumption controls: input/output ratio (§2), served-from (§4), T&D (§3)
+  const mixPreset=document.getElementById('mixPreset');
   function syncMixUI(){
     const v=Math.round(MMURR_MIX.get()*100);
-    if(mixEl) mixEl.value=v;
-    if(mixOutEl) mixOutEl.textContent=`${v}/${100-v}`;
     if(mixPreset) [...mixPreset.children].forEach(b=>b.classList.toggle('on', +b.dataset.mix===v));
     const mn=document.getElementById('mixNote');
-    if(mn) mn.textContent=`Prices blended at ${v}/${100-v} input/output. Historical points without a sourced in/out split stay at 50/50 (flagged in tooltips). Energy & water never react to this slider.`;
+    if(mn) mn.textContent=`Prices blended at ${v}/${100-v} input/output. Historical points without a sourced in/out split stay at 50/50 (flagged in tooltips). Energy & water never react to this ratio.`;
     history.replaceState(null,'',`#mix=${v}`);   // shareable state (v2 §2.6)
   }
-  if(mixEl){
-    mixEl.addEventListener('input',e=>MMURR_MIX.set((+e.target.value)/100));
-    mixPreset.addEventListener('click',e=>{ if(e.target.dataset.mix) MMURR_MIX.set((+e.target.dataset.mix)/100); });
-  }
+  if(mixPreset) mixPreset.addEventListener('click',e=>{ if(e.target.dataset.mix) MMURR_MIX.set((+e.target.dataset.mix)/100); });
   const hostSel=document.getElementById('hosting'), hostCustom=document.getElementById('hostCustom'),
         hostWrap=document.getElementById('hostCustomWrap'), tdBox=document.getElementById('tdToggle'),
         tdWrap=document.getElementById('tdWrap');
+  // Option labels carry the factor, matching the Main-model dropdown's style;
+  // values come from gridFactor so nothing here can drift from factors.js.
+  if(hostSel){
+    const opts = [
+      ['vendor', `Vendor fleet (default) — each vendor's own serving grid`],
+      ...['UK','EU','US','FR'].map(c=>{
+        const lab = MMURR_DATA.regions[c] ? MMURR_DATA.regions[c].label : MMURR_CI_EXTRA[c].label;
+        return [c, `${lab} grid — ${gridFactor(c,false)} kgCO₂e/kWh`];
+      }),
+      ['custom', 'Custom kgCO₂e/kWh'],
+    ];
+    hostSel.innerHTML = opts.map(([v,l])=>`<option value="${v}"${v==='vendor'?' selected':''}>${l}</option>`).join('');
+  }
   function syncEnvUI(){
     if(hostWrap) hostWrap.hidden = MMURR_ENV.hosting!=='custom';
     if(hostCustom && hostCustom.value==='') hostCustom.value = MMURR_ENV.custom;   // seed from gridFactor, not a hard-code
@@ -553,6 +570,15 @@ function init(){
       tdWrap.title = ok ? 'Adds the sourced T&D adder to the grid factor (UK +0.0185 kgCO₂e/kWh, DESNZ 2025)'
                         : 'Only source-backed T&D adders are applied — pick a country basis with one (UK) to enable';
     }
+    const hn=document.getElementById('hostNote');
+    if(hn) hn.innerHTML = MMURR_ENV.hosting==='vendor'
+      ? `<b>Vendor fleet</b> = the average grid intensity where that vendor actually serves prompts, so each model's `+
+        `CO₂e uses its own vendor's estimate: sourced where a first-party figure exists (Mistral serves from France, `+
+        `≈${MMURR_HOSTING.vendors.Mistral.fleet_ci} kgCO₂e/kWh), inferred from disclosed siting elsewhere (e.g. xAI's `+
+        `gas-heavy Memphis campus ≈${MMURR_HOSTING.vendors.xAI.fleet_ci}), and a labelled US/EU-weighted assumption `+
+        `(${MMURR_HOSTING.fallback.ci}) where nothing usable is disclosed. No vendor reveals which region served your `+
+        `prompt — these are fleet-weighted estimates, graded per vendor in the sources panel (data as of ${MMURR_HOSTING.as_of}).`
+      : `All models' CO₂e uses <b>${MMURR_ENV.basisLabel()}</b> kgCO₂e/kWh. Pick “Vendor fleet” to give each model its own vendor's serving-grid estimate.`;
   }
   if(hostSel){
     hostSel.addEventListener('change',e=>MMURR_ENV.setHosting(e.target.value));

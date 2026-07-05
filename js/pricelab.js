@@ -32,7 +32,9 @@
   let ppd = M.defaultPpd;               // enterprise: prompts / user / day
   let usagePct = 50;                    // subscription: % of plan capacity
   const tokPerPrompt = M.tokPerPrompt;
-  const on = { api:false, energy:false, co2:false, water:false };   // overlays
+  // API overlay on by default — a licence line alone is just a flat line;
+  // the break-even against metered usage is the chart's whole point.
+  const on = { api:true, energy:false, co2:false, water:false };    // overlays
   let ctx = null;   // last-drawn context, read by the hover handler
 
   const isSub = () => LT[type].kind === 'subscription';
@@ -283,6 +285,7 @@
     }
 
     // model-transition markers on the licence line
+    let lastLabX = -1e9;                   // drop a label below the line when it would collide
     markers.forEach(m=>{
       const tt = addDays(D(m[0]), t.lagDays);
       if(tt<t0 || tt>T1) return;
@@ -290,7 +293,8 @@
       if(licHere==null) return;            // before the subscription launched
       const xx=x(tt), yy=yC(licHere), g=el('g',{}); g.style.cursor='pointer';
       g.appendChild(el('circle',{class:'lab-mk',cx:xx,cy:yy,r:5}));
-      g.appendChild(txt('lab-mklab',xx,yy-11,'middle',m[1]));
+      const below = (xx - lastLabX) < 52; lastLabX = xx;
+      g.appendChild(txt('lab-mklab',xx,below?yy+19:yy-11,'middle',m[1]));
       const reach = fmtMonth(tt);
       g.addEventListener('mouseenter',()=>{
         const mixTxt = stepLocked(m)

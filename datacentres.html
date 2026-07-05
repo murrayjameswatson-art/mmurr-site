@@ -63,7 +63,10 @@
           <div class="hw-servers" hidden><label class="f" for="spm">Servers / MW</label><input type="number" id="spm" step="any" value="1000"></div>
           <div class="hw-servers" hidden><label class="f" for="sec">Server embodied (kgCO₂e)</label><input type="number" id="sec" step="any" value="2500"></div>
           <div><label class="f" for="pue">PUE</label><input type="number" id="pue" step="any" value="1.2"></div>
-          <div><label class="f" for="grid">Grid (kgCO₂e/kWh)</label><input type="number" id="grid" step="any" value="0.177"></div>
+          <div><label class="f" for="grid">Grid (kgCO₂e/kWh)</label><input type="number" id="grid" step="any">
+            <label class="note" id="tdWrap" style="display:block;cursor:pointer"><input type="checkbox" id="tdToggle">
+              Include T&amp;D losses (+10.5% UK)</label>
+          </div>
           <div><label class="f" for="wue">WUE (L/kWh)</label><input type="number" id="wue" step="any" value="0.5">
             <div class="seg" id="wuePreset" style="margin-top:6px">
               <button type="button" data-wue="0.5" class="on" title="EED-derived European average (WRc/MOSL 2026); CNDCP targets 0.4 for new builds in cool climates">UK/EU avg 0.5</button>
@@ -87,6 +90,18 @@
     <p class="note">A full geographic heatmap (production vs consumption by postcode/region) is a sensible next step,
       but reliable per-site consumption data is scarce — operators self-report inconsistently. This cluster view uses
       the regional figures that are actually published.</p>
+  </div>
+
+  <h2>Reported vs location-based — the scope-2 gap</h2>
+  <div class="panel">
+    <p class="sub" style="margin-top:0">Fleet emissions can be counted two ways: <b>location-based</b> (grid average ×
+      consumption) or <b>market-based</b> (netting renewable certificates &amp; PPAs). Vendors report the second; the
+      delta is the certificates. The rules permit it — but REC-matched ≠ real-time zero-carbon. This site stays
+      location-based throughout — <a href="handbook.html#carbon">handbook §4</a> explains why.</p>
+    <div class="chartbox"><canvas id="scope2Chart"></canvas></div>
+    <p class="note">2024 reporting year, Mt CO₂e. Location-based estimates from an academic analysis of the 2025
+      sustainability reports; market-based figures are the vendors' own. Context: scope 3 dwarfs both — 97% of
+      Microsoft's total footprint (+26% since 2020); Google's scope 3 +22% YoY (2025 reports).</p>
   </div>
 
   <h2>Sources</h2>
@@ -115,17 +130,21 @@
         <tr><td>UK demand vs supply (NESO)</td><td class="v">~5.2 GW connected by 2030 · ~20 TWh demand · &gt;70 GW connection requests</td>
           <td><a href="https://www.neso.energy/" target="_blank" rel="noopener">NESO</a> — the 70 GW connection queue
             against the ~8 GW realistic pipeline is the hype-vs-steel gap.</td></tr>
+        <tr><td>Scope-2 gap (location vs market)</td><td class="v">Microsoft 25.2 vs 15.5 Mt · Google 23.4 vs 15.2 Mt (2024)</td>
+          <td><a href="https://policyreview.info/articles/news/big-techs-2025-sustainability-reports/2027" target="_blank" rel="noopener">Papaevangelou &amp; Vogiatzoglou (2026)</a> · vendor 2025 sustainability reports</td></tr>
       </tbody>
     </table>
     <p class="foot">All factors are editable and represent academic/industry approximations — the literature spans wide
       ranges (server embodied carbon alone varies ~40× across published LCAs), so treat outputs as order-of-magnitude.
-      The CO₂e/water bases here match the per-usage dashboard so totals reconcile across the site. Runs in your browser.</p>
+      The CO₂e/water bases here are read from the same shared factors as the AI Impact Calculator (one gridFactor, one
+      WUE set) so totals reconcile across the site. Runs in your browser.</p>
   </div>
 
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/factors.js"></script>
+<script src="js/data/scope2.js"></script>
 <script src="js/region.js"></script>
 <script src="js/datacentres.js"></script>
 </body>

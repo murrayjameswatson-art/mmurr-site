@@ -56,9 +56,10 @@ window.MMURR_REGION = (function(){
         <li><b>Token / API prices are USD list, FX-converted</b> at an editable anchor
             (${R.cur||'custom'} at ${R.fx}/USD). ${MMURR_DATA.fxNote}</li>
         <li><b>Carbon depends on where compute runs, not where you sit.</b>
-            Grid intensity defaults to ${R.label} ≈ ${R.grid} kg/kWh
-            (${R.gridNote}). For UK M365 tenants this is an <em>assumption</em>,
-            not a guarantee — inference routing isn't publicly pinned.</li>
+            Grid intensity defaults to ${R.label} ≈ ${gridFactor(current,false)} kg/kWh
+            (${R.gridNote}); the calculator's served-from selector can override
+            this with a vendor-fleet or country basis. Inference routing isn't
+            publicly pinned — treat all of it as an <em>assumption</em>.</li>
       </ul>`;
   }
 

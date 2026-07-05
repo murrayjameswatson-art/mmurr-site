@@ -30,6 +30,41 @@ window.MMURR_BASES = {
   // labelled "global evaporative average" scenario on the data-centres page.
 };
 
+// --- Grid carbon intensity + T&D losses (v2 §3) ------------------------------
+// Only source-backed adders are listed; regions without one disable the T&D
+// toggle on-page rather than guessing. UK: DESNZ 2025 (+0.0185 ≈ +10.5%).
+window.MMURR_TD_ADDER = { UK: 0.0185, US: null, EU: null, FR: null };
+// Hosting-only country intensities (selectable carbon bases, not full region
+// profiles — no currency/seat pricing attached).
+window.MMURR_CI_EXTRA = { FR: { grid: 0.05, label: 'France', note: 'French grid (RTE/EEA)', conf: 'SOURCED' } };
+// THE grid accessor: every page reads intensity through this — never a local
+// hard-code — so the calculator, data-centres page and handbook cannot disagree.
+window.gridFactor = function(code, tdOn){
+  const base = (window.MMURR_DATA && MMURR_DATA.regions[code]) ? MMURR_DATA.regions[code].grid
+             : MMURR_CI_EXTRA[code] ? MMURR_CI_EXTRA[code].grid : null;
+  if(base == null) return null;
+  const adder = MMURR_TD_ADDER[code];
+  return base + ((tdOn && adder) ? adder : 0);
+};
+
+// --- Traffic mix (input share) — shared slider state (v2 §2) -----------------
+// One global input/output split for EVERY model and licence. Price maths only:
+// energy/water are per-prompt figures and MUST NOT react to this (v2 §2.5).
+window.MMURR_MIX = (function(){
+  let s = 0.5; const listeners = [];
+  const clamp = v => Math.min(0.9, Math.max(0.1, v));
+  return {
+    get: () => s,
+    set(v){ v = clamp(v); if(v === s) return; s = v; listeners.forEach(f => f(s)); },
+    onChange: f => listeners.push(f),
+  };
+})();
+// Blended $/1M for a lineage step at input share s. Steps carrying an io pair
+// re-blend with the slider; steps without one are MIX-LOCKED at their stored
+// 50/50 blend and flag it in tooltips ("historical point, 50/50 only").
+window.stepPrice  = function(step, s){ const io = step[4]; return io ? s*io[0] + (1-s)*io[1] : step[2]; };
+window.stepLocked = function(step){ return !step[4]; };
+
 // --- Facility build-out anchors (data-centres page) --------------------------
 // Hardware embodied is anchored PER MW OF IT LOAD (CIBSE TM65-based assessment
 // via ADW Developments: 750–1,500 tCO2e/MW, midpoint 1,100; AI-dense halls
@@ -204,12 +239,16 @@ window.MMURR_DATA = {
 
     // Copilot/OpenAI backend that rides under the M365 licence (drives markers).
     // [date, label, blendedUSD/1M, Wh/prompt]
+    // Step format: [date, label, blended50 USD/1M, Wh/prompt, io?] where
+    // io = [inUSD/1M, outUSD/1M] backfilled from public price archives (v2 §2.3).
+    // Steps WITHOUT an io pair are mix-locked: the traffic-mix slider cannot
+    // re-blend them and they display "historical point, 50/50 only".
     backend: [
-      ['2023-11','GPT-4 Turbo',20,3.0],['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],
-      ['2025-08','GPT-5',5.6,0.34],['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],
+      ['2023-11','GPT-4 Turbo',20,3.0,[10,30]],['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],
+      ['2025-08','GPT-5',5.6,0.34,[1.25,10]],['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],
       // GPT-5.5 launched 23 Apr 2026 at $5/$30 — a straight 2× on GPT-5.4 ($2.50/$15).
       // The feed never touches backend, so this anchor must carry the real price.
-      ['2026-04','GPT-5.5',17.5,0.31],
+      ['2026-04','GPT-5.5',17.5,0.31,[5,30]],
     ],
 
     // Main-model axis: which lineage drives the API line + footprint overlay.
@@ -217,29 +256,31 @@ window.MMURR_DATA = {
     defaultAxis: 'oa:auto',
     axis: {
       'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[5,30,'GPT-5.5 (Auto)'],
-        steps:[['2024-05','GPT-4o',6.25,0.9],['2025-03','GPT-4.1',5.0,0.6],['2025-08','GPT-5',5.6,0.34],
-               ['2025-12','GPT-5.2',7.9,0.31],['2026-03','GPT-5.4',8.75,0.55],['2026-04','GPT-5.5',17.5,0.31]]},
+        steps:[['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],['2025-08','GPT-5',5.6,0.34,[1.25,10]],
+               ['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],['2026-04','GPT-5.5',17.5,0.31,[5,30]]]},
+      // GPT-5.x Thinking tiers are not separately priced API SKUs — those steps
+      // stay mix-locked (no io pair); o1/o3 archive prices are public.
       'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[1.25,10,'GPT-5.5 Thinking'],
-        steps:[['2024-12','o1',30,3.4],['2025-04','o3',20,3.0],['2025-08','GPT-5 Thinking',6.5,3.1],
+        steps:[['2024-12','o1',30,3.4,[15,60]],['2025-04','o3',20,3.0,[10,40]],['2025-08','GPT-5 Thinking',6.5,3.1],
                ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1]]},
       'oa:mini':  {group:'OpenAI', label:'Mini / o4', conf:'VERIFY', io:[0.25,2,'o4 / GPT-5 mini'],
-        steps:[['2025-01','o3-mini',2.8,0.2],['2025-04','o4-mini',2.8,0.2],['2025-08','GPT-5 mini',1.1,0.15],['2026-03','GPT-5 mini',1.1,0.15]]},
+        steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-03','GPT-5 mini',1.1,0.15,[0.25,2]]]},
       'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[0.30,2.50,'Gemini 2.5 Flash'],
-        steps:[['2024-05','1.5 Flash',0.70,0.30],['2024-08','1.5 Flash-002',0.19,0.24],['2025-06','2.5 Flash',1.40,0.24],['2026-05','2.5 Flash',1.40,0.24]]},
+        steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','2.5 Flash',1.40,0.24,[0.30,2.50]]]},
       'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
-        steps:[['2024-02','1.5 Pro',7.0,0.6],['2025-03','2.5 Pro',5.6,0.4],['2025-11','3 Pro',7.0,0.4],['2026-05','3.1 Pro',7.0,0.4]]},
+        steps:[['2024-02','1.5 Pro',7.0,0.6,[3.5,10.5]],['2025-03','2.5 Pro',5.6,0.4,[1.25,10]],['2025-11','3 Pro',7.0,0.4,[2,12]],['2026-05','3.1 Pro',7.0,0.4,[2,12]]]},
       'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[1.25,2.50,'Grok 4.3'],
-        steps:[['2025-02','Grok 3',9.0,0.4],['2025-07','Grok 4',9.0,0.4],['2026-03','Grok 4.3',1.9,0.35]]},
+        steps:[['2025-02','Grok 3',9.0,0.4,[3,15]],['2025-07','Grok 4',9.0,0.4,[3,15]],['2026-03','Grok 4.3',1.9,0.35,[1.25,2.5]]]},
       'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[0.50,1.50,'Large 3'],
         // Large 3 (Dec 2025) lists $0.50/$1.50 — mistral.ai/pricing agrees with the
         // LiteLLM feed; the old 4.0 anchor carried Large 2's price forward.
-        steps:[['2024-07','Large 2',4.0,0.3],['2025-05','Medium 3',1.2,0.25],['2025-12','Large 3',1.0,0.3]]},
+        steps:[['2024-07','Large 2',4.0,0.3,[2,6]],['2025-05','Medium 3',1.2,0.25,[0.4,2]],['2025-12','Large 3',1.0,0.3,[0.5,1.5]]]},
       'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
-        steps:[['2024-03','Haiku 3',0.75,0.25],['2025-10','Haiku 4.5',3.0,0.3]]},
+        steps:[['2024-03','Haiku 3',0.75,0.25,[0.25,1.25]],['2025-10','Haiku 4.5',3.0,0.3,[1,5]]]},
       'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],
-        steps:[['2024-06','Sonnet 3.5',9.0,0.34],['2025-09','Sonnet 4.5',9.0,0.34],['2026-01','Sonnet 4.6',9.0,0.34]]},
+        steps:[['2024-06','Sonnet 3.5',9.0,0.34,[3,15]],['2025-09','Sonnet 4.5',9.0,0.34,[3,15]],['2026-01','Sonnet 4.6',9.0,0.34,[3,15]]]},
       'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[5,25,'Opus 4.8'],
-        steps:[['2024-03','Opus 3',45,0.6],['2025-08','Opus 4.1',45,0.6],['2026-01','Opus 4.6',15,0.5],['2026-05','Opus 4.8',15,0.5]]},
+        steps:[['2024-03','Opus 3',45,0.6,[15,75]],['2025-08','Opus 4.1',45,0.6,[15,75]],['2026-01','Opus 4.6',15,0.5,[5,25]],['2026-05','Opus 4.8',15,0.5,[5,25]]]},
     },
 
     // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)
@@ -295,7 +336,9 @@ window.MMURR_DATA = {
   for(const [k, p] of Object.entries(ref.models)){
     const ax = MMURR_DATA.models.axis[k]; if(!ax) continue;
     ax.io[0] = p.in; ax.io[1] = p.out;
-    ax.steps[ax.steps.length-1][2] = +((p.in + p.out)/2).toFixed(2);
+    const last = ax.steps[ax.steps.length-1];
+    last[2] = +((p.in + p.out)/2).toFixed(2);   // stored 50/50 blend (mix applied at read time)
+    last[4] = [p.in, p.out];                    // io pair → the mix slider can re-blend it
   }
 })();
 

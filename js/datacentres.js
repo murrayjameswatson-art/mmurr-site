@@ -98,9 +98,21 @@ function heat(el, rows, color){
 }
 
 // Grid + water default to the selected region (§6); both remain editable.
+// Grid is read through the shared gridFactor() (never hard-coded here) and
+// carries the T&D toggle — enabled only where a source-backed adder exists (UK).
+let TD = false;
 function applyRegion(){
-  const R = MMURR_REGION.data();
-  $('grid').value = R.grid;
+  const R = MMURR_REGION.data(), code = MMURR_REGION.get();
+  const box = $('tdToggle'), wrap = $('tdWrap');
+  const ok = MMURR_TD_ADDER[code] != null;
+  if(!ok) TD = false;
+  if(box){
+    box.disabled = !ok; box.checked = TD;
+    wrap.title = ok ? 'Adds the sourced T&D adder to the grid factor (UK +0.0185 kgCO₂e/kWh, DESNZ 2025)'
+                    : 'No source-backed T&D adder for this region — only the UK has one (DESNZ 2025)';
+    wrap.style.opacity = ok ? '' : '.45';
+  }
+  $('grid').value = gridFactor(code, TD);
   $('wue').value  = R.wue;
   syncWuePreset(R.wue);
   calc();
@@ -111,9 +123,32 @@ function syncWuePreset(v){
   [...box.children].forEach(b=>b.classList.toggle('on', parseFloat(b.dataset.wue)===v));
 }
 
+// --- Scope-2 gap: location- vs market-based paired bars (v2 §5) -------------
+function drawScope2(){
+  const S = window.MMURR_SCOPE2, el = document.getElementById('scope2Chart');
+  if(!S || !el) return;
+  new Chart(el,{
+    type:'bar',
+    data:{ labels:S.rows.map(r=>r.vendor), datasets:[
+      {label:'Location-based estimate', data:S.rows.map(r=>r.location), backgroundColor:'#b18cff'},
+      {label:'Market-based, reported',  data:S.rows.map(r=>r.market),   backgroundColor:'#5bd1a6'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{
+          label:c=>` ${c.dataset.label}: ${c.parsed.y} Mt CO₂e (${S.rows[c.dataIndex].year})`,
+          footer:items=>{const r=S.rows[items[0].dataIndex];
+            return `certificates & PPAs: ${(r.location-r.market).toFixed(1)} Mt`;}}}},
+      scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
+        y:{beginAtZero:true,ticks:{color:'#6b7280',callback:v=>v+' Mt',font:{size:10}},grid:{color:'#222732'},
+           title:{display:true,text:'Scope 2, 2024 (Mt CO₂e)',color:'#9aa3b2',font:{size:11}}}}},
+  });
+}
+
 // --- Wire -----------------------------------------------------------------
 function init(){
   drawCap();
+  drawScope2();
   heat('heatNow', CLUSTERS_NOW, '#5bd1a6');
   heat('heatPlan', CLUSTERS_PLAN, '#ff6b57');
   applyRegion();                        // sets grid/water from region, then calc()
@@ -129,6 +164,7 @@ function init(){
     if(!e.target.dataset.wue) return;
     $('wue').value=e.target.dataset.wue; syncWuePreset(parseFloat(e.target.dataset.wue)); calc();
   });
+  $('tdToggle').addEventListener('change',e=>{ TD = e.target.checked; applyRegion(); });
   $('hwMethod').addEventListener('click',e=>{
     if(!e.target.dataset.hw) return;
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));

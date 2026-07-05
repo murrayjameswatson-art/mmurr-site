@@ -47,17 +47,23 @@
   // prompts/day per licence — the single number both slider modes resolve to
   const promptsDay = () => isSub() ? usagePct/100 * maxPpdSub() : ppd;
 
-  // Footprint per user per day for a given per-prompt Wh, in the region's
-  // grid/PUE/WUE. Same basis as the carbon dashboard so the two reconcile (§4.4).
+  // Footprint per user per day for a given per-prompt Wh. Carbon uses the
+  // served-from basis (vendor fleet / country grid / custom via MMURR_ENV,
+  // T&D-aware); water stays on the region's WUE. Energy & water are per-prompt
+  // and MUST NOT react to the traffic-mix slider (v2 §2.5).
   // PUE is the region's all-in 1.0 — NOT a >1 multiplier (that would double-count).
   function footprint(wh, R){
     const energyWh = promptsDay() * wh;              // Wh / user / day
+    const ci = window.MMURR_ENV ? MMURR_ENV.ci(M.axis[mainModel].group) : R.grid;
     return {
       energy: energyWh,
-      co2:   energyWh/1000 * R.pue * R.grid * 1000,  // g CO2e / user / day
+      co2:   energyWh/1000 * R.pue * ci * 1000,      // g CO2e / user / day
       water: energyWh/1000 * R.wue * 1000,           // mL / user / day
     };
   }
+  // Blended $/1M at the shared traffic mix; mix-locked steps stay at 50/50.
+  const mix = () => window.MMURR_MIX ? MMURR_MIX.get() : 0.5;
+  const priceOf = step => stepPrice(step, mix());
 
   // --- date + scale helpers ------------------------------------------------
   const D = s => { const [y,m] = s.split('-'); return new Date(+y, +m-1, 1).getTime(); };
@@ -160,8 +166,9 @@
     const licAt = tt => { const p = licencePrice(tt); return p==null ? null : licences*p; };
     const licSeries = PTS.map(licAt);
 
-    // same workload metered on the raw API, per month, in region currency (§4.5)
-    const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * mdlAt(tt)[2] * R.fx;
+    // same workload metered on the raw API, per month, in region currency (§4.5);
+    // re-blended at the traffic-mix slider — so the break-even moves with it
+    const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * priceOf(mdlAt(tt)) * R.fx;
     const apiSeries = PTS.map(apiAt);
 
     // Cost-axis anchor: enterprise anchors to the LICENCE (fixed) so the flat
@@ -170,7 +177,7 @@
     // the small fee. Clamp so a line above the top rides the edge.
     let maxCost = (lic * 2.6) || 1;
     if(isSub()){
-      const maxRate = Math.max(...am.steps.map(s=>s[2]));
+      const maxRate = Math.max(...am.steps.map(priceOf));
       maxCost = Math.max(maxCost, licences * maxPpdSub() * 30 * tokPerPrompt/1e6 * maxRate * R.fx * 1.15) || 1;
     }
     const clampY = y => Math.max(PT, Math.min(H-PB, y));
@@ -229,7 +236,8 @@
     // rescaling and the line staying put.
     const PPD_REF = isSub() ? maxPpdSub() : 120;
     const refE = PPD_REF*Math.max(...am.steps.map(s=>s[3]));
-    const refByK = { energy:refE, co2:refE/1000*R.pue*R.grid*1000, water:refE/1000*R.wue*1000 };
+    const ciRef = window.MMURR_ENV ? MMURR_ENV.ci(am.group) : R.grid;
+    const refByK = { energy:refE, co2:refE/1000*R.pue*ciRef*1000, water:refE/1000*R.wue*1000 };
     const maxFp = Math.max(1, ...shown.map(k=>refByK[k])) * 1.1;
     const yF = v => clampY(H-PB - (v/maxFp)*(H-PT-PB));
     const path = (arr,cls,yfn) => { let d=''; PTS.forEach((tt,i)=> d+=(i?'L':'M')+x(tt)+' '+yfn(arr[i])); svg.appendChild(el('path',{class:cls,d})); };
@@ -268,7 +276,10 @@
       g.appendChild(txt('lab-mklab',xx,yy-11,'middle',m[1]));
       const reach = fmtMonth(tt);
       g.addEventListener('mouseenter',()=>{
-        tip.innerHTML = `<b>${isSub()?'Model under the plan':'Copilot backend'}: ${m[1]}</b><br>reaches this licence ≈ ${reach}<br>${m[3]} Wh / prompt · $${m[2]}/1M list`;
+        const mixTxt = stepLocked(m)
+          ? `$${m[2]}/1M — historical point, 50/50 only`
+          : `$${priceOf(m).toFixed(2)}/1M at ${Math.round(mix()*100)}/${Math.round((1-mix())*100)} mix`;
+        tip.innerHTML = `<b>${isSub()?'Model under the plan':'Copilot backend'}: ${m[1]}</b><br>reaches this licence ≈ ${reach}<br>${m[3]} Wh / prompt · ${mixTxt}`;
         tip.style.left = xx/W*100+'%'; tip.style.top = yy/H*100+'%'; tip.style.opacity=1;
       });
       g.addEventListener('mouseleave',()=>tip.style.opacity=0);
@@ -286,7 +297,7 @@
     const disc = (!isSub() && type==='list') ? seatDiscount(licences) : 0;
     const fpNow = footprint(mdlAt(T1)[3], R);
     const apiNow = apiSeries[apiSeries.length-1];
-    const rateNow = mdlAt(T1)[2]*R.fx;
+    const rateNow = priceOf(mdlAt(T1))*R.fx;
     const beUsers = (licences>0 && rateNow>0) ? lic/(30*tokPerPrompt/1e6*rateNow*licences) : 0;
     const beTxt = beUsers>0
       ? `${beUsers.toFixed(1)} prompts/day` + (isSub()? ` ≈ ${(beUsers/maxPpdSub()*100).toFixed(1)}% of plan` : '')
@@ -345,6 +356,7 @@
     document.getElementById('lab-disc').innerHTML = note;
 
     ctx = { R, mdlAt, lic, licAt, cursor, t0, x };   // stash for the hover handler
+    if(window.renderEnvStrip) renderEnvStrip();      // per-prompt impact strip follows the selection
   }
 
   // --- interactive hover: vertical cursor + on-page caption ----------------
@@ -357,7 +369,7 @@
     const t = ctx.t0 + (px-PL)/(W-PL-PR)*(T1-ctx.t0);
     ctx.cursor.setAttribute('x1',px); ctx.cursor.setAttribute('x2',px); ctx.cursor.setAttribute('opacity',1);
     const R = ctx.R;
-    const api = licences*promptsDay()*30*tokPerPrompt/1e6*ctx.mdlAt(t)[2]*R.fx;
+    const api = licences*promptsDay()*30*tokPerPrompt/1e6*priceOf(ctx.mdlAt(t))*R.fx;
     const fp  = footprint(ctx.mdlAt(t)[3], R);
     const licHere = ctx.licAt(t);
     let s = `<b>${fmtMonth(t)}</b> · Licence ${licHere==null ? 'not launched' : R.sym+Math.round(licHere).toLocaleString()}`;
@@ -397,25 +409,30 @@
     draw();
   });
   MMURR_REGION.onChange(()=>{ buildModelSelect(); draw(); });   // re-price + relabel on region switch
+  if(window.MMURR_MIX) MMURR_MIX.onChange(draw);                // traffic-mix slider re-blends the API line (v2 §2)
+  if(window.MMURR_ENV) MMURR_ENV.onChange(draw);                // served-from / T&D move the carbon overlays (v2 §3–§4)
 
   // expose state for later-phase overlays
   window.__lab = { get:()=>({type,licences,override,mainModel,promptsDay:promptsDay()}), footprint, draw };
 
   buildTypeSelect(); buildModelSelect(); syncSlider(); draw();
 
-  // ponytail: reconciliation self-check (local only). The price-page footprint
-  // and the carbon dashboard MUST agree for identical inputs — same grid, same
-  // all-in PUE (1.0, not a >1 multiplier), same per-prompt Wh. Guards the P4
-  // acceptance test and the bug where the mockup hard-coded PUE 1.25 / grid 0.21.
+  // ponytail: coherence self-checks (local only). One gridFactor, one PUE
+  // basis, and — per v2 §2.5 — energy/water strictly mix-independent.
   if(['localhost','127.0.0.1',''].includes(location.hostname)){
     const R = MMURR_DATA.regions.UK;
-    console.assert(R.pue === 1.0, 'UK region PUE must be all-in 1.0 to reconcile with dashboard');
-    const wh = 0.31, p = promptsDay();     // enterprise default at load → ppd
-    const got = footprint(wh, R).co2;
-    const dashboard = (p*wh)/1000 * R.pue * R.grid * 1000;   // dashboard's formula
-    console.assert(Math.abs(got - dashboard) < 1e-9, 'price/dashboard CO2e per day reconcile');
+    console.assert(R.pue === 1.0, 'UK region PUE must be all-in 1.0');
     console.assert(windowsPerDay === 4, '5h window + 1h gap → 4 maxed windows/day');
-    console.assert(Math.abs(LT.claudePro.usd[0][1]*R.fx - 15.60) < 1e-9, 'Claude Pro UK ≈ £15.60/mo at FX 0.78');
+    console.assert(Math.abs(gridFactor('UK',true) - (R.grid + MMURR_TD_ADDER.UK)) < 1e-12, 'gridFactor applies the UK T&D adder');
+    console.assert(gridFactor('US',true) === MMURR_DATA.regions.US.grid, 'no unsourced T&D adder is ever applied');
+    // energy/water must NOT react to the traffic-mix slider (per-prompt basis)
+    const fp = footprint(0.31, R);
+    console.assert(fp.energy === promptsDay()*0.31, 'energy is mix-independent');
+    console.assert(fp.water === promptsDay()*0.31/1000*R.wue*1000, 'water is mix-independent');
+    // mix maths: a locked step ignores s; an io step re-blends
+    console.assert(stepPrice(['2026-01','x',9,0.3], 0.7) === 9, 'mix-locked step holds its 50/50 blend');
+    console.assert(Math.abs(stepPrice(['2026-01','x',9,0.3,[3,15]], 0.5) - 9) < 1e-12, 'io step blends to stored value at 50/50');
+    console.assert(LT.claudePro.usd[0][1] === 20, 'Claude Pro USD fee anchor $20');
     console.assert(LT.geminiPro.local.UK[0][1] === 18.99, 'Google AI Pro UK local list £18.99');
   }
 })();

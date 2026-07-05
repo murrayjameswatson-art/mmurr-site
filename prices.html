@@ -22,6 +22,36 @@
 
   <div id="region-bar"></div>
 
+  <!-- Global assumptions: traffic mix (§2), served-from carbon basis (§4), T&D losses (§3) -->
+  <div class="panel">
+    <div class="mix-panel">
+      <span class="mix-lab"><strong>Traffic mix</strong> — input share</span>
+      <input type="range" id="mix" min="10" max="90" step="5" value="50" aria-label="Input share of traffic, percent">
+      <output id="mixOut">50/50</output>
+      <div class="seg" id="mixPreset">
+        <button type="button" data-mix="50" class="on">50/50</button>
+        <button type="button" data-mix="70">70/30 context-heavy</button>
+        <button type="button" data-mix="20">20/80 generation-heavy</button>
+      </div>
+    </div>
+    <div class="host-row">
+      <div><label class="f" for="hosting">Served from — carbon basis</label>
+        <select id="hosting">
+          <option value="vendor" selected>Vendor fleet (default)</option>
+          <option value="UK">UK</option>
+          <option value="EU">EU</option>
+          <option value="US">US</option>
+          <option value="FR">France</option>
+          <option value="custom">Custom kgCO₂e/kWh</option>
+        </select></div>
+      <div id="hostCustomWrap" hidden><label class="f" for="hostCustom">Custom kgCO₂e/kWh</label>
+        <input type="number" id="hostCustom" min="0" step="any" value="0.177"></div>
+      <label class="chk-td" id="tdWrap" title="Only source-backed T&D adders are applied — pick a country basis with one (UK) to enable"><input type="checkbox" id="tdToggle" disabled>
+        Include transmission &amp; distribution losses (+10.5% UK)</label>
+    </div>
+    <p class="env-note" id="mixNote"></p>
+  </div>
+
   <details class="panel logic-disclose">
     <summary><strong>Overview</strong></summary>
     <p class="sub" style="margin:10px 0 0">
@@ -90,6 +120,10 @@
     </div>
     <p class="sub lab-hover" id="lab-hover">Hover the chart to read the values at any month.</p>
 
+    <p class="sub" style="margin:10px 0 0">Seat pricing is insensitive to your traffic mix; API pricing is not — the
+      slider above moves the API line and the break-even, never the licence line. That asymmetry is part of what the
+      seat premium buys.</p>
+
     <div class="lab-legend">
       <span><i style="border-color:var(--warn)"></i>Licence fee (steps if changed)</span>
       <span id="lab-lg-api" hidden><i style="border-color:var(--hot)"></i>Same workload, raw API</span>
@@ -150,6 +184,10 @@
     <div class="snap" id="snap"></div>
   </details>
 
+  <h2>Per-prompt impact — at your current settings</h2>
+  <div class="env-strip" id="envStrip"></div>
+  <p class="env-note" id="envNote"></p>
+
   <h2>Sources &amp; assumptions</h2>
   <div class="panel" id="sourcesPanel"></div>
 
@@ -158,6 +196,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/data/api-prices.js"></script>  <!-- weekly-refreshed referenced API prices; optional -->
 <script src="js/factors.js"></script>
+<script src="js/data/hosting.js"></script>     <!-- served-from carbon bases (v2 §4) -->
 <script src="js/region.js"></script>
 <script src="js/prices.js"></script>
 <script src="js/pricelab.js"></script>

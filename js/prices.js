@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-   mmurr.ai — AI Price History · "Blended Usage" basket
+   mmurr.ai — AI Impact Calculator · "Blended Usage" basket
    Build a stack from ANY licence type on the page — the enterprise per-licence
    services AND the personal/team subscriptions from the decision chart above.
    Cards are collapsed expandables to keep the page uncluttered. Every service
@@ -82,7 +82,7 @@ window.MMURR_MODE_CHIP = modeChip;   // reused by the decision chart (pricelab.j
 // td: T&D losses toggle — only applied where a source-backed adder exists (UK),
 // so it is only enabled for country bases that have one.
 window.MMURR_ENV = (function(){
-  let hosting = 'vendor', custom = 0.177, td = false;
+  let hosting = 'vendor', custom = gridFactor('UK', false), td = false;
   const listeners = [];
   const notify = () => listeners.forEach(f => f());
   return {
@@ -133,8 +133,10 @@ function seatFill(s, region){
     return MONTHS.map(()=>p);
   }
   if(s.seatRule==='fx'){
-    const usd = fill(MMURR_DATA.seat.series.claudeUsd), fx = MMURR_REGION.data().fx;
-    return MONTHS.map(m => usd[m]==null ? null : usd[m]*fx);
+    // Enterprise seats billed USD: each month converts at ITS OWN ECB monthly
+    // rate (v2 §9.2). B2B prices stay ex-VAT.
+    const usd = fill(MMURR_DATA.seat.series.claudeUsd);
+    return MONTHS.map(m => usd[m]==null ? null : usd[m]*fxAt(region,m));
   }
   const tbl = MMURR_DATA.seat.series[s.seatKey];
   const f = fill(tbl[region] || tbl.UK);
@@ -142,11 +144,15 @@ function seatFill(s, region){
 }
 // subscription fee history; null before the plan launched. Uses the vendor's
 // LOCAL list history when one exists for this region (e.g. Google bills £ in
-// the UK), otherwise USD × FX (Anthropic & xAI bill USD worldwide).
+// the UK), otherwise USD × the month's OWN ECB FX (v2 §9.2) — plus consumer
+// VAT for usd_fx plans (billed USD + tax at checkout; regional consumer lists
+// already include it), so the two pricing modes compare like-for-like (§9.4).
 function subFill(s){
-  const loc = s.lt.local && s.lt.local[MMURR_REGION.get()];
-  const fx = MMURR_REGION.data().fx, f = fill(loc || s.lt.usd);
-  return MONTHS.map(m => f[m]==null ? null : (loc ? f[m] : f[m]*fx));
+  const region = MMURR_REGION.get();
+  const loc = s.lt.local && s.lt.local[region];
+  const f = fill(loc || s.lt.usd);
+  const vat = (!loc && s.lt.pricing_mode==='usd_fx') ? subVat(region) : 1;
+  return MONTHS.map(m => f[m]==null ? null : (loc ? f[m] : f[m]*fxAt(region,m)*vat));
 }
 // latest lineage step ≤ t (clamped to first). [date,label,blended$/1M,Wh/prompt]
 function stepAt(key, t){ const st=M.axis[key].steps; let c=st[0]; for(const s of st){ if(D(s[0])<=t) c=s; } return c; }
@@ -254,12 +260,12 @@ function compute(){
     let series;
     if(metric==='cost'){
       if(s.billing==='credits'){
-        const rate = (MMURR_DATA.seat.credit[region] ?? MMURR_DATA.seat.credit.US) * R.fx;
-        series = MONTHS.map((m,i)=> +(qtyAt(s,i)*rate).toFixed(2));
+        const rateUsd = MMURR_DATA.seat.credit[region] ?? MMURR_DATA.seat.credit.US;
+        series = MONTHS.map((m,i)=> +(qtyAt(s,i)*rateUsd*fxAt(region,m)).toFixed(2));
       } else {
         series = MONTHS.map((m,i)=>{ const p=rows[k][i]; if(p==null) return null;
           let c = qtyAt(s,i)*p;
-          if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; c += Mt*stepPrice(stepAt(s.lineage,TS[i]),MMURR_MIX.get())*R.fx; }
+          if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; c += Mt*stepPrice(stepAt(s.lineage,TS[i]),MMURR_MIX.get())*fxAt(region,m); }
           return +c.toFixed(2); });
       }
     } else { // environmental — prompt-driven services only
@@ -278,7 +284,7 @@ function compute(){
     apiSeries = MONTHS.map((m,i)=>{ let c=0, any=false;
       for(const [k,s] of Object.entries(SVC)){ if(!s.on || s.billing==='credits') continue;
         if(rows[k][i]==null) continue; any=true;
-        c += promptsAt(s,i)*TPP/1e6 * stepPrice(stepAt(lineageOf(s),TS[i]),MMURR_MIX.get()) * R.fx; }
+        c += promptsAt(s,i)*TPP/1e6 * stepPrice(stepAt(lineageOf(s),TS[i]),MMURR_MIX.get()) * fxAt(region,m); }
       return any ? +c.toFixed(2) : null; });
     datasets.push({ label:'Cost if billed on raw API', data:apiSeries, borderColor:'#7db7ff',
       backgroundColor:'transparent', fill:false, stack:'api', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:.15 });
@@ -372,12 +378,12 @@ function renderSnapshot(){
     if(!s.on) continue;
     let cost=null, wh=null;
     if(s.billing==='credits'){
-      cost=qtyAt(s,i)*((MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US)*R.fx);
+      cost=qtyAt(s,i)*((MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US)*fxAt(region,MONTHS[i]));
     } else {
       const price=priceRow(s,region)[i];
       if(price!=null){
         cost=qtyAt(s,i)*price;
-        if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; cost+=Mt*stepPrice(stepAt(s.lineage,t),MMURR_MIX.get())*R.fx; }
+        if(s.billing==='seat' && s.usage && s.usageAddon){ const Mt=promptsAt(s,i)*TPP/1e6; cost+=Mt*stepPrice(stepAt(s.lineage,t),MMURR_MIX.get())*fxAt(region,MONTHS[i]); }
         wh=promptsAt(s,i)*stepAt(lineageOf(s),t)[3];     // Wh / month
       }
     }
@@ -428,10 +434,17 @@ function renderSources(){
   const gem=(MMURR_DATA.seat.series.gemini[region]??MMURR_DATA.seat.series.gemini.UK);
   const gemNow=gem[gem.length-1][1];
   const cred=MMURR_DATA.seat.credit[region]??MMURR_DATA.seat.credit.US;
-  const fxLine = region==='US' ? 'USD (no conversion)' : `USD × ${R.fx} FX → ${R.cur}`;
+  const fxNow = fxAt(region,'9999-12');
+  const fxLine = region==='US' ? 'USD (no conversion)'
+    : region==='UK' ? `USD × ECB monthly FX (latest ${fxNow}) → GBP`
+    : `USD × ${fxNow} FX anchor → ${R.cur}`;
   const ref = window.MMURR_API_PRICES;
+  const F = window.MMURR_FX;
   const rows = [
-    ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate. Personal/team plans use the vendor's OWN local list where one is billed (Google UK £, Mistral EU €); Anthropic and xAI bill USD worldwide, so those convert at the FX anchor (${R.cur} ${R.fx}/USD).`, 'VERIFY', '(editable anchors)'],
+    ['Pricing basis', `Microsoft, Google &amp; Snowflake enterprise licences are shown as <b>${R.label}</b> regional list/rate. Personal/team plans use the vendor's OWN local list where one is billed (ChatGPT Plus &amp; Google UK £, Mistral EU €); Anthropic and xAI bill USD worldwide, so those convert per month (${fxLine}) plus consumer VAT — shown as a band, not a point.`, 'VERIFY', '(mode chips on each card)'],
+    ['FX (GBP/USD)', F
+        ? `ECB reference rates via frankfurter.dev — monthly means, ${F.months[0]} → ${F.months[F.months.length-1]}, committed by a monthly repo Action (updated ${F.updated}; latest ${F.latest}). Historical $ points convert at their own month's rate; usd_fx consumer plans add UK/EU VAT ×1.20 (EU rate approximate). EUR remains an editable anchor (${MMURR_DATA.regions.EU.fx}/USD).`
+        : `fx-history.js not loaded — emergency 0.78 anchor in use.`, 'SOURCED', '<a href="https://api.frankfurter.dev/v1/latest?base=USD&symbols=GBP" target="_blank" rel="noopener">frankfurter.dev (ECB)</a>'],
     ['M365 Copilot licence', `${R.sym}${cop.toFixed(2)}/licence/mo (enterprise add-on, ${R.label} list); held since Nov 2023`, 'SOURCED', aLink(SRC.ms,'Microsoft pricing')],
     ['Copilot price changes', `≤300-licence Business SKU cut $30→$21 (1 Dec 2025; an $18 promo runs to late 2026); bundled into premium licences from Jul 2026`, 'SOURCED', aLink(SRC.ms,'Microsoft')],
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
@@ -469,8 +482,8 @@ function renderSources(){
       EU figures are localised approximations (flagged VERIFY).</p>
     <table class="src"><thead><tr><th>Item</th><th>Value (this region)</th><th>Conf.</th><th>Source</th></tr></thead>
     <tbody>${rows.map(([k,v,c,s])=>`<tr><td>${k}</td><td>${v}</td><td>${confTag(c)}</td><td>${s}</td></tr>`).join('')}</tbody></table>
-    <p class="foot">Prices are list/indicative — overwrite them with your own contract rates in the dataset. Token prices convert at an
-      editable FX anchor; no network calls. Runs entirely in your browser.</p>`;
+    <p class="foot">Prices are list/indicative — overwrite them with your own contract rates in the dataset. GBP conversion uses the
+      committed ECB monthly series (no runtime network calls); EUR is an editable anchor. Runs entirely in your browser.</p>`;
 }
 
 // --- Per-prompt impact strip (v2 §1.4) ----------------------------------------
@@ -532,6 +545,7 @@ function init(){
         tdWrap=document.getElementById('tdWrap');
   function syncEnvUI(){
     if(hostWrap) hostWrap.hidden = MMURR_ENV.hosting!=='custom';
+    if(hostCustom && hostCustom.value==='') hostCustom.value = MMURR_ENV.custom;   // seed from gridFactor, not a hard-code
     if(tdBox){
       const ok=MMURR_ENV.tdAllowed();
       tdBox.disabled=!ok; tdBox.checked=ok && MMURR_ENV.td;

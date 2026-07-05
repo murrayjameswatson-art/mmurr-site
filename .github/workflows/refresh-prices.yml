@@ -1,10 +1,12 @@
-# Weekly refresh of js/data/api-prices.js from the LiteLLM community registry.
-# Manual run: Actions tab → "Refresh API prices" → Run workflow.
+# Weekly refresh of js/data/api-prices.js (LiteLLM registry) + monthly refresh
+# of js/data/fx-history.js (ECB GBPUSD via frankfurter.dev).
+# Manual run: Actions tab → "Refresh API prices" → Run workflow (runs both).
 name: Refresh API prices
 
 on:
   schedule:
-    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC — API prices
+    - cron: '0 6 1 * *'   # 1st of month 06:00 UTC — GBPUSD FX
   workflow_dispatch:
 
 permissions:
@@ -12,6 +14,7 @@ permissions:
 
 jobs:
   refresh:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * 1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,4 +32,26 @@ jobs:
             git push
           else
             echo "No price changes this week."
+          fi
+
+  refresh-fx:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node tools/refresh-fx.mjs
+      - name: Commit if changed
+        run: |
+          if ! git diff --quiet js/data/fx-history.js; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git pull --rebase
+            git add js/data/fx-history.js
+            git commit -m "*CLAUDE CODE* Monthly GBPUSD FX refresh (ECB via frankfurter.dev)"
+            git push
+          else
+            echo "No FX changes this month."
           fi

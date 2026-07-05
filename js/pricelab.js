@@ -86,17 +86,34 @@
   const usdAt = (series, tt) => { let v=null; for(const [m,p] of series){ if(D(m)<=tt) v=p; } return v; };
   const feeSeries = t => (t.local && t.local[MMURR_REGION.get()]) || t.usd;
   const feeIsLocal = t => !!(t.local && t.local[MMURR_REGION.get()]);
+  // month key for a timestamp (local getters — toISOString can shift a month
+  // across the UTC boundary) → feeds fxAt for per-month ECB conversion (v2 §9)
+  const ymOf = tt => { const d = new Date(tt); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+  const fxCur = () => fxAt(MMURR_REGION.get(), '9999-12');
   function licencePrice(tt = T1){
     const t = LT[type];
     if(override > 0) return override;
     if(t.kind === 'subscription'){
       const u = usdAt(feeSeries(t), tt);
       if(u == null) return null;
-      return feeIsLocal(t) ? u : u * MMURR_REGION.data().fx;
+      if(feeIsLocal(t)) return u;
+      // billed USD: convert at the month's own ECB rate, plus consumer VAT for
+      // usd_fx plans (regional consumer lists already include VAT) (§9.4)
+      const vat = t.pricing_mode === 'usd_fx' ? subVat(MMURR_REGION.get()) : 1;
+      return u * fxAt(MMURR_REGION.get(), ymOf(tt)) * vat;
     }
     const tbl = MMURR_DATA.seat[t.seatKey] || MMURR_DATA.seat.list;
     const base = tbl[MMURR_REGION.get()] ?? tbl.UK;
     return t.discount ? base*(1 - seatDiscount(licences)) : base;
+  }
+  // usd_fx display band (§0.3): $fee × each of the trailing-12-months' ECB
+  // rates × VAT → [lo, hi]. Collapses to a point where no monthly series exists.
+  function feeBand(t){
+    const u = usdAt(t.usd, T1); if(u == null) return null;
+    const region = MMURR_REGION.get(), vat = subVat(region);
+    if(region !== 'UK' || !window.MMURR_FX){ const v = u*fxCur()*vat; return [v, v]; }
+    const vals = MMURR_FX.months.slice(-12).map(k => u*MMURR_FX.series[k]*vat);
+    return [Math.min(...vals), Math.max(...vals)];
   }
 
   // --- selects + slider -----------------------------------------------------
@@ -119,7 +136,7 @@
     for(const k in M.axis){ const m=M.axis[k];
       if(m.group!==lastG){ og=document.createElement('optgroup'); og.label=m.group; sel.appendChild(og); lastG=m.group; }
       const o=document.createElement('option'); o.value=k;
-      o.textContent=`${m.label} — ${m.io[2]} (${R.sym}${(m.io[0]*R.fx).toFixed(2)}/${R.sym}${(m.io[1]*R.fx).toFixed(2)} per 1M)`;
+      o.textContent=`${m.label} — ${m.io[2]} (${R.sym}${(m.io[0]*fxCur()).toFixed(2)}/${R.sym}${(m.io[1]*fxCur()).toFixed(2)} per 1M)`;
       if(!allowed.includes(k)){ o.disabled=true; o.title='Not available on this licence'; }
       if(k===mainModel) o.selected=true; og.appendChild(o);
     }
@@ -168,7 +185,7 @@
 
     // same workload metered on the raw API, per month, in region currency (§4.5);
     // re-blended at the traffic-mix slider — so the break-even moves with it
-    const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * priceOf(mdlAt(tt)) * R.fx;
+    const apiAt = tt => licences * promptsDay() * 30 * tokPerPrompt/1e6 * priceOf(mdlAt(tt)) * fxAt(MMURR_REGION.get(), ymOf(tt));
     const apiSeries = PTS.map(apiAt);
 
     // Cost-axis anchor: enterprise anchors to the LICENCE (fixed) so the flat
@@ -178,7 +195,7 @@
     let maxCost = (lic * 2.6) || 1;
     if(isSub()){
       const maxRate = Math.max(...am.steps.map(priceOf));
-      maxCost = Math.max(maxCost, licences * maxPpdSub() * 30 * tokPerPrompt/1e6 * maxRate * R.fx * 1.15) || 1;
+      maxCost = Math.max(maxCost, licences * maxPpdSub() * 30 * tokPerPrompt/1e6 * maxRate * fxCur() * 1.15) || 1;
     }
     const clampY = y => Math.max(PT, Math.min(H-PB, y));
     const yC = v => clampY(H-PB - (v/maxCost)*(H-PT-PB));
@@ -297,7 +314,7 @@
     const disc = (!isSub() && type==='list') ? seatDiscount(licences) : 0;
     const fpNow = footprint(mdlAt(T1)[3], R);
     const apiNow = apiSeries[apiSeries.length-1];
-    const rateNow = priceOf(mdlAt(T1))*R.fx;
+    const rateNow = priceOf(mdlAt(T1))*fxCur();
     const beUsers = (licences>0 && rateNow>0) ? lic/(30*tokPerPrompt/1e6*rateNow*licences) : 0;
     const beTxt = beUsers>0
       ? `${beUsers.toFixed(1)} prompts/day` + (isSub()? ` ≈ ${(beUsers/maxPpdSub()*100).toFixed(1)}% of plan` : '')
@@ -306,8 +323,14 @@
     document.getElementById('lab-r-api').textContent  = on.api ? R.sym+Math.round(apiNow).toLocaleString() : 'toggle on';
     document.getElementById('lab-r-be').textContent   = on.api ? beTxt : 'toggle on';
     const modeChip = window.MMURR_MODE_CHIP ? MMURR_MODE_CHIP(t.pricing_mode) : '';
+    // usd_fx subscriptions display as a BAND (trailing-12-month ECB FX × VAT),
+    // not a point (§0.3); everything else stays a point price.
+    const band = (isSub() && t.pricing_mode==='usd_fx' && override<=0) ? feeBand(t) : null;
+    const seatTxt = (band && Math.abs(band[1]-band[0])>0.005)
+      ? `${R.sym}${band[0].toFixed(2)}–${R.sym}${band[1].toFixed(2)}`
+      : `${R.sym}${price.toFixed(2)}`;
     document.getElementById('lab-r-seat').innerHTML =
-      `${R.sym}${price.toFixed(2)}` + (disc>0?` (−${Math.round(disc*100)}%)`:'') + (modeChip?' '+modeChip:'');
+      seatTxt + (disc>0?` (−${Math.round(disc*100)}%)`:'') + (modeChip?' '+modeChip:'');
     document.getElementById('lab-r-model').textContent = stepAt(markers,T1)[1];
     document.getElementById('lab-r-fp').textContent = `${fpNow.energy.toFixed(1)} Wh · ${fpNow.co2.toFixed(1)} g · ${fpNow.water.toFixed(1)} mL`;
 
@@ -317,9 +340,13 @@
       note = `Licence price fixed at your <b>${R.sym}${override.toFixed(2)}</b> override.`;
     } else if(isSub()){
       const fees = feeSeries(t);
+      const bandD = t.pricing_mode==='usd_fx' ? feeBand(t) : null;
       const feeTxt = feeIsLocal(t)
         ? `<b>${R.sym}${price.toFixed(2)}</b>/mo — the vendor's own ${R.label} list price`
-        : `<b>$${usdAt(t.usd,T1)} USD × ${R.fx} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`;
+        : bandD
+        ? `<b>$${usdAt(t.usd,T1)} USD billed worldwide → ${R.sym}${bandD[0].toFixed(2)}–${R.sym}${bandD[1].toFixed(2)}</b>/mo `+
+          `(ECB monthly FX over the trailing 12 months${subVat(MMURR_REGION.get())>1?' × '+subVat(MMURR_REGION.get()).toFixed(2)+' VAT':''} — a band, not a point; currently ${R.sym}${price.toFixed(2)})`
+        : `<b>$${usdAt(t.usd,T1)} USD × ${fxCur()} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`;
       note = `Fee = ${feeTxt}`+
              (fees.length>1 ? ` — the fee has changed over time; the steps are plotted on the line. ` : `. `)+
              `<b>100% usage</b> = exhausting the plan's estimated <b>${t.windowMTok}M tokens per ${SW.windowHours}-hour window</b>, `+
@@ -369,7 +396,7 @@
     const t = ctx.t0 + (px-PL)/(W-PL-PR)*(T1-ctx.t0);
     ctx.cursor.setAttribute('x1',px); ctx.cursor.setAttribute('x2',px); ctx.cursor.setAttribute('opacity',1);
     const R = ctx.R;
-    const api = licences*promptsDay()*30*tokPerPrompt/1e6*priceOf(ctx.mdlAt(t))*R.fx;
+    const api = licences*promptsDay()*30*tokPerPrompt/1e6*priceOf(ctx.mdlAt(t))*fxAt(MMURR_REGION.get(), ymOf(t));
     const fp  = footprint(ctx.mdlAt(t)[3], R);
     const licHere = ctx.licAt(t);
     let s = `<b>${fmtMonth(t)}</b> · Licence ${licHere==null ? 'not launched' : R.sym+Math.round(licHere).toLocaleString()}`;

@@ -17,8 +17,9 @@
 --------------------------------------------------------------------------- */
 
 // --- Environmental bases (unchanged single source for CO2/water) -----------
+// Grid intensity is NOT here — read it via gridFactor(region, td) below so no
+// two copies can drift (coherence checklist §8.1).
 window.MMURR_BASES = {
-  grid:  0.177,   // kgCO2e/kWh — UK location-based grid intensity (DESNZ/Defra 2025)
   car:   0.17,    // kgCO2e/km  — UK average car, all fuels (Defra 2025)
   phone: 0.0082,  // kgCO2e     — one full smartphone charge (US-grid basis, US EPA equivalencies)
   // Per-token energy, API-METERED VIEW ONLY (Gemini basis, ported from the old
@@ -46,6 +47,27 @@ window.gridFactor = function(code, tdOn){
   const adder = MMURR_TD_ADDER[code];
   return base + ((tdOn && adder) ? adder : 0);
 };
+
+// --- FX helpers (v2 §9) -------------------------------------------------------
+// GBP per USD by month from js/data/fx-history.js. Historical $ points convert
+// at FX[ym] (nearest prior month); current prices at the latest month (pass a
+// far-future ym). Non-GBP regions keep their editable anchors (US 1.00;
+// EU 0.92 — no EUR series yet).
+window.fxAt = function(regionCode, ym){
+  const R = MMURR_DATA.regions[regionCode];
+  if(regionCode !== 'UK' || !window.MMURR_FX) return R ? R.fx : 1;
+  const S = MMURR_FX.series;
+  if(S[ym] != null) return S[ym];
+  let v = null;
+  for(const k of MMURR_FX.months){ if(k <= ym) v = S[k]; else break; }
+  return v != null ? v : S[MMURR_FX.months[0]];
+};
+// Consumer VAT applied when DISPLAYING usd_fx subscriptions (billed USD + local
+// VAT at checkout). Regional-list consumer prices already include VAT, so this
+// makes the two modes like-for-like. US shows ex-sales-tax by convention.
+// EU 0.20 is an approximation (rates vary 17–27% by state) — VERIFY.
+window.MMURR_VAT = { UK: 0.20, US: 0, EU: 0.20 };
+window.subVat = function(regionCode){ const v = MMURR_VAT[regionCode]; return 1 + (v == null ? 0 : v); };
 
 // --- Traffic mix (input share) — shared slider state (v2 §2) -----------------
 // One global input/output split for EVERY model and licence. Price maths only:
@@ -93,7 +115,11 @@ window.MMURR_DATA = {
   // EU 0.6). 1.8–1.9 L/kWh is the GLOBAL evaporative-cooling average (Green
   // Grid via EESI) and remains the US default. All editable.
   regions: {
-    UK: { label:'UK — London', flag:'🇬🇧', cur:'GBP', sym:'£', fx:0.78,
+    // UK fx comes from js/data/fx-history.js (ECB monthly series, committed by
+    // a repo Action; loaded before this file). The 0.78 literal is ONLY an
+    // emergency fallback for a file:// copy missing the generated data file.
+    UK: { label:'UK — London', flag:'🇬🇧', cur:'GBP', sym:'£',
+          fx:(window.MMURR_FX ? MMURR_FX.latest : 0.78),
           grid:0.177, wue:0.5, pue:1.0,
           gridNote:'UK location-based grid (DESNZ/Defra 2025)', gridConf:'SOURCED',
           wueNote:'EED-derived European average (WRc/MOSL 2026) / CNDCP 0.4 midpoint', wueConf:'SOURCED' },
@@ -107,8 +133,10 @@ window.MMURR_DATA = {
           wueNote:'EED-reported European average ≈0.58 (WRc/MOSL 2026)', wueConf:'SOURCED' },
   },
 
-  // FX = local currency per 1 USD. Editable anchors, NOT a live feed. (§7.5)
-  fxNote: 'Editable anchor, not a live feed — this site makes no network calls.',
+  // FX = local currency per 1 USD. GBP is the ECB reference-rate monthly series
+  // (js/data/fx-history.js, committed by a monthly Action); EUR stays an
+  // editable anchor until an EUR series exists. (v2 §9)
+  fxNote: 'GBP/USD is the ECB reference rate (monthly series committed by a repo Action — the site itself makes no runtime network calls); EUR is an editable anchor.',
 
   // Seat prices: regional LIST per seat/month, in that region's own currency.
   // M365 Copilot enterprise add-on. NOT FX-converted between regions. (§7.2)

@@ -45,7 +45,7 @@
           <option value="custom">Custom kgCO₂e/kWh</option>
         </select></div>
       <div id="hostCustomWrap" hidden><label class="f" for="hostCustom">Custom kgCO₂e/kWh</label>
-        <input type="number" id="hostCustom" min="0" step="any" value="0.177"></div>
+        <input type="number" id="hostCustom" min="0" step="any"></div>
       <label class="chk-td" id="tdWrap" title="Only source-backed T&D adders are applied — pick a country basis with one (UK) to enable"><input type="checkbox" id="tdToggle" disabled>
         Include transmission &amp; distribution losses (+10.5% UK)</label>
     </div>
@@ -195,6 +195,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/data/api-prices.js"></script>  <!-- weekly-refreshed referenced API prices; optional -->
+<script src="js/data/fx-history.js"></script>  <!-- ECB GBP/USD monthly series (Action-committed); before factors.js -->
 <script src="js/factors.js"></script>
 <script src="js/data/hosting.js"></script>     <!-- served-from carbon bases (v2 §4) -->
 <script src="js/region.js"></script>

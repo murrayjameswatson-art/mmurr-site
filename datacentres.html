@@ -27,6 +27,7 @@
     <div class="stat"><div class="big">8.1 GW</div><div class="lab">Announced pipeline to 2037</div></div>
     <div class="stat"><div class="big">6 GW</div><div class="lab">Gov AI-capable target by 2030</div></div>
     <div class="stat"><div class="big">266</div><div class="lab">Data centres (up from 52 in 2000)</div></div>
+    <div class="stat"><div class="big">&gt;70 GW</div><div class="lab">Connection requests in the queue (NESO) — vs ~8 GW realistic pipeline</div></div>
   </div>
   <p class="note">Capacity estimates range <b>1.6–2.9 GW</b> depending on methodology (EPC-derived vs IT-power
     estimates — Oxford Economics' IT-power method gives 2.9 GW today with 6.2 GW to be added by 2030); this page uses
@@ -92,6 +93,36 @@
       the regional figures that are actually published.</p>
   </div>
 
+  <h2>UK map — the curated sites</h2>
+  <div class="panel">
+    <div class="seg" id="ukFilter">
+      <button type="button" data-f="all" class="on">All sites</button>
+      <button type="button" data-f="ai">AI-flagged</button>
+    </div>
+    <div class="map-legend"><span><i style="background:#5bd1a6"></i>operational</span>
+      <span><i style="background:#e0b341"></i>under construction</span>
+      <span><i style="background:none;border:1.5px solid #9aa3b2"></i>announced</span></div>
+    <div class="mapbox" id="ukMap"></div>
+    <p class="note" id="ukMapNote"></p>
+  </div>
+
+  <h2>Demand vs supply — the national picture</h2>
+  <div class="panel">
+    <div class="chartbox"><canvas id="demandChart"></canvas></div>
+    <p class="note">NESO's data-centre demand estimate against the theoretical ceiling of the operational fleet
+      (MW × 8,760 h). The demand line sits at an implied fleet-average load factor of roughly <b>0.4–0.55</b> — shown
+      as the shaded band. Per-site utilisation is not public anywhere and is not synthesised here. The system-level
+      tension: <b>&gt;70 GW</b> of connection requests against a ~8 GW realistic pipeline.</p>
+  </div>
+
+  <h2>The world map — major AI-relevant sites</h2>
+  <div class="panel">
+    <div class="seg" id="wmChips"></div>
+    <div class="map-legend" id="wmLegend"></div>
+    <div class="mapbox" id="worldMap"></div>
+    <p class="note" id="worldMapNote"></p>
+  </div>
+
   <h2>Reported vs location-based — the scope-2 gap</h2>
   <div class="panel">
     <p class="sub" style="margin-top:0">Fleet emissions can be counted two ways: <b>location-based</b> (grid average ×
@@ -132,6 +163,12 @@
             against the ~8 GW realistic pipeline is the hype-vs-steel gap.</td></tr>
         <tr><td>Scope-2 gap (location vs market)</td><td class="v">Microsoft 25.2 vs 15.5 Mt · Google 23.4 vs 15.2 Mt (2024)</td>
           <td><a href="https://policyreview.info/articles/news/big-techs-2025-sustainability-reports/2027" target="_blank" rel="noopener">Papaevangelou &amp; Vogiatzoglou (2026)</a> · vendor 2025 sustainability reports</td></tr>
+        <tr><td>UK site map</td><td class="v">~23 curated sites (of ~190 EPC-identified)</td>
+          <td><a href="https://www.gov.uk/government/collections/ai-growth-zones" target="_blank" rel="noopener">GOV.UK AI Growth Zones</a> · <a href="https://www.nscale.com/press-releases/nscale-uk-ai-infrastructure-announcement" target="_blank" rel="noopener">Nscale/Microsoft/OpenAI (2025)</a> · operator pages · press-cited planning applications — per-marker source &amp; confidence in each tooltip</td></tr>
+        <tr><td>World map — capacity shares</td><td class="v">≈55 GW global IT (mid-2025) · US ≈50% · Europe ≈18% · China ≈10% · US 180 TWh / China 102 TWh (2024)</td>
+          <td><a href="https://www.iea.org/reports/energy-and-ai" target="_blank" rel="noopener">IEA, Energy and AI (2025)</a></td></tr>
+        <tr><td>World map — grid-CI choropleth</td><td class="v">display only; UK/US/France anchors match gridFactor</td>
+          <td><a href="https://ember-energy.org/data/yearly-electricity-data/" target="_blank" rel="noopener">Ember Yearly Electricity Data (2024)</a> — non-anchor countries VERIFY</td></tr>
       </tbody>
     </table>
     <p class="foot">All factors are editable and represent academic/industry approximations — the literature spans wide
@@ -143,10 +180,17 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="js/data/fx-history.js"></script>
 <script src="js/factors.js"></script>
 <script src="js/data/scope2.js"></script>
+<script src="js/data/world-110m.js"></script>
+<script src="js/data/sites-uk.js"></script>
+<script src="js/data/sites-world.js"></script>
+<script src="js/data/dc-geo.js"></script>
 <script src="js/region.js"></script>
+<script src="js/worldmap.js"></script>
 <script src="js/datacentres.js"></script>
 </body>
 </html>

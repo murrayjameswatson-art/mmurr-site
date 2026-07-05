@@ -41,7 +41,8 @@ input[type=number]:focus,input[type=month]:focus{outline:2px solid var(--accent)
 table.src{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:8px}
 table.src th,table.src td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 table.src th{color:var(--muted);font-weight:600}
-table.src td.val,table.src td.v{font-family:var(--mono);white-space:nowrap;color:var(--accent)}
+/* value cells wrap at separators (nowrap crushed the label column mid-word) */
+table.src td.val,table.src td.v{font-family:var(--mono);color:var(--accent)}
 .foot{margin-top:24px;color:var(--faint);font-size:.78rem}
 /* region / currency selector (shared, rendered by js/region.js) */
 .region-bar{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-top:12px}
@@ -58,6 +59,8 @@ table.src td.val,table.src td.v{font-family:var(--mono);white-space:nowrap;color
 /* mobile hardening */
 input[type=number],input[type=month]{font-size:16px} /* ≥16px stops iOS zoom-on-focus */
 table.src td,table.src th{overflow-wrap:anywhere}
+/* labels break at word boundaries only, never mid-word */
+table.src td:first-child,table.src th:first-child{overflow-wrap:normal;min-width:120px}
 canvas,table,img{max-width:100%}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

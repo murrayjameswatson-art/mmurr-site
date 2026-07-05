@@ -123,6 +123,39 @@ function syncWuePreset(v){
   [...box.children].forEach(b=>b.classList.toggle('on', parseFloat(b.dataset.wue)===v));
 }
 
+// --- Demand vs supply: national band chart (v2 §7.3) ------------------------
+// NESO estimates (~5 TWh 2023 → ~20 TWh 2030; ~5.2 GW connected by 2030)
+// against the theoretical ceiling of the operational fleet (GW × 8.76 TWh/GW).
+// The implied fleet-average load factor is the 0.4–0.55 band — strictly a
+// NATIONAL figure; per-site utilisation is not public and never synthesised.
+const DEMAND_YEARS = ['2023','2024','2025','2026','2027','2028','2029','2030'];
+const FLEET_GW     = [1.5, 1.6, 1.8, 2.0, 2.5, 3.0, 4.0, 5.2];   // operational trajectory (CW basis → NESO 5.2 by 2030)
+const NESO_TWH     = [5.0, 6.0, 7.5, 9.0, 11.0, 13.5, 16.5, 20.0]; // NESO demand estimate, interpolated between anchors
+function drawDemand(){
+  const el = document.getElementById('demandChart'); if(!el) return;
+  const ceiling = FLEET_GW.map(gw => +(gw*8.76).toFixed(1));
+  new Chart(el,{
+    type:'line',
+    data:{ labels:DEMAND_YEARS, datasets:[
+      {label:'Theoretical ceiling (operational GW × 8,760 h)', data:ceiling, borderColor:'#7db7ff',
+       backgroundColor:'transparent', borderDash:[5,4], tension:.25, pointRadius:0, borderWidth:2},
+      {label:'Ceiling × 0.55 load factor', data:ceiling.map(v=>+(v*0.55).toFixed(1)), borderColor:'transparent',
+       backgroundColor:'#e0b34122', fill:'+1', tension:.25, pointRadius:0},
+      {label:'Ceiling × 0.40 load factor', data:ceiling.map(v=>+(v*0.40).toFixed(1)), borderColor:'transparent',
+       backgroundColor:'transparent', tension:.25, pointRadius:0},
+      {label:'NESO data-centre demand estimate (TWh)', data:NESO_TWH, borderColor:'#5bd1a6',
+       backgroundColor:'transparent', tension:.25, pointRadius:3, borderWidth:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11},
+          filter:i=>!i.text.startsWith('Ceiling ×')}},
+        tooltip:{callbacks:{label:c=> c.dataset.label.startsWith('Ceiling ×')?null:` ${c.dataset.label}: ${c.parsed.y} TWh`}}},
+      scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
+        y:{beginAtZero:true,ticks:{color:'#6b7280',callback:v=>v+' TWh',font:{size:10}},grid:{color:'#222732'},
+           title:{display:true,text:'TWh / year',color:'#9aa3b2',font:{size:11}}}}},
+  });
+}
+
 // --- Scope-2 gap: location- vs market-based paired bars (v2 §5) -------------
 function drawScope2(){
   const S = window.MMURR_SCOPE2, el = document.getElementById('scope2Chart');
@@ -148,6 +181,7 @@ function drawScope2(){
 // --- Wire -----------------------------------------------------------------
 function init(){
   drawCap();
+  drawDemand();
   drawScope2();
   heat('heatNow', CLUSTERS_NOW, '#5bd1a6');
   heat('heatPlan', CLUSTERS_PLAN, '#ff6b57');

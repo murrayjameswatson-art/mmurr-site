@@ -333,49 +333,6 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;colo
   <p><strong>2 &mdash; Top-up exceeds evaporation.</strong> As pure water evaporates, dissolved solids concentrate in the loop, so the tower must bleed off concentrated water ("blowdown") and take in more make-up than was evaporated. At typical cycles of concentration (3&ndash;6), make-up &asymp; evaporation &times; CoC/(CoC&minus;1), i.e. ~20&ndash;50% above the evaporated volume. Evaporation is <em>consumed</em> (leaves the catchment as vapour); blowdown is <em>withdrawn and returned</em> (to sewer/drain) &mdash; the WUE metric counts the consumption, which is why "withdrawal" headlines can read several times higher than WUE-based figures for the same site.</p>
   <p><strong>3 &mdash; Many facilities barely use this loop at all.</strong> Air-cooled chillers, dry coolers and closed-loop liquid cooling reject heat without evaporation &mdash; trading water for electricity (a higher PUE). UK-climate facilities mostly run this way, drawing water only in heatwave peaks (hybrid/adiabatic assist)<a class="src" href="#src-11">[11]</a>. This water&harr;energy trade-off is the single most important design fork for the footprint.</p>
 
-  <figure>
-    <svg viewBox="0 0 860 330" role="img" aria-label="Diagram of an evaporative cooling loop: server heat moves through a heat exchanger into a condenser water loop; at the cooling tower a small share evaporates and is consumed, a bleed stream goes to drain, and make-up water tops the loop up">
-      <defs><marker id="warr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#54c8e8"/></marker>
-      <marker id="garr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#6b7280"/></marker></defs>
-      <!-- server hall -->
-      <rect x="14" y="120" width="150" height="90" rx="8" fill="#1c212b" stroke="#5bd1a6"/>
-      <text x="89" y="155" text-anchor="middle" fill="#5bd1a6" font-size="13">Server hall</text>
-      <text x="89" y="174" text-anchor="middle" fill="#6b7280" font-size="10.5">IT energy E</text>
-      <text x="89" y="190" text-anchor="middle" fill="#6b7280" font-size="10.5">&rarr; heat, ~1:1</text>
-      <!-- heat exchanger -->
-      <line x1="164" y1="165" x2="222" y2="165" stroke="#6b7280" marker-end="url(#garr)"/>
-      <text x="193" y="153" text-anchor="middle" fill="#6b7280" font-size="10">heat</text>
-      <rect x="226" y="130" width="120" height="70" rx="8" fill="#1c212b" stroke="#222732"/>
-      <text x="286" y="160" text-anchor="middle" fill="#c9d1dc" font-size="12">Heat exchanger</text>
-      <text x="286" y="177" text-anchor="middle" fill="#6b7280" font-size="10">chilled &harr; condenser loop</text>
-      <!-- condenser loop arrows -->
-      <path d="M346 145 C 420 110, 480 110, 545 140" fill="none" stroke="#54c8e8" stroke-width="2" marker-end="url(#warr)"/>
-      <text x="447" y="112" text-anchor="middle" fill="#54c8e8" font-size="10.5">warm condenser water &mdash; recirculating</text>
-      <path d="M545 205 C 480 235, 420 235, 346 190" fill="none" stroke="#54c8e8" stroke-width="2" marker-end="url(#warr)"/>
-      <text x="447" y="252" text-anchor="middle" fill="#54c8e8" font-size="10.5">cooled water returns &mdash; ~98% of each pass</text>
-      <!-- cooling tower -->
-      <path d="M560 120 L 700 120 L 685 230 L 575 230 Z" fill="#1c212b" stroke="#54c8e8"/>
-      <text x="630" y="165" text-anchor="middle" fill="#54c8e8" font-size="12.5">Cooling tower</text>
-      <text x="630" y="184" text-anchor="middle" fill="#6b7280" font-size="10">air drawn through</text>
-      <text x="630" y="199" text-anchor="middle" fill="#6b7280" font-size="10">falling water film</text>
-      <!-- evaporation -->
-      <line x1="615" y1="116" x2="600" y2="58" stroke="#54c8e8" stroke-width="2" marker-end="url(#warr)"/>
-      <line x1="645" y1="116" x2="660" y2="58" stroke="#54c8e8" stroke-width="2" marker-end="url(#warr)"/>
-      <text x="632" y="40" text-anchor="middle" fill="#e8edf4" font-size="12">evaporation &mdash; CONSUMED</text>
-      <text x="632" y="55" text-anchor="middle" fill="#6b7280" font-size="10">~1&ndash;2% per pass &middot; 1 L rejects ~0.63 kWh heat</text>
-      <!-- blowdown -->
-      <line x1="655" y1="230" x2="700" y2="286" stroke="#6b7280" stroke-width="2" marker-end="url(#garr)"/>
-      <text x="742" y="300" text-anchor="middle" fill="#9aa3b2" font-size="10.5">blowdown &rarr; drain</text>
-      <text x="742" y="314" text-anchor="middle" fill="#6b7280" font-size="10">withdrawn, returned</text>
-      <!-- makeup -->
-      <line x1="790" y1="175" x2="704" y2="175" stroke="#54c8e8" stroke-width="2" marker-end="url(#warr)"/>
-      <text x="792" y="160" text-anchor="start" fill="#54c8e8" font-size="10.5" transform="rotate(0)"></text>
-      <text x="795" y="165" fill="#54c8e8" font-size="10.5" text-anchor="middle" transform="translate(-18,0)">make-up</text>
-      <text x="777" y="192" fill="#6b7280" font-size="10">= evap &times; CoC/(CoC&minus;1)</text>
-    </svg>
-    <figcaption>Fig. W1 &mdash; the evaporative loop. WUE counts the vapour that leaves (plus net losses), not the volume circulating. Air-cooled and closed-loop designs skip the evaporation entirely and pay for it in electricity.</figcaption>
-  </figure>
-
   <p><strong>Making L/kWh tangible.</strong> "Litres consumed per kWh of IT energy" means: for every kilowatt-hour the servers draw, this many litres end up as water vapour in the sky above the site. At the global evaporative average (1.9), one kWh of AI compute evaporates about two large water bottles; at the UK default (0.5), about a mug. Scaled to W3's 1,000-seat month (136&nbsp;kWh): 68&nbsp;L in the UK, ~259&nbsp;L on the global figure &mdash; a few bathtubs either way. The per-prompt number really is three drops; the aggregate question is how many trillions of drops, and in whose catchment, in which month.</p>
 
   <h3>Choosing WUE is choosing a climate</h3>
@@ -396,33 +353,10 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;colo
 
 
   <h3>The other two ways AI consumes water</h3>
-  <p>On-site cooling is one of three pathways. The other two are larger and less visible:</p>
-  <figure>
-    <svg viewBox="0 0 860 210" role="img" aria-label="Three panels comparing water pathways: on-site cooling, off-site power generation, and embodied water in chips and construction">
-      <rect x="10" y="14" width="266" height="160" rx="8" fill="#1c212b" stroke="#54c8e8"/>
-      <text x="143" y="42" text-anchor="middle" fill="#54c8e8" font-size="12.5">1 &middot; On-site cooling</text>
-      <text x="143" y="66" text-anchor="middle" fill="#c9d1dc" font-size="11">evaporative loop (Fig. W1)</text>
-      <text x="143" y="92" text-anchor="middle" fill="#e8edf4" font-size="13">0 &ndash; 1.9 L/kWh</text>
-      <text x="143" y="112" text-anchor="middle" fill="#6b7280" font-size="10">design- and climate-dependent</text>
-      <text x="143" y="128" text-anchor="middle" fill="#6b7280" font-size="10">what WUE measures</text>
-      <text x="143" y="158" text-anchor="middle" fill="#5bd1a6" font-size="10">MODELLED ON THIS SITE</text>
-      <rect x="297" y="14" width="266" height="160" rx="8" fill="#1c212b" stroke="#222732"/>
-      <text x="430" y="42" text-anchor="middle" fill="#c9d1dc" font-size="12.5">2 &middot; Off-site: making the electricity</text>
-      <text x="430" y="66" text-anchor="middle" fill="#c9d1dc" font-size="11">thermal-plant condensers, hydro evap.</text>
-      <text x="430" y="92" text-anchor="middle" fill="#e8edf4" font-size="13">often several &times; on-site</text>
-      <text x="430" y="112" text-anchor="middle" fill="#6b7280" font-size="10">mix-dependent; falls as grids</text>
-      <text x="430" y="128" text-anchor="middle" fill="#6b7280" font-size="10">shift to wind &amp; solar</text>
-      <text x="430" y="158" text-anchor="middle" fill="#e0b341" font-size="10">EXCLUDED &mdash; STATED IN &sect;5</text>
-      <rect x="584" y="14" width="266" height="160" rx="8" fill="#1c212b" stroke="#222732"/>
-      <text x="717" y="42" text-anchor="middle" fill="#c9d1dc" font-size="12.5">3 &middot; Embodied: chips &amp; concrete</text>
-      <text x="717" y="66" text-anchor="middle" fill="#c9d1dc" font-size="11">fab ultra-pure water, cement, steel</text>
-      <text x="717" y="92" text-anchor="middle" fill="#e8edf4" font-size="13">~several m&sup3; per wafer</text>
-      <text x="717" y="112" text-anchor="middle" fill="#6b7280" font-size="10">large fabs use tens of ML/day;</text>
-      <text x="717" y="128" text-anchor="middle" fill="#6b7280" font-size="10">most is treated &amp; partially recycled</text>
-      <text x="717" y="158" text-anchor="middle" fill="#e0b341" font-size="10">EXCLUDED &mdash; ORDER-OF-MAGNITUDE ONLY</text>
-    </svg>
-    <figcaption>Fig. W2 &mdash; three water pathways. This site's water figures are pathway 1 only; pathways 2 and 3 are acknowledged, not modelled, because credible per-prompt allocation does not yet exist.</figcaption>
-  </figure>
+  <p>On-site cooling (pathway 1, 0&ndash;1.9&nbsp;L/kWh — what WUE measures, and the only pathway modelled on this
+    site) is one of three. Pathway 2 is off-site: water consumed generating the electricity (thermal-plant
+    condensers, hydro evaporation) — often several times the on-site figure, mix-dependent, and excluded as stated
+    above. Pathway 3 is embodied: chips &amp; construction — excluded, order-of-magnitude only.</p>
   <p class="small">On pathway 3: semiconductor fabrication is intensely water-hungry &mdash; ultra-pure water for wafer rinsing dominates, with industry figures of order several thousand gallons per finished 300&nbsp;mm wafer and leading fabs consuming tens of millions of litres per day (much of it recycled at high rates). Construction adds mixing and curing water for concrete. Both are real, both are upstream scope-3-style burdens, and neither can honestly be divided into a per-prompt number today &mdash; which is why they appear here as context rather than in the calculator. <span class="tag verify">VERIFY</span></p>
 
   <p class="small">Cross-check: Google discloses 0.26 mL per median Gemini prompt<a class="src" href="#src-3">[3]</a>. 0.26 mL ÷ 0.24 Wh = <b>1.08 L/kWh</b> — matching their ~1.1 fleet WUE. The chain is internally consistent. ✓</p>

@@ -1,0 +1,81 @@
+/* costmodel.css — AI Cost-of-Service Model page. Layered on base.css (theme
+   vars, .panel, .seg, .stat, table.src, .region-*). Only page-specific
+   components live here. Cost-layer palette: PHYSICAL layers are cool (real,
+   firmer ~+-30%), SOFT layers are warm (estimated, +-order-of-magnitude) — the
+   colour split reinforces the narrative. */
+
+.cm-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:14px 0}
+.cm-controls .seg{flex-wrap:wrap}
+.svc-range{width:100%;accent-color:var(--warn)}
+.cm-slider output{font-family:var(--mono);color:var(--ink)}
+
+.chartbox{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;position:relative}
+.chartbox svg{width:100%;height:auto;display:block;overflow:visible}
+.cm-axis{fill:var(--faint);font-size:10px}
+.cm-gridline{stroke:#222732}
+.cm-barlab{fill:var(--muted);font-size:10px}
+.cm-total{fill:var(--ink);font-size:12px;font-weight:600}
+.cm-priceline{stroke:var(--hot);stroke-width:2.2;stroke-dasharray:5 3}
+.cm-pricelab{fill:var(--hot);font-size:10.5px;font-weight:600}
+.cm-serie{fill:none;stroke-width:2.2}
+.cm-serie-total{stroke:var(--ink)}
+.cm-serie-phys{stroke:var(--link);stroke-dasharray:6 4}
+.cm-dot{stroke:var(--panel);stroke-width:1.5}
+
+/* cost-layer fills — cool = physical, warm = soft */
+.cl-silicon{fill:#7db7ff}
+.cl-facility{fill:#5bd1a6}
+.cl-energy{fill:#54c8e8}
+.cl-network{fill:#9aa3b2}
+.cl-training{fill:#e0b341}
+.cl-rnd{fill:#ff6b57}
+
+.cm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.78rem;color:var(--muted)}
+.cm-legend span{display:inline-flex;align-items:center;gap:6px}
+.cm-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.cm-legend .grp{width:100%;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-top:4px}
+
+.cm-readout{display:flex;flex-wrap:wrap;gap:18px 26px;margin-top:16px}
+.cm-readout div{display:flex;flex-direction:column}
+.cm-k{font-size:.72rem;color:var(--faint)}
+.cm-v{font-size:1.2rem;font-family:var(--mono);color:var(--ink)}
+.cm-v.pos{color:var(--accent)}
+.cm-v.neg{color:var(--hot)}
+.cm-v small{font-size:.6em;color:var(--muted)}
+
+/* per-1M environmental strip */
+.env-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.env-strip .cell{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.env-strip .k{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
+.env-strip .v{font-family:var(--mono);font-size:1.05rem;color:var(--ink);margin-top:2px}
+
+/* company mode */
+.cm-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.cm-tiles .stat .big{color:var(--ink)}
+.cm-companies{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0}
+.cm-companies button{background:var(--panel2);border:1px solid var(--line);border-radius:999px;color:var(--muted);
+  padding:6px 14px;font-size:.85rem;cursor:pointer}
+.cm-companies button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:600;border-color:var(--accent)}
+
+.cm-banner{background:rgba(224,179,65,.09);border:1px solid rgba(224,179,65,.35);border-radius:var(--radius);
+  padding:12px 14px;margin-top:12px;font-size:.85rem;color:var(--ink)}
+.cm-banner strong{color:var(--warn)}
+
+.logic-disclose{font-size:.84rem;color:var(--muted)}
+.logic-disclose summary{cursor:pointer;color:var(--link);width:max-content}
+.logic-disclose[open] summary{margin-bottom:8px}
+.eq{font-family:var(--mono);font-size:.82rem;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:10px 12px;margin:8px 0;overflow-x:auto;white-space:pre;color:var(--ink)}
+
+.conf{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.conf.sourced{color:var(--accent);border-color:var(--accent)}
+.conf.verify{color:var(--warn);border-color:var(--warn)}
+.conf.assumption{color:#b98cff;border-color:#b98cff}
+
+.cm-asof{font-size:.78rem;color:var(--faint);font-family:var(--mono)}
+
+@media(max-width:680px){
+  .cm-readout{gap:14px 18px}
+  .cm-v{font-size:1.05rem}
+}

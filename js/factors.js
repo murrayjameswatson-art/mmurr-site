@@ -217,13 +217,13 @@ window.MMURR_DATA = {
                    models:['oa:auto','oa:think','oa:mini'] },
     claudePro:   { label:'Claude Pro — personal', name:'Claude Pro', provider:'Anthropic', color:'#3fb489', group:'Personal & team subscriptions',
                    kind:'subscription', usd:[['2023-09',20]], lagDays:0, lineage:'an:sonnet', windowMTok:0.5, pricing_mode:'usd_fx',
-                   models:['an:haiku','an:sonnet','an:opus'] },
+                   models:['an:haiku','an:sonnet','an:opus','an:fable'] },
     claudeMax5:  { label:'Claude Max 5× — personal', name:'Claude Max 5×', provider:'Anthropic', color:'#8fe3c4', group:'Personal & team subscriptions',
                    kind:'subscription', usd:[['2025-04',100]], lagDays:0, lineage:'an:sonnet', windowMTok:2.5, pricing_mode:'usd_fx',
-                   models:['an:haiku','an:sonnet','an:opus'] },
+                   models:['an:haiku','an:sonnet','an:opus','an:fable'] },
     claudeMax20: { label:'Claude Max 20× — personal', name:'Claude Max 20×', provider:'Anthropic', color:'#2e8f6f', group:'Personal & team subscriptions',
                    kind:'subscription', usd:[['2025-04',200]], lagDays:0, lineage:'an:opus',  windowMTok:10, pricing_mode:'usd_fx',
-                   models:['an:haiku','an:sonnet','an:opus'] },
+                   models:['an:haiku','an:sonnet','an:opus','an:fable'] },
     geminiPro:   { label:'Google AI Pro — personal', name:'Google AI Pro', provider:'Google', color:'#d3b3ff', group:'Personal & team subscriptions',
                    kind:'subscription', usd:[['2024-02',19.99]], lagDays:0, lineage:'gm:pro', windowMTok:0.5, pricing_mode:'regional_list',
                    local:{ UK:[['2024-02',18.99]] },                     // gemini.google UK list (SOURCED Jul 2026)
@@ -275,40 +275,54 @@ window.MMURR_DATA = {
       ['2023-11','GPT-4 Turbo',20,3.0,[10,30]],['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],
       ['2025-08','GPT-5',5.6,0.34,[1.25,10]],['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],
       // GPT-5.5 launched 23 Apr 2026 at $5/$30 — a straight 2× on GPT-5.4 ($2.50/$15).
-      // The feed never touches backend, so this anchor must carry the real price.
-      ['2026-04','GPT-5.5',17.5,0.31,[5,30]],
+      // GPT-5.6 (Sol/Terra/Luna) GA 9 Jul 2026; Sol is the flagship backend at the
+      // same $5/$30. The feed never touches backend, so these anchors carry the price.
+      ['2026-04','GPT-5.5',17.5,0.31,[5,30]],['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],
     ],
 
     // Main-model axis: which lineage drives the API line + footprint overlay.
     // io=[inUSD/1M, outUSD/1M, current-model label]; steps=[date,label,blendedUSD/1M,Wh]
     defaultAxis: 'oa:auto',
     axis: {
-      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[5,30,'GPT-5.5 (Auto)'],
+      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[5,30,'GPT-5.6 Sol (Auto)'],
         steps:[['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],['2025-08','GPT-5',5.6,0.34,[1.25,10]],
-               ['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],['2026-04','GPT-5.5',17.5,0.31,[5,30]]]},
+               ['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],['2026-04','GPT-5.5',17.5,0.31,[5,30]],
+               ['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]]]},
       // GPT-5.x Thinking tiers are not separately priced API SKUs — those steps
-      // stay mix-locked (no io pair); o1/o3 archive prices are public.
-      'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[1.25,10,'GPT-5.5 Thinking'],
+      // stay mix-locked (no io pair); o1/o3 archive prices are public. GPT-5.6
+      // Thinking (VERIFY) rides the Sol backend from Jul 2026.
+      'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[5,30,'GPT-5.6 Thinking'],
         steps:[['2024-12','o1',30,3.4,[15,60]],['2025-04','o3',20,3.0,[10,40]],['2025-08','GPT-5 Thinking',6.5,3.1],
-               ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1]]},
-      'oa:mini':  {group:'OpenAI', label:'Mini / o4', conf:'VERIFY', io:[0.25,2,'o4 / GPT-5 mini'],
-        steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-03','GPT-5 mini',1.1,0.15,[0.25,2]]]},
-      'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[0.30,2.50,'Gemini 2.5 Flash'],
-        steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','2.5 Flash',1.40,0.24,[0.30,2.50]]]},
+               ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1],
+               ['2026-07','GPT-5.6 Thinking',9.5,3.1]]},
+      // Cheap tier: o3/o4-mini → GPT-5 mini → GPT-5.6 Luna ($0.20/$1.20 after the
+      // 30 Jul 2026 −80% cut). Removed the duplicate 'GPT-5 mini' placeholder step.
+      'oa:mini':  {group:'OpenAI', label:'Mini / Luna', conf:'VERIFY', io:[0.20,1.20,'GPT-5.6 Luna'],
+        steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-07','GPT-5.6 Luna',0.70,0.12,[0.20,1.20]]]},
+      // Flash moved fast: 2.5 Flash → 3.5 Flash ($1.50/$9, May 2026) → 3.6 Flash
+      // ($1.50/$7.50, Aug 2026). Removed the duplicate '2.5 Flash' placeholder.
+      'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[1.50,7.50,'Gemini 3.6 Flash'],
+        steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','3.5 Flash',5.25,0.24,[1.50,9.00]],['2026-08','3.6 Flash',4.50,0.24,[1.50,7.50]]]},
       'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
         steps:[['2024-02','1.5 Pro',7.0,0.6,[3.5,10.5]],['2025-03','2.5 Pro',5.6,0.4,[1.25,10]],['2025-11','3 Pro',7.0,0.4,[2,12]],['2026-05','3.1 Pro',7.0,0.4,[2,12]]]},
-      'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[1.25,2.50,'Grok 4.3'],
-        steps:[['2025-02','Grok 3',9.0,0.4,[3,15]],['2025-07','Grok 4',9.0,0.4,[3,15]],['2026-03','Grok 4.3',1.9,0.35,[1.25,2.5]]]},
+      'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Grok 4.5'],
+        steps:[['2025-02','Grok 3',9.0,0.4,[3,15]],['2025-07','Grok 4',9.0,0.4,[3,15]],['2026-03','Grok 4.3',1.9,0.35,[1.25,2.5]],['2026-07','Grok 4.5',4.0,0.35,[2,6]]]},
       'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[0.50,1.50,'Large 3'],
         // Large 3 (Dec 2025) lists $0.50/$1.50 — mistral.ai/pricing agrees with the
         // LiteLLM feed; the old 4.0 anchor carried Large 2's price forward.
         steps:[['2024-07','Large 2',4.0,0.3,[2,6]],['2025-05','Medium 3',1.2,0.25,[0.4,2]],['2025-12','Large 3',1.0,0.3,[0.5,1.5]]]},
       'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
         steps:[['2024-03','Haiku 3',0.75,0.25,[0.25,1.25]],['2025-10','Haiku 4.5',3.0,0.3,[1,5]]]},
-      'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[3,15,'Sonnet 4.6'],
-        steps:[['2024-06','Sonnet 3.5',9.0,0.34,[3,15]],['2025-09','Sonnet 4.5',9.0,0.34,[3,15]],['2026-01','Sonnet 4.6',9.0,0.34,[3,15]]]},
+      // Sonnet held $3/$15 across 3.5 → 4.5 → 4.6 (the "price held while the model
+      // was swapped" story — kept intentionally); Sonnet 5 (Jul 2026) cut it to
+      // $2/$10 on intro pricing through 31 Aug 2026.
+      'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[2,10,'Sonnet 5'],
+        steps:[['2024-06','Sonnet 3.5',9.0,0.34,[3,15]],['2025-09','Sonnet 4.5',9.0,0.34,[3,15]],['2026-01','Sonnet 4.6',9.0,0.34,[3,15]],['2026-07','Sonnet 5',6.0,0.34,[2,10]]]},
       'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[5,25,'Opus 4.8'],
         steps:[['2024-03','Opus 3',45,0.6,[15,75]],['2025-08','Opus 4.1',45,0.6,[15,75]],['2026-01','Opus 4.6',15,0.5,[5,25]],['2026-05','Opus 4.8',15,0.5,[5,25]]]},
+      // Fable 5 (Jul 2026) — new Claude 5 flagship above Opus, $10/$50 (LiteLLM). Wh assumed.
+      'an:fable': {group:'Anthropic', label:'Fable', conf:'SOURCED', assumedWh:true, io:[10,50,'Fable 5'],
+        steps:[['2026-07','Fable 5',30,0.6,[10,50]]]},
     },
 
     // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)

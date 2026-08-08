@@ -14,7 +14,7 @@ function monthList(start, end){
   while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} }
   return out;
 }
-const START='2024-01', END='2026-06';
+const START='2024-01', END='2026-08';
 const MONTHS = monthList(START,END);
 const D = s => { const [y,m]=s.split('-').map(Number); return new Date(y,m-1,1).getTime(); };
 const TS = MONTHS.map(D);

@@ -2,25 +2,27 @@
    Current API $/1M-token prices referenced from the LiteLLM community
    registry. History steps stay hand-set in js/factors.js; the site uses
    these values to overwrite each lineage's LATEST price point. Absent
-   file / absent key → factors.js anchors are used unchanged. */
+   file / absent key → factors.js anchors are used unchanged.
+   NOTE: 2026-08-08 values hand-synced to the Aug-2026 refresh (no local Node
+   to run the Action); the weekly Action self-heals these against LiteLLM. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-08-03",
+  "fetched": "2026-08-08",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {
-      "id": "gpt-5.5",
+      "id": "gpt-5.6",
       "in": 5,
       "out": 30
     },
     "oa:mini": {
-      "id": "gpt-5-mini",
-      "in": 0.25,
-      "out": 2
+      "id": "gpt-5.6-luna",
+      "in": 0.2,
+      "out": 1.2
     },
     "gm:flash": {
-      "id": "gemini/gemini-2.5-flash",
-      "in": 0.3,
-      "out": 2.5
+      "id": "gemini/gemini-3.6-flash",
+      "in": 1.5,
+      "out": 7.5
     },
     "gm:pro": {
       "id": "gemini/gemini-3.1-pro-preview",
@@ -33,19 +35,24 @@ window.MMURR_API_PRICES = {
       "out": 5
     },
     "an:sonnet": {
-      "id": "claude-sonnet-4-6",
-      "in": 3,
-      "out": 15
+      "id": "claude-sonnet-5",
+      "in": 2,
+      "out": 10
     },
     "an:opus": {
       "id": "claude-opus-4-8",
       "in": 5,
       "out": 25
     },
+    "an:fable": {
+      "id": "claude-fable-5",
+      "in": 10,
+      "out": 50
+    },
     "xa:grok": {
-      "id": "xai/grok-4.3",
-      "in": 1.25,
-      "out": 2.5
+      "id": "xai/grok-4.5",
+      "in": 2,
+      "out": 6
     },
     "mi:large": {
       "id": "mistral/mistral-large-3",

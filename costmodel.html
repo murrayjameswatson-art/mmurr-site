@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Cost-of-Service Model — mmurr.ai</title>
+<meta name="description" content="First-principles model of what it actually costs to serve AI — six cost layers per million tokens, price-vs-cost margin, and whole-company annual cost, CO₂e and water. Runs in your browser.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/costmodel.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>AI Cost-of-Service Model</h1>
+      <p class="sub bright">What it actually costs to <em>serve</em> a token — six cost layers from silicon to R&amp;D —
+        and how that compares to the price vendors charge. A first-principles estimate, every input a slider.</p>
+    </div>
+    <div><a class="back" href="prices.html">Impact Calculator</a> · <a class="back" href="handbook.html">Handbook</a> ·
+      <a class="back" href="index.html">← mmurr.ai</a></div>
+  </header>
+
+  <div class="panel">
+    <p class="sub" style="margin:0">
+      Everything descends from one physical quantity — <strong>accelerator-seconds per token</strong> — so the dollar,
+      carbon and water views stay on the same stream (power-in = heat-out). Two views share one engine: the
+      <strong>per-model unit cost</strong> ($/1M tokens) below, and the <strong>whole-company annual</strong> cost further
+      down. This is the fully-loaded cost <em>underneath</em> the API price on the
+      <a href="prices.html">Impact Calculator</a> — the physical serving layers here are the same quantity as its
+      "token cost". Data anchors as of <span class="cm-asof" id="cm-asof">—</span>.
+    </p>
+    <div class="cm-banner" style="margin-top:12px">
+      <strong>Two inputs carry the dollar answer.</strong> The <strong>served-token denominator</strong> (how many tokens a
+      model serves over its life) and the <strong>R&amp;D multiple</strong> are undisclosed and swing the total ~10×, so
+      treat any single dollar figure as ±order-of-magnitude. The <em>physical</em> serving cost is firmer (~±30%);
+      environmental answers are set by geography (grid, water), not engineering. Both live-wire inputs are sliders.
+    </div>
+  </div>
+
+  <!-- ============ MODEL ECONOMICS — COST TO SERVE ============ -->
+  <h2>Model economics — cost to serve</h2>
+  <div class="panel">
+    <div class="cm-controls">
+      <div>
+        <label class="f">Year baseline</label>
+        <div class="seg" id="cm-year">
+          <button data-y="2023">2023</button><button data-y="2024">2024</button>
+          <button data-y="2025">2025</button><button data-y="2026" class="on">2026</button>
+        </div>
+      </div>
+      <div>
+        <label class="f">Model archetype</label>
+        <div class="seg" id="cm-arch">
+          <button data-a="standard" class="on">Standard</button><button data-a="reasoning">Reasoning</button>
+          <button data-a="efficient">Efficient</button><button data-a="large">Large</button>
+        </div>
+      </div>
+      <div>
+        <label class="f" for="cm-model">Overlay a real model's API price</label>
+        <select id="cm-model" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
+      </div>
+    </div>
+
+    <div class="cm-controls" style="margin-top:0">
+      <div class="cm-slider">
+        <label class="f" for="cm-served">Served tokens over model life (T<sub>s</sub>) <output id="cm-servedOut"></output></label>
+        <input type="range" id="cm-served" class="svc-range" min="12.5" max="15.5" step="0.05" value="14.9">
+      </div>
+      <div class="cm-slider">
+        <label class="f" for="cm-rnd">R&amp;D multiple over the shipped training run (m) <output id="cm-rndOut"></output></label>
+        <input type="range" id="cm-rnd" class="svc-range" min="0" max="4" step="0.1" value="2">
+      </div>
+    </div>
+
+    <details class="logic-disclose">
+      <summary>Advanced inputs</summary>
+      <div class="cm-controls" style="margin-top:8px">
+        <div><label class="f" for="cm-elec">Electricity $/kWh</label><input type="number" id="cm-elec" min="0" step="any"></div>
+        <div><label class="f" for="cm-grid">Grid gCO₂e/kWh</label><input type="number" id="cm-grid" min="0" step="any"></div>
+        <div><label class="f" for="cm-util">Utilisation (0–1)</label><input type="number" id="cm-util" min="0.05" max="1" step="0.01"></div>
+      </div>
+    </details>
+
+    <div class="chartbox"><svg id="cmStack" viewBox="0 0 760 150" role="img" aria-label="Fully-loaded cost per million tokens, split into six layers, with the selected model's API price marked"></svg></div>
+
+    <div class="cm-legend" id="cm-legend"></div>
+
+    <div class="cm-readout">
+      <div><span class="cm-k">Physical serving</span><span class="cm-v" id="cm-r-phys">—</span></div>
+      <div><span class="cm-k">Soft (training + R&amp;D)</span><span class="cm-v" id="cm-r-soft">—</span></div>
+      <div><span class="cm-k">Fully-loaded / 1M tok</span><span class="cm-v" id="cm-r-total">—</span></div>
+      <div><span class="cm-k">API list price / 1M tok</span><span class="cm-v" id="cm-r-price">—</span></div>
+      <div><span class="cm-k">Gross margin</span><span class="cm-v" id="cm-r-margin">—</span></div>
+    </div>
+
+    <div class="env-strip" id="cm-env"></div>
+
+    <details class="logic-disclose" style="margin-top:12px">
+      <summary>Cost logic</summary>
+      <p class="sub" id="cm-disc" style="margin:10px 0 0"></p>
+    </details>
+  </div>
+
+  <!-- ============ COST OVER TIME ============ -->
+  <h2>Cost over time — the efficiency curve</h2>
+  <div class="panel">
+    <p class="sub" style="margin:0 0 6px">Fully-loaded and physical-only cost per 1M tokens across the year baselines, at
+      the current archetype and slider settings. The unit cost falls several-fold as throughput, batching and silicon
+      improve — directionally tracking the experience curve.</p>
+    <div class="chartbox"><svg id="cmTrend" viewBox="0 0 760 240" role="img" aria-label="Fully-loaded and physical cost per million tokens, 2023 to 2026"></svg></div>
+    <div class="cm-legend">
+      <span><i style="background:var(--ink)"></i>Fully-loaded $/1M</span>
+      <span><i style="background:var(--link)"></i>Physical serving $/1M</span>
+    </div>
+  </div>
+
+  <!-- ============ WHOLE COMPANY / YEAR ============ -->
+  <h2>Whole company · per year</h2>
+  <div class="panel">
+    <p class="sub" style="margin:0 0 4px">Top-down from a fleet's average IT power (MW): annualised cost of running the
+      fleet that <em>exists</em>, plus its CO₂e and water. Pick a lab:</p>
+    <div class="cm-companies" id="cm-co"></div>
+
+    <div class="cm-banner">
+      <strong>Estimates, not disclosures.</strong> The MW and R&amp;D figures are order-of-magnitude estimates
+      back-solved to be plausible against disclosed capex — no lab publishes a served-token denominator or a clean
+      location-based fleet average. And <strong>cash ≠ cost of service</strong>: the total below is the annualised
+      <em>accrual</em> cost of the existing fleet, not the disclosed cash capex (mostly new capacity — the buildout gap).
+    </div>
+
+    <div class="cm-tiles" id="cm-cotiles"></div>
+    <p class="sub" id="cm-conote" style="margin:12px 0 0"></p>
+  </div>
+
+  <!-- ============ METHODS ============ -->
+  <h2>Methods &amp; sources</h2>
+  <div class="panel">
+    <details class="logic-disclose" open>
+      <summary>The six cost layers &amp; the physical chain</summary>
+      <p class="sub" style="margin:10px 0 0">Root everything in accelerator-seconds; the rest is unit conversions +
+        accounting. Per 1M tokens:</p>
+      <div class="eq">FLOPs/token   = 2 · N                         (N = ACTIVE params, MoE)
+GPU-hours/1M  = g = 1e6 / (r · 3600)          (r folds in batching / MFU / bandwidth)
+Energy/1M     = g · P_g/1000 · (1+host) · PUE (kWh — power-in = heat-out)
+Carbon/1M     = Energy · grid                 Water/1M = Energy · (w_on + w_off)
+
+silicon   = g · cap / (life · 8760 · util)    facility = g · dcW·P_fac / (12 · 8760 · util)
+energy    = Energy · $/kWh                     network  = 0.10 · (silicon+facility+energy)
+training  = C_tr / T_s · 1e6                   rnd      = training · m
+TOTAL     = silicon + facility + energy + network + training + rnd</div>
+      <p class="sub" style="margin:8px 0 0"><strong>Physical serving</strong> = silicon + facility + energy + network —
+        the same quantity as the "token cost" on the <a href="prices.html">Impact Calculator</a>. <strong>Soft</strong> =
+        training + R&amp;D, dominated by the two undisclosed inputs. Onsite-water ceiling is latent heat: rejecting 1 kWh
+        by evaporation needs ≈1.48 L (h<sub>fg</sub> ≈ 2.44 MJ/kg); real WUE 0.2–1.9 reflects how much heat is rejected
+        evaporatively.</p>
+    </details>
+
+    <div id="cm-sources"></div>
+    <p class="foot">Physical chain is robust; soft-cost and per-company inputs are explicitly estimates. Every value is an
+      editable anchor in <span class="cm-asof">js/cost-model.js</span>. Compiled from public sources + first-principles
+      derivation — verify before load-bearing use. Runs entirely in your browser; no network calls.</p>
+  </div>
+
+</div>
+
+<script src="js/data/api-prices.js"></script>
+<script src="js/data/fx-history.js"></script>
+<script src="js/factors.js"></script>
+<script src="js/cost-model.js"></script>
+<script src="js/costlab.js"></script>
+</body>
+</html>

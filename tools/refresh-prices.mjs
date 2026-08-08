@@ -17,17 +17,18 @@ const SOURCE = 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_pri
 // FIRST entry aligned with the lineage's latest step label in factors.js so
 // the referenced price describes the same model the chart names.
 const MAP = {
-  'oa:auto':  ['gpt-5.5', 'gpt-5.2', 'gpt-5'],
+  'oa:auto':  ['gpt-5.6', 'gpt-5.6-sol', 'gpt-5.5', 'gpt-5.2', 'gpt-5'],
   // no '-pro' fallback here: gpt-5.4-pro is a pricier separate tier, not the
   // Thinking variant — omission (→ hand-set anchor) is more honest
-  'oa:think': ['gpt-5.5-thinking', 'gpt-5.4-thinking', 'gpt-5-thinking'],
-  'oa:mini':  ['gpt-5-mini', 'gpt-5.4-mini', 'gpt-5.2-mini'],
-  'gm:flash': ['gemini/gemini-2.5-flash', 'gemini-2.5-flash'],
+  'oa:think': ['gpt-5.6-thinking', 'gpt-5.5-thinking', 'gpt-5.4-thinking', 'gpt-5-thinking'],
+  'oa:mini':  ['gpt-5.6-luna', 'gpt-5-mini', 'gpt-5.4-mini', 'gpt-5.2-mini'],
+  'gm:flash': ['gemini/gemini-3.6-flash', 'gemini/gemini-3.5-flash', 'gemini/gemini-2.5-flash', 'gemini-2.5-flash'],
   'gm:pro':   ['gemini/gemini-3.1-pro-preview', 'gemini-3.1-pro-preview', 'gemini/gemini-3-pro-preview', 'gemini-3-pro-preview'],
   'an:haiku': ['claude-haiku-4-5', 'claude-haiku-4-5-20251001'],
-  'an:sonnet':['claude-sonnet-4-6', 'claude-sonnet-4-5'],
+  'an:sonnet':['claude-sonnet-5', 'claude-sonnet-4-6', 'claude-sonnet-4-5'],
   'an:opus':  ['claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6'],
-  'xa:grok':  ['xai/grok-4.3', 'xai/grok-4-3', 'xai/grok-4.1', 'xai/grok-4'],
+  'an:fable': ['claude-fable-5'],
+  'xa:grok':  ['xai/grok-4.5', 'xai/grok-4.3', 'xai/grok-4-3', 'xai/grok-4.1', 'xai/grok-4'],
   'mi:large': ['mistral/mistral-large-3', 'azure_ai/mistral-large-3', 'mistral/mistral-large-latest'],
 };
 

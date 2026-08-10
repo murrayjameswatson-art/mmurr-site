@@ -2,11 +2,9 @@
    Current API $/1M-token prices referenced from the LiteLLM community
    registry. History steps stay hand-set in js/factors.js; the site uses
    these values to overwrite each lineage's LATEST price point. Absent
-   file / absent key → factors.js anchors are used unchanged.
-   NOTE: 2026-08-08 values hand-synced to the Aug-2026 refresh (no local Node
-   to run the Action); the weekly Action self-heals these against LiteLLM. */
+   file / absent key → factors.js anchors are used unchanged. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-08-08",
+  "fetched": "2026-08-10",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {

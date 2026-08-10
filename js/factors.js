@@ -408,6 +408,26 @@ window.effectiveSeat = function(region, headcount, override){
   return list * (1 - seatDiscount(headcount));
 };
 
+// --- Adaptive-unit formatters (shared — moved from prices.js so every page
+// reads the same units instead of each rolling its own). Small enough to
+// live inline; kg/L pick t/kg/g and m³/L/mL so a small footprint never
+// displays as a bare "0".
+window.fmtEnergy = function(wh){
+  if(wh>=1e6)  return (wh/1e6).toLocaleString(undefined,{maximumFractionDigits:1})+' MWh';
+  if(wh>=1000) return (wh/1000).toLocaleString(undefined,{maximumFractionDigits:1})+' kWh';
+  return Math.round(wh).toLocaleString()+' Wh';
+};
+window.fmtKg = function(kg){
+  if(kg>=1000) return (kg/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' t';
+  if(kg>=1)    return kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})+' kg';
+  return Math.round(kg*1000).toLocaleString()+' g';
+};
+window.fmtL = function(L){
+  if(L>=1000) return (L/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' m³';
+  if(L>=1)    return Math.round(L).toLocaleString()+' L';
+  return Math.round(L*1000).toLocaleString()+' mL';
+};
+
 // ponytail: tiny self-check of the seat-discount math, runs only when opened
 // locally (file:// or localhost), never in production.
 if(['localhost','127.0.0.1',''].includes(location.hostname)){

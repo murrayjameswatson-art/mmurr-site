@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run It Locally — mmurr.ai</title>
+<meta name="description" content="Can you run this open-weight model on your own hardware? Hardware floor, capex/opex by region, and the operating reality after it loads — for 10 flagship open-weight models.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/local.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Run It Locally</h1>
+      <p class="sub">Can you run this open-weight model on your own hardware — and what does that actually cost?
+        Planning estimates from published specs, not measured benchmarks.</p>
+    </div>
+    <div><a class="back" href="prices.html">Impact Calculator</a> · <a class="back" href="costmodel.html">Cost-of-Service Model</a> ·
+      <a class="back" href="index.html">← mmurr.ai</a></div>
+  </header>
+
+  <div class="panel">
+    <p class="sub" style="margin:0">
+      Three questions, in order: <strong>can I run this at all</strong> (the hardware floor), <strong>what does that cost
+      me, where I am</strong> (capex + running cost by region), and <strong>what happens after it loads</strong> (the
+      operating reality most guides skip). These are planning estimates derived from published architecture specs and
+      community hardware guides — not measured on our own hardware. Verified as of
+      <span class="lm-asof" id="lm-asof">—</span>.
+    </p>
+  </div>
+
+  <!-- ============ MODEL + FACT STRIP ============ -->
+  <h2>Pick a model</h2>
+  <div class="panel">
+    <label class="f" for="lm-model">Flagship open-weight model</label>
+    <select id="lm-model" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
+    <div class="lm-strip" id="lm-facts"></div>
+    <p class="sub" style="margin-top:10px"><strong>Total params ≠ active params.</strong> For MoE models the compute
+      footprint tracks the <em>active</em> count — the headline total misleads if read as hardware demand.</p>
+  </div>
+
+  <!-- ============ CAN I RUN IT ============ -->
+  <h2>Can I run it?</h2>
+  <div class="panel">
+    <div class="chartbox"><svg id="lm-ladder" viewBox="0 0 760 92" role="img" aria-label="Hardware tier ladder, from API-only to multi-node, with the selected model's minimum tier marked"></svg></div>
+    <p class="lm-note" id="lm-tier-desc"></p>
+    <p class="sub" style="margin-top:6px">A hardware floor means <strong>"loads and runs"</strong> — not "runs fast for a
+      team." See the operating reality below before buying anything.</p>
+  </div>
+
+  <!-- ============ COST BY GEOGRAPHY ============ -->
+  <h2>What does that cost, where I am?</h2>
+  <div class="panel">
+    <div id="region-bar"></div>
+    <label class="f" for="lm-util" style="margin-top:14px">Utilisation — hours/day under load <output id="lm-util-out"></output></label>
+    <input type="range" id="lm-util" class="lm-range" min="1" max="24" step="1" value="8">
+    <div id="lm-cost"></div>
+    <p class="lm-note" id="lm-api-note"></p>
+    <p class="sub" style="margin-top:6px">Prices are hand-sourced and dated, not live — see Methods below.</p>
+  </div>
+
+  <!-- ============ POST-SETUP REALITY ============ -->
+  <details class="logic-disclose">
+    <summary>What happens after it loads</summary>
+    <ul style="margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:.85rem;line-height:1.7">
+      <li><strong>Serving stack</strong> — vLLM/SGLang setup; context length is a memory decision, not a free setting.
+        Kimi K3's 1M-token window realistically starts at 128k–256k locally unless the KV cache is sharded across many GPUs.</li>
+      <li><strong>Concurrency</strong> — loading a model isn't serving a team. Tier B fits one user comfortably; tiers D/E
+        are needed before several people can prompt at once without queuing.</li>
+      <li><strong>Storage</strong> — weights alone are large (Kimi K3 ≈ 594GB); add checkpoint and quantisation headroom
+        on top.</li>
+      <li><strong>Maintenance</strong> — driver/CUDA upgrades, re-quantisation as community GGUF ports mature.</li>
+      <li><strong>Licence</strong> — read the repo LICENCE directly. Modified MIT, Apache 2.0, MIT, and Meta's custom
+        terms differ materially at commercial scale.</li>
+      <li><strong>Hybrid pattern</strong> — sensitive work local, frontier/long-context bursts via API. Often the correct
+        answer.</li>
+    </ul>
+  </details>
+
+  <!-- ============ TREND ============ -->
+  <h2>How has this changed since 2025?</h2>
+  <div class="panel">
+    <div class="lm-metricrow" id="lm-metric" role="radiogroup" aria-label="Trend metric">
+      <label><input type="radio" name="lm-metric" data-metric="totalB" checked><span>Total parameters</span></label>
+      <label><input type="radio" name="lm-metric" data-metric="activeB"><span>Active parameters</span></label>
+      <label><input type="radio" name="lm-metric" data-metric="minGPUs"><span>Minimum GPUs</span></label>
+      <label><input type="radio" name="lm-metric" data-metric="capexUSD"><span>Estimated capex</span></label>
+    </div>
+    <div class="chartbox"><svg id="lm-trend" viewBox="0 0 760 260" role="img" aria-label="Trend of the selected metric across flagship open-weight releases, January 2025 to now"></svg></div>
+    <p class="sub" style="margin-top:8px">Flagship-class releases only — not every model a provider shipped. Points only
+      where a real release exists; no interpolation across silent quarters. Capex uses US baseline pricing (the region
+      selector above doesn't affect this chart).</p>
+  </div>
+
+  <!-- ============ METHODS ============ -->
+  <h2>Methods &amp; sources</h2>
+  <div class="panel">
+    <p class="sub" style="margin:0">Sourcing hierarchy: provider release blog / model card for params and dates →
+      Hugging Face <code>config.json</code> for architecture confirmation → community hardware guides for real-world VRAM
+      floors → national energy statistics for electricity price. Every row links to its Hugging Face source.
+      Enterprise-tier GPU price/wattage is read from the <a href="costmodel.html">Cost-of-Service Model</a>'s anchors
+      rather than sourced a second time.</p>
+    <p class="foot">Every constant is an editable anchor in <code>js/data/local-models.js</code>. Anchors as of
+      <span class="lm-asof">—</span>. Verify before load-bearing use. Runs entirely in your browser; no network calls.</p>
+  </div>
+
+</div>
+
+<script src="js/data/fx-history.js"></script>
+<script src="js/factors.js"></script>
+<script src="js/cost-model.js"></script>
+<script src="js/region.js"></script>
+<script src="js/data/local-models.js"></script>
+<script src="js/local.js"></script>
+</body>
+</html>

@@ -364,22 +364,7 @@ function draw(){
 }
 
 // --- Per-service snapshot: cost vs footprint for every model, at "now" --------
-function fmtEnergy(wh){
-  if(wh>=1e6)  return (wh/1e6).toLocaleString(undefined,{maximumFractionDigits:1})+' MWh';
-  if(wh>=1000) return (wh/1000).toLocaleString(undefined,{maximumFractionDigits:1})+' kWh';
-  return Math.round(wh).toLocaleString()+' Wh';
-}
-// adaptive units so small footprints never display as a bare "0"
-function fmtKg(kg){
-  if(kg>=1000) return (kg/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' t';
-  if(kg>=1)    return kg.toLocaleString(undefined,{maximumFractionDigits:kg<10?1:0})+' kg';
-  return Math.round(kg*1000).toLocaleString()+' g';
-}
-function fmtL(L){
-  if(L>=1000) return (L/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' m³';
-  if(L>=1)    return Math.round(L).toLocaleString()+' L';
-  return Math.round(L*1000).toLocaleString()+' mL';
-}
+// fmtEnergy/fmtKg/fmtL now live in js/factors.js (shared with local.js).
 function renderSnapshot(){
   const host=document.getElementById('snap'); if(!host) return;
   const R=MMURR_REGION.data(), region=MMURR_REGION.get(), i=MONTHS.length-1, t=TS[i];

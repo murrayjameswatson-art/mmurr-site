@@ -1,33 +1,16 @@
-/* local.css — "Run It Locally" page. Layered on base.css (theme vars, .panel,
-   .seg, .stat, table.src, .region-*, label.f, .logic-disclose, .chartbox).
-   Only components with no existing equivalent live here. */
+/* local.css — "Run It Locally" page. Layered on base.css (theme vars,
+   .panel, .seg, .stat, table.src, .region-*, label.f, .logic-disclose,
+   .chartbox). Only components with no existing equivalent live here. */
 
 .lm-strip,#lm-cost{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
 
-/* tier ladder (Block C) */
+/* hardware-tier ladder */
 .lm-tier{stroke:var(--line);stroke-width:1}
 .lm-tier.lm-on{fill:var(--panel2)}
 .lm-tier.lm-off{fill:var(--panel);opacity:.4}
 .lm-tier-k{fill:var(--ink);font-size:13px;font-weight:700}
 .lm-tier-hw{fill:var(--muted);font-size:9px}
-.lm-floor-lab{fill:var(--accent);font-size:10.5px;font-weight:600}
-
-/* shared axis/gridline + trend-chart series (renamed from costmodel's cm-*
-   equivalents — same look, this page doesn't load costmodel.css) */
-.lm-axis{fill:var(--faint);font-size:10px}
-.lm-gridline{stroke:#222732}
-.lm-serie{fill:none;stroke-width:2}
-.lm-serie-on{stroke:var(--accent);stroke-width:2.4}
-.lm-serie-off{stroke:var(--faint);stroke-width:1.2;opacity:.45}
-.lm-dot-on{fill:var(--accent)}
-.lm-dot-off{fill:var(--faint);opacity:.5}
-.lm-serielab{fill:var(--faint);font-size:9px;opacity:.6}
-.lm-serielab.on{fill:var(--accent);font-size:10px;font-weight:600;opacity:1}
-
-/* Block F metric radios — native inputs, lightly styled */
-.lm-metricrow{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0}
-.lm-metricrow label{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer}
-.lm-metricrow input:checked+span{color:var(--ink);font-weight:600}
+.lm-floor-lab{fill:var(--accent);font-size:10px;font-weight:600}
 
 .lm-range{width:100%;accent-color:var(--accent)}
 .lm-note{font-size:.84rem;color:var(--muted);margin-top:8px}

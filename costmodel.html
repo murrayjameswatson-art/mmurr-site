@@ -23,19 +23,12 @@
 
   <div class="panel">
     <p class="sub" style="margin:0">
-      Everything descends from one physical quantity — <strong>accelerator-seconds per token</strong> — so the dollar,
-      carbon and water views stay on the same stream (power-in = heat-out). Two views share one engine: the
-      <strong>per-model unit cost</strong> ($/1M tokens) below, and the <strong>whole-company annual</strong> cost further
-      down. This is the fully-loaded cost <em>underneath</em> the API price on the
-      <a href="prices.html">Impact Calculator</a> — the physical serving layers here are the same quantity as its
-      "token cost". Data anchors as of <span class="cm-asof" id="cm-asof">—</span>.
+      What it costs a vendor to <em>serve</em> one token — built up from silicon to R&amp;D — compared against what they
+      charge. This is the fully-loaded cost <em>underneath</em> the API price on the
+      <a href="prices.html">Impact Calculator</a>: physical serving here is the same quantity as its "token cost".
+      Every number is an editable estimate, not a disclosure. Data anchors as of
+      <span class="cm-asof" id="cm-asof">—</span>.
     </p>
-    <div class="cm-banner" style="margin-top:12px">
-      <strong>Two inputs carry the dollar answer.</strong> The <strong>served-token denominator</strong> (how many tokens a
-      model serves over its life) and the <strong>R&amp;D multiple</strong> are undisclosed and swing the total ~10×, so
-      treat any single dollar figure as ±order-of-magnitude. The <em>physical</em> serving cost is firmer (~±30%);
-      environmental answers are set by geography (grid, water), not engineering. Both live-wire inputs are sliders.
-    </div>
   </div>
 
   <!-- ============ MODEL ECONOMICS — COST TO SERVE ============ -->
@@ -50,13 +43,6 @@
         </div>
       </div>
       <div>
-        <label class="f">Model archetype</label>
-        <div class="seg" id="cm-arch">
-          <button data-a="standard" class="on">Standard</button><button data-a="reasoning">Reasoning</button>
-          <button data-a="efficient">Efficient</button><button data-a="large">Large</button>
-        </div>
-      </div>
-      <div>
         <label class="f" for="cm-model">Overlay a real model's API price</label>
         <select id="cm-model" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
       </div>
@@ -64,12 +50,19 @@
 
     <div class="cm-controls" style="margin-top:0">
       <div class="cm-slider">
-        <label class="f" for="cm-served">Served tokens over model life (T<sub>s</sub>) <output id="cm-servedOut"></output></label>
+        <label class="f" for="cm-served">Tokens served over the model's life <output id="cm-servedOut"></output></label>
         <input type="range" id="cm-served" class="svc-range" min="12.5" max="15.5" step="0.05" value="14.9">
+        <p class="cm-ref">No lab discloses this — it swings the $ total ~10×. For scale: OpenAI's reported ~1B
+          messages/day × ~1,500 tokens/message, over an ~18-month model life, lands almost exactly on the default
+          (8×10¹⁴) — that's where it comes from. A mid-size product copilot (1M users × 20 msgs/day, 1yr) lands
+          nearer 10¹³, the low end of the slider.</p>
       </div>
       <div class="cm-slider">
-        <label class="f" for="cm-rnd">R&amp;D multiple over the shipped training run (m) <output id="cm-rndOut"></output></label>
+        <label class="f" for="cm-rnd">R&amp;D spend, as a multiple of the shipped run's cost <output id="cm-rndOut"></output></label>
         <input type="range" id="cm-rnd" class="svc-range" min="0" max="4" step="0.1" value="2">
+        <p class="cm-ref">Also undisclosed. Epoch AI's cost-split finding (R&amp;D staff = 29–49% of total dev spend)
+          implies the shipped run is roughly a third of total spend — R&amp;D ≈2× the run itself, the default. A lean
+          lab with few failed attempts sits nearer 1×; a frontier lab running several large parallel attempts, nearer 4×.</p>
       </div>
     </div>
 
@@ -136,7 +129,7 @@
   <!-- ============ METHODS ============ -->
   <h2>Methods &amp; sources</h2>
   <div class="panel">
-    <details class="logic-disclose" open>
+    <details class="logic-disclose">
       <summary>The six cost layers &amp; the physical chain</summary>
       <p class="sub" style="margin:10px 0 0">Root everything in accelerator-seconds; the rest is unit conversions +
         accounting. Per 1M tokens:</p>

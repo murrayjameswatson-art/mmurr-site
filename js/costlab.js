@@ -184,18 +184,17 @@
     }
     $('cm-legend').innerHTML=html;
   }
+  // Only says what the readouts above don't already show — no restated
+  // dollar figures, no jargon the sliders' own reference copy already covers.
   function renderDisc(r, price){
-    const p=currentParams();
-    let s=`At the <b>${year}</b> baseline, <b>${arch}</b> archetype: physical serving is <b>${usd(r.physical)}</b> `+
-      `and soft costs (training + R&D) <b>${usd(r.soft)}</b> → fully-loaded <b>${usd(r.total)}</b> / 1M tokens. `+
-      `Served-token denominator T<sub>s</sub> = <b>${fmtBigTok(p.served)}</b>, R&D multiple m = <b>${rnd.toFixed(1)}×</b> — `+
-      `the two undisclosed inputs; slide them to see the ±10× swing.`;
+    let s=`At the <b>${year}</b> baseline.`;
     if(price!=null){ const m=price-r.total;
-      s+=` The selected model lists at <b>${usd(price)}</b>/1M (50/50 blend) — `+
-        (m>=0? `a <b>${usd(m)}</b> gross margin over fully-loaded cost.`
-             : `<b>${usd(-m)}</b> <b style="color:var(--hot)">below</b> fully-loaded cost (loss-leading, or the cost inputs are too high for this class).`);
-    }
-    s+=` Physical serving is the same quantity as the "token cost" on the <a href="prices.html">Impact Calculator</a>.`;
+      s+= m>=0 ? ` The selected model's list price implies a <b>${usd(m)}</b> gross margin over fully-loaded cost `+
+                  `(${(m/price*100).toFixed(0)}% of price).`
+               : ` The selected model lists <b>${usd(-m)}</b> <b style="color:var(--hot)">below</b> fully-loaded cost — `+
+                  `either loss-leading, or the cost inputs above are too high for this class.`;
+    } else { s+=` Pick a model above to compare its API price against this cost.`; }
+    s+=` Physical serving here is the same quantity as "token cost" on the <a href="prices.html">Impact Calculator</a>.`;
     $('cm-disc').innerHTML=s;
   }
 
@@ -265,10 +264,12 @@
   function init(){
     buildModelSelect(); buildCompanies(); seedInputs(); renderSources();
     segClick('cm-year','y', v=>{ year=+v; seedInputs(); draw(); drawCompany(); });
-    segClick('cm-arch','a', v=>{ arch=v; seedInputs(); draw(); });
+    // Archetype isn't a user-facing control — it's auto-detected from the
+    // overlaid model (archFor), 'standard' when none is picked. One less
+    // decision the user has to make to get an accurate answer.
     $('cm-model').addEventListener('change',e=>{ model=e.target.value||null;
-      if(model){ arch=archFor(model); [...$('cm-arch').children].forEach(n=>n.classList.toggle('on',n.dataset.a===arch)); seedInputs(); }
-      draw(); });
+      arch = model ? archFor(model) : 'standard';
+      seedInputs(); draw(); });
     $('cm-served').addEventListener('input',e=>{ servedLog=+e.target.value; syncSliderLabels(); draw(); });
     $('cm-rnd').addEventListener('input',e=>{ rnd=+e.target.value; syncSliderLabels(); draw(); });
     $('cm-elec').addEventListener('input',e=>{ elec=parseFloat(e.target.value)||null; draw(); });

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Run It Locally — mmurr.ai</title>
-<meta name="description" content="Can you run this open-weight model on your own hardware? Hardware floor, capex/opex by region, and the operating reality after it loads — for 10 flagship open-weight models.">
+<meta name="description" content="Planning estimates for the hardware requirements and cost of running open-weight artificial intelligence models on locally owned equipment, by region.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/local.css">
 </head>
@@ -14,8 +14,8 @@
   <header class="top">
     <div>
       <h1>Run It Locally</h1>
-      <p class="sub">Can you run this open-weight model on your own hardware — and what does that actually cost?
-        Planning estimates from published specs, not measured benchmarks.</p>
+      <p class="sub">Planning estimates for the hardware requirements and cost of running open-weight artificial
+        intelligence models on locally owned equipment.</p>
     </div>
     <div><a class="back" href="prices.html">Impact Calculator</a> · <a class="back" href="costmodel.html">Cost-of-Service Model</a> ·
       <a class="back" href="index.html">← mmurr.ai</a></div>
@@ -23,91 +23,153 @@
 
   <div class="panel">
     <p class="sub" style="margin:0">
-      Three questions, in order: <strong>can I run this at all</strong> (the hardware floor), <strong>what does that cost
-      me, where I am</strong> (capex + running cost by region), and <strong>what happens after it loads</strong> (the
-      operating reality most guides skip). These are planning estimates derived from published architecture specs and
-      community hardware guides — not measured on our own hardware. Verified as of
-      <span class="lm-asof" id="lm-asof">—</span>.
+      This page addresses three questions, in order: first, whether a given model can be run on available hardware
+      at all (its minimum hardware requirement); second, the cost of doing so, accounting for regional variation in
+      hardware and electricity prices; and third, the practical operational considerations that planning guides
+      frequently omit. The figures presented are planning estimates, derived from published architecture
+      specifications and community-sourced hardware guides. They have not been independently measured by mmurr.ai.
+      Data verified as of <span class="lm-asof" id="lm-asof">—</span>.
     </p>
   </div>
 
+  <!-- ============ GLOSSARY ============ -->
+  <details class="logic-disclose">
+    <summary>Glossary of terms used on this page</summary>
+    <dl style="margin:10px 0 0;color:var(--muted);font-size:.85rem;line-height:1.7">
+      <dt style="color:var(--ink);font-weight:600">GPU (graphics processing unit)</dt>
+      <dd style="margin:0 0 8px">A specialised computer chip, originally designed for rendering images, that is also
+        well suited to the mathematical operations artificial intelligence models require. Running a model locally
+        requires one or more GPUs.</dd>
+      <dt style="color:var(--ink);font-weight:600">VRAM (video random-access memory)</dt>
+      <dd style="margin:0 0 8px">The memory built into a graphics card. A model's parameters must fit within the
+        combined VRAM of the GPU or GPUs used to run it, or the model cannot be loaded.</dd>
+      <dt style="color:var(--ink);font-weight:600">Parameter</dt>
+      <dd style="margin:0 0 8px">One of the numerical values that define a model's behaviour. Larger models — those
+        with more parameters — are generally more capable, but require more memory and computation to run.</dd>
+      <dt style="color:var(--ink);font-weight:600">Quantisation and "Q4"</dt>
+      <dd style="margin:0 0 8px">A technique that reduces the numerical precision used to store each parameter, in
+        order to reduce the memory required to load and run a model, at a small and generally acceptable cost to
+        output quality. Parameters are ordinarily stored at 16-bit precision; "Q4" denotes 4-bit quantisation, which
+        reduces the memory footprint by roughly a factor of four. Every figure on this page assumes Q4 quantisation.</dd>
+      <dt style="color:var(--ink);font-weight:600">Mixture-of-Experts (MoE) and active parameters</dt>
+      <dd style="margin:0 0 8px">An architecture in which a model is divided into specialised sub-networks
+        ("experts"), only some of which are used to process any given request. The "active parameter" count is the
+        portion actually used per request, and is what determines hardware requirements — the total parameter count,
+        on its own, overstates the hardware a Mixture-of-Experts model needs.</dd>
+      <dt style="color:var(--ink);font-weight:600">Capital cost (capex) and operating cost (opex)</dt>
+      <dd style="margin:0 0 8px">Capital cost is the upfront cost of purchasing hardware. Operating cost is the
+        ongoing cost of running it, principally electricity. This page reports both separately, since they behave
+        differently.</dd>
+      <dt style="color:var(--ink);font-weight:600">API (application programming interface)</dt>
+      <dd style="margin:0">The mechanism by which software requests a response from a provider's hosted service over
+        the internet, as an alternative to running a model on local hardware.</dd>
+    </dl>
+  </details>
+
   <!-- ============ MODEL + FACT STRIP ============ -->
-  <h2>Pick a model</h2>
+  <h2>Select a Model</h2>
   <div class="panel">
-    <label class="f" for="lm-model">Flagship open-weight model</label>
+    <label class="f" for="lm-model">Open-weight model</label>
     <select id="lm-model" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
     <div class="lm-strip" id="lm-facts"></div>
-    <p class="sub" style="margin-top:10px"><strong>Total params ≠ active params.</strong> For MoE models the compute
-      footprint tracks the <em>active</em> count — the headline total misleads if read as hardware demand.</p>
+    <p class="sub" id="lm-source" style="margin-top:8px"></p>
+    <p class="sub" style="margin-top:10px">For models using a Mixture-of-Experts architecture, the total parameter
+      count and the active parameter count differ; hardware requirements are determined by the active count (see
+      Glossary, above). The <strong>Q4 weight size</strong> shown is the amount of storage and graphics memory
+      (VRAM) required to load the model at 4-bit quantisation — the reduced-precision format assumed throughout this
+      page. Quantisation reduces the memory required to run a model, typically by a factor of roughly four relative
+      to its unquantised form, at a small and generally acceptable cost to output quality.</p>
   </div>
 
-  <!-- ============ CAN I RUN IT ============ -->
-  <h2>Can I run it?</h2>
+  <!-- ============ HARDWARE REQUIREMENTS ============ -->
+  <h2>Hardware Requirements</h2>
   <div class="panel">
-    <div class="chartbox"><svg id="lm-ladder" viewBox="0 0 760 92" role="img" aria-label="Hardware tier ladder, from API-only to multi-node, with the selected model's minimum tier marked"></svg></div>
+    <p class="sub" style="margin:0 0 10px">The diagram below indicates the minimum tier of hardware required to load
+      and run the selected model. A minimum hardware requirement means the model will load and produce output — it
+      does not mean the hardware will do so quickly, or that it can serve more than one person at a time. See
+      "Operational Considerations", below.</p>
+    <div class="chartbox"><svg id="lm-ladder" viewBox="0 0 760 92" role="img" aria-label="Hardware tier ladder, from API-only to a multi-server cluster, with the selected model's minimum tier marked"></svg></div>
     <p class="lm-note" id="lm-tier-desc"></p>
-    <p class="sub" style="margin-top:6px">A hardware floor means <strong>"loads and runs"</strong> — not "runs fast for a
-      team." See the operating reality below before buying anything.</p>
+
+    <div style="overflow-x:auto;margin-top:14px">
+    <table class="src">
+      <thead><tr><th>Tier</th><th>Representative hardware</th><th>Physical space required</th><th>Typical power draw</th></tr></thead>
+      <tbody>
+        <tr><td class="val">A</td><td>None — the request is sent to a cloud-hosted provider over the internet</td><td>None</td><td>None</td></tr>
+        <tr><td class="val">B</td><td>One consumer graphics card, such as an NVIDIA GeForce RTX 4090 or RTX 5090 (24–32GB of VRAM)</td><td>Fits inside a standard desktop computer</td><td>350–575 W — a standard household power socket is normally sufficient</td></tr>
+        <tr><td class="val">C</td><td>Two to four data-centre-grade accelerators, such as the NVIDIA A100 or H100 (80GB of VRAM each)</td><td>A dedicated server chassis, typically 2–4U of rack space (1 rack unit, "U", equals 44.45mm)</td><td>2,000–4,000 W — a dedicated electrical circuit and active cooling are normally required</td></tr>
+        <tr><td class="val">D</td><td>Four to eight NVIDIA H100 (80GB) accelerators</td><td>Half of a server rack to a full server rack</td><td>4,000–8,000 W — a three-phase electrical supply and computer-room-grade cooling are normally required</td></tr>
+        <tr><td class="val">E</td><td>More than eight accelerators, connected across multiple physical servers</td><td>Multiple server racks in a dedicated server room or data centre</td><td>Above 8,000 W, with industrial cooling</td></tr>
+      </tbody>
+    </table>
+    </div>
   </div>
 
-  <!-- ============ COST BY GEOGRAPHY ============ -->
-  <h2>What does that cost, where I am?</h2>
+  <!-- ============ COST BY REGION ============ -->
+  <h2>Cost by Region</h2>
   <div class="panel">
     <div id="region-bar"></div>
-    <label class="f" for="lm-util" style="margin-top:14px">Utilisation — hours/day under load <output id="lm-util-out"></output></label>
+
+    <label class="f" for="lm-compare" style="margin-top:14px">Compare against</label>
+    <select id="lm-compare" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
+    <p class="sub" style="margin:6px 0 0">Select a specific hosted model — for example, Anthropic Opus or OpenAI
+      GPT-5.5 — to compare its cost against self-hosting, at the same monthly token volume. The default option is a
+      generic estimate of hosted-service cost, drawn from the <a href="costmodel.html">Cost-of-Service Model</a>.</p>
+
+    <label class="f" for="lm-util" style="margin-top:14px">Utilisation — hours per day under load <output id="lm-util-out"></output></label>
     <input type="range" id="lm-util" class="lm-range" min="1" max="24" step="1" value="8">
     <div id="lm-cost"></div>
     <p class="lm-note" id="lm-api-note"></p>
-    <p class="sub" style="margin-top:6px">Prices are hand-sourced and dated, not live — see Methods below.</p>
+    <p class="sub" style="margin-top:6px">Prices are sourced by hand and dated, not retrieved live — see Methods and
+      Sources, below.</p>
   </div>
 
-  <!-- ============ POST-SETUP REALITY ============ -->
+  <!-- ============ OPERATIONAL CONSIDERATIONS ============ -->
   <details class="logic-disclose">
-    <summary>What happens after it loads</summary>
-    <ul style="margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:.85rem;line-height:1.7">
-      <li><strong>Serving stack</strong> — vLLM/SGLang setup; context length is a memory decision, not a free setting.
-        Kimi K3's 1M-token window realistically starts at 128k–256k locally unless the KV cache is sharded across many GPUs.</li>
-      <li><strong>Concurrency</strong> — loading a model isn't serving a team. Tier B fits one user comfortably; tiers D/E
-        are needed before several people can prompt at once without queuing.</li>
-      <li><strong>Storage</strong> — weights alone are large (Kimi K3 ≈ 594GB); add checkpoint and quantisation headroom
-        on top.</li>
-      <li><strong>Maintenance</strong> — driver/CUDA upgrades, re-quantisation as community GGUF ports mature.</li>
-      <li><strong>Licence</strong> — read the repo LICENCE directly. Modified MIT, Apache 2.0, MIT, and Meta's custom
-        terms differ materially at commercial scale.</li>
-      <li><strong>Hybrid pattern</strong> — sensitive work local, frontier/long-context bursts via API. Often the correct
-        answer.</li>
+    <summary>Operational considerations</summary>
+    <ul style="margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:.85rem;line-height:1.8">
+      <li><strong>Serving software.</strong> Running a model requires dedicated serving software, such as vLLM or
+        SGLang (open-source programs designed to run large language models efficiently). The maximum context
+        length — the amount of text the model can consider at once — is limited by available memory, not merely by a
+        software setting. For example, Kimi K3's advertised 1,000,000-token context window is, in practice, limited
+        to approximately 128,000–256,000 tokens on typical local hardware, unless the intermediate calculation data
+        (known as the "key-value cache", or "KV cache") is distributed across multiple graphics cards.</li>
+      <li><strong>Concurrent users.</strong> The ability to load a model does not imply the ability to serve multiple
+        people simultaneously. Tier B hardware comfortably supports a single user. Supporting several people at once
+        without requests queuing typically requires Tier D or Tier E hardware.</li>
+      <li><strong>Storage requirements.</strong> The model weights alone require substantial storage — for example,
+        approximately 594 gigabytes for Kimi K3 at Q4 precision. Additional storage should be allowed for checkpoints
+        (saved copies of the model) and for experimenting with alternative quantisation levels.</li>
+      <li><strong>Ongoing maintenance.</strong> Running a model locally requires periodic maintenance, including
+        updates to graphics-card drivers and to CUDA (NVIDIA's software platform for running computations on its
+        GPUs), and occasionally re-processing ("re-quantising") the model as improved community-produced versions
+        become available. GGUF is a common file format used for these community-produced, quantised models.</li>
+      <li><strong>Licensing.</strong> The terms under which a model may be used vary by provider and should be read
+        directly from the official source repository. The licences referenced on this page — including Modified MIT,
+        Apache 2.0, MIT, and Meta's custom Llama licence — differ materially, particularly for commercial use at
+        scale.</li>
+      <li><strong>Hybrid deployment.</strong> Many organisations run sensitive workloads on local hardware while
+        using a hosted API for occasional tasks that require the largest models or the longest context windows. This
+        hybrid approach is frequently the most practical outcome.</li>
     </ul>
   </details>
 
-  <!-- ============ TREND ============ -->
-  <h2>How has this changed since 2025?</h2>
-  <div class="panel">
-    <div class="lm-metricrow" id="lm-metric" role="radiogroup" aria-label="Trend metric">
-      <label><input type="radio" name="lm-metric" data-metric="totalB" checked><span>Total parameters</span></label>
-      <label><input type="radio" name="lm-metric" data-metric="activeB"><span>Active parameters</span></label>
-      <label><input type="radio" name="lm-metric" data-metric="minGPUs"><span>Minimum GPUs</span></label>
-      <label><input type="radio" name="lm-metric" data-metric="capexUSD"><span>Estimated capex</span></label>
-    </div>
-    <div class="chartbox"><svg id="lm-trend" viewBox="0 0 760 260" role="img" aria-label="Trend of the selected metric across flagship open-weight releases, January 2025 to now"></svg></div>
-    <p class="sub" style="margin-top:8px">Flagship-class releases only — not every model a provider shipped. Points only
-      where a real release exists; no interpolation across silent quarters. Capex uses US baseline pricing (the region
-      selector above doesn't affect this chart).</p>
-  </div>
-
   <!-- ============ METHODS ============ -->
-  <h2>Methods &amp; sources</h2>
+  <h2>Methods and Sources</h2>
   <div class="panel">
-    <p class="sub" style="margin:0">Sourcing hierarchy: provider release blog / model card for params and dates →
-      Hugging Face <code>config.json</code> for architecture confirmation → community hardware guides for real-world VRAM
-      floors → national energy statistics for electricity price. Every row links to its Hugging Face source.
-      Enterprise-tier GPU price/wattage is read from the <a href="costmodel.html">Cost-of-Service Model</a>'s anchors
-      rather than sourced a second time.</p>
-    <p class="foot">Every constant is an editable anchor in <code>js/data/local-models.js</code>. Anchors as of
-      <span class="lm-asof">—</span>. Verify before load-bearing use. Runs entirely in your browser; no network calls.</p>
+    <p class="sub" style="margin:0">Sourcing hierarchy: the provider's release announcement or model card is used
+      for parameters and release dates; Hugging Face's <code>config.json</code> is used to confirm architecture;
+      community hardware guides are used for real-world VRAM requirements; national energy statistics are used for
+      electricity prices. Every model links to its Hugging Face source. Enterprise-tier GPU price and power draw are
+      read from the <a href="costmodel.html">Cost-of-Service Model</a>'s figures rather than sourced a second time.</p>
+    <p class="foot">Every figure is an editable value in <code>js/data/local-models.js</code>. Data anchors as of
+      <span class="lm-asof">—</span>. These are planning estimates and should be verified independently before being
+      relied upon. This page performs all calculations in the browser; no data is transmitted over the network.</p>
   </div>
 
 </div>
 
+<script src="js/data/api-prices.js"></script>
 <script src="js/data/fx-history.js"></script>
 <script src="js/factors.js"></script>
 <script src="js/cost-model.js"></script>

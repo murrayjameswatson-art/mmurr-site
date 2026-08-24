@@ -4,13 +4,13 @@
    these values to overwrite each lineage's LATEST price point. Absent
    file / absent key → factors.js anchors are used unchanged. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-08-17",
+  "fetched": "2026-08-24",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {
       "id": "gpt-5.6",
-      "in": 5,
-      "out": 30
+      "in": 4,
+      "out": 20
     },
     "oa:mini": {
       "id": "gpt-5.6-luna",
@@ -19,8 +19,8 @@ window.MMURR_API_PRICES = {
     },
     "gm:flash": {
       "id": "gemini/gemini-3.6-flash",
-      "in": 1.5,
-      "out": 7.5
+      "in": 0.75,
+      "out": 3.75
     },
     "gm:pro": {
       "id": "gemini/gemini-3.1-pro-preview",

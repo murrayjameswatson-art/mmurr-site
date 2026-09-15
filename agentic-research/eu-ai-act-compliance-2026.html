@@ -246,6 +246,51 @@ August" —
 <a href="https://digital-strategy.ec.europa.eu/en/news/commission-starts-enforcing-ai-act-rules-and-new-transparency-requirements-2-august">digital-strategy.ec.europa.eu</a>
 (European Commission, accessed 2026-09-04) — see Sources &amp; method below.</p>
 
+<h2>None of the above was built for agents specifically — two governments have taken opposite approaches to that gap <span class="tag tag-confirmed">confirmed</span></h2>
+<p>Every framework covered above — the AI Act itself, NIST's AI RMF, ISO/IEC 42001,
+and the FS AI RMF — was written to govern AI systems in general: a model that produces
+an output a human reads or acts on, such as a classifier's score or a chatbot's reply.
+None was drafted with autonomous AI agents specifically in mind — software that plans,
+chains tool calls, and takes multi-step actions with only intermittent human review.
+Two governments have now taken visibly different approaches to that gap. On 22 January
+2026, at the World Economic Forum, Singapore's Infocomm Media Development Authority
+(IMDA) launched the Model AI Governance Framework for Agentic AI: voluntary guidance
+built around four pillars — bounding an agent's autonomy and data access to its use
+case, requiring human sign-off at defined checkpoints, technical controls across the
+agent's lifecycle, and end-user transparency. On 20 March 2026, the White House
+published its National Policy Framework for Artificial Intelligence — Legislative
+Recommendations, a set of recommendations to Congress that takes the structurally
+opposite position: it recommends Congress preempt state AI laws in favour of "a
+minimally burdensome national standard," explicitly recommends that "Congress should
+not create any new federal rulemaking body to regulate AI," and carves out no distinct
+category for agentic systems at all.</p>
+<p>Put together with the sections above, that's a four-way split in how governments are
+treating enterprise AI governance in 2026, not just two more data points on top of two:
+binding EU law (postponed on the schedule described above, and silent on agents
+specifically); voluntary technical frameworks that much of the private sector actually
+runs on day to day (NIST's AI RMF, ISO/IEC 42001, and the sector-specific FS AI RMF,
+all likewise agent-agnostic); Singapore's agent-specific soft law; and the US federal
+government's preference for fewer rules and no new regulator at all. An enterprise
+operating across all three jurisdictions in 2026 has no single agent-governance
+standard to point to — it has four different postures, only one of which mentions
+agents by name.</p>
+<table>
+<tr><th>Jurisdiction / framework</th><th>Binding?</th><th>Written for agentic AI specifically?</th></tr>
+<tr><td>EU AI Act (Digital Omnibus schedule)</td><td>Yes, in law</td><td>No</td></tr>
+<tr><td>NIST AI RMF / ISO/IEC 42001 / FS AI RMF</td><td>No — voluntary</td><td>No</td></tr>
+<tr><td>Singapore MGF for Agentic AI</td><td>No — voluntary</td><td>Yes</td></tr>
+<tr><td>US National Policy Framework for AI</td><td>Recommendation to Congress, not law</td><td>No — explicitly avoids a distinct category</td></tr>
+</table>
+<p>Source: Singapore Ministry of Digital Development and Information, "Singapore
+Launches New Model AI Governance Framework for Agentic AI" —
+<a href="https://www.mddi.gov.sg/newsroom/singapore-launches-new-model-ai-governance-framework-for-agentic-ai--/">mddi.gov.sg</a>
+(Singapore Ministry of Digital Development and Information, accessed 2026-09-14); The
+White House, "National Policy Framework for Artificial Intelligence — Legislative
+Recommendations" —
+<a href="https://www.whitehouse.gov/wp-content/uploads/2026/03/03.20.26-National-Policy-Framework-for-Artificial-Intelligence-Legislative-Recommendations.pdf">whitehouse.gov</a>
+(The White House, dated 20 March 2026, accessed 2026-09-15) — see Sources &amp; method
+below.</p>
+
 <h2>Sources &amp; method</h2>
 <div class="sources-method">
 <p>Built from <code>knowledge/eu-ai-act-enterprise-governance-2026.md</code>, a
@@ -273,6 +318,8 @@ non-EU frameworks" section above, sourced directly to NIST, Microsoft, AWS and I
 <li>KPMG, "Deconstructing the Cyber Risk Institute FS AI RMF" — <a href="https://kpmg.com/kpmg-us/content/dam/kpmg/pdf/2026/deconstructing-cyber-risk-institute.pdf">kpmg.com</a> (dated 2 March 2026, accessed 2026-09-03 via a text-extraction proxy)</li>
 <li>European Commission, "Commission starts enforcing AI Act rules and new transparency requirements on 2 August" — <a href="https://digital-strategy.ec.europa.eu/en/news/commission-starts-enforcing-ai-act-rules-and-new-transparency-requirements-2-august">digital-strategy.ec.europa.eu</a> (accessed 2026-09-04)</li>
 <li>European Commission, "Enforcement of the AI Act" — <a href="https://digital-strategy.ec.europa.eu/en/policies/enforcement-ai-act">digital-strategy.ec.europa.eu/en/policies/enforcement-ai-act</a> (accessed 2026-09-04) — describes the AI Office's enforcement powers in general terms and names no fine or case issued to date</li>
+<li>Singapore Ministry of Digital Development and Information, "Singapore Launches New Model AI Governance Framework for Agentic AI" — <a href="https://www.mddi.gov.sg/newsroom/singapore-launches-new-model-ai-governance-framework-for-agentic-ai--/">mddi.gov.sg/newsroom/singapore-launches-new-model-ai-governance-framework-for-agentic-ai--</a> (accessed 2026-09-14)</li>
+<li>The White House, "National Policy Framework for Artificial Intelligence — Legislative Recommendations" — <a href="https://www.whitehouse.gov/wp-content/uploads/2026/03/03.20.26-National-Policy-Framework-for-Artificial-Intelligence-Legislative-Recommendations.pdf">whitehouse.gov</a> (dated 20 March 2026, accessed 2026-09-15 via a text-extraction proxy, direct fetch could not parse the PDF's binary stream)</li>
 </ul>
 <p><strong>Known limitation:</strong> the deadline figures for the Digital Omnibus
 (Annex III / Annex I dates) are also corroborated by several named law-firm summaries
@@ -311,6 +358,18 @@ and press release, neither of which mentions any fine, and found to contain an
 internal inconsistency in its own numbers — recorded here so the dead end is visible
 rather than silently dropped, per the charter's rule on tracing aggregator claims to
 their origin.</p>
+<p><strong>Update, 2026-09-15:</strong> added a sixth section noting that none of the
+frameworks already on this page (the AI Act, NIST AI RMF, ISO/IEC 42001, FS AI RMF)
+was written with autonomous AI agents specifically in mind, and contrasting two
+governments that have taken opposite approaches to that gap: Singapore's voluntary,
+agent-specific Model AI Governance Framework for Agentic AI (22 January 2026), and the
+White House's National Policy Framework for Artificial Intelligence (20 March 2026),
+which recommends federal preemption of state AI law, no new regulator, and carves out
+no agent-specific category. Both sourced directly to the issuing government (Singapore
+via a direct fetch, the White House via a text-extraction proxy after direct PDF
+access failed), each independently corroborated by five named law firms' summaries
+surfaced in the same searches, used here as corroboration only, not as the primary
+source.</p>
 </div>
 
 <footer>
@@ -322,6 +381,8 @@ Subtitle and opening paragraph updated from three points to four by hand at huma
 review · 2026-09-06.
 Fifth section (FS AI RMF and AI Act enforcement without the fines story) added wake
 48 · 2026-09-07, human-reviewed via pull request.
+Sixth section (Singapore and US governance approaches to agentic AI) added wake 64 ·
+2026-09-15, human-reviewed via pull request.
 </footer>
 
 </body>

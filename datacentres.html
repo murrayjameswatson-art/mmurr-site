@@ -29,15 +29,17 @@
   <div id="region-bar"></div>
 
   <div class="stat-row">
-    <div class="stat"><div class="big">~1.6 GW</div><div class="lab">Operational capacity (2024)</div></div>
-    <div class="stat"><div class="big">8.1 GW</div><div class="lab">Announced pipeline to 2037</div></div>
-    <div class="stat"><div class="big">6 GW</div><div class="lab">Gov AI-capable target by 2030</div></div>
-    <div class="stat"><div class="big">266</div><div class="lab">Data centres (up from 52 in 2000)</div></div>
-    <div class="stat"><div class="big">&gt;70 GW</div><div class="lab">Connection requests in the queue (NESO) — vs ~8 GW realistic pipeline</div></div>
+    <div class="stat"><div class="big">~1.6 GW</div><div class="lab">Co-location capacity in Great Britain, 2024: the latest government estimate</div></div>
+    <div class="stat"><div class="big">4.9–6.2 GW</div><div class="lab">Possible by 2030: consented projects, then including unconsented (Apr 2026)</div></div>
+    <div class="stat"><div class="big">6 GW</div><div class="lab">Government target for AI-capable capacity by 2030</div></div>
+    <div class="stat"><div class="big">266</div><div class="lab">Data centres (2024)</div></div>
+    <div class="stat"><div class="big">50 GW</div><div class="lab">Data centres in the grid connection queue (NESO, 2025): far more than will be built</div></div>
   </div>
-  <p class="note">Capacity estimates range <b>1.6–2.9 GW</b> depending on methodology (EPC-derived vs IT-power
-    estimates — Oxford Economics' IT-power method gives 2.9 GW today with 6.2 GW to be added by 2030); this page uses
-    the Computer Weekly / Barbour ABI basis throughout for internal consistency.</p>
+  <p class="note">There is no single official figure. The government does not routinely collect capacity data;
+    its 1.6 GW estimate covers co-location sites only, which is why IT-power methods come out higher (Oxford
+    Economics: 2.9 GW). The government's own preliminary range for 2030 is 3.3–6.3 GW. This page uses the
+    Computer Weekly / Barbour ABI project data for the pipeline so the charts are internally consistent. Summary of
+    all of these in the <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a>.</p>
 
   <h2>Capacity over time</h2>
   <div class="chartbox"><canvas id="capChart"></canvas></div>
@@ -118,7 +120,8 @@
     <p class="note">NESO's data-centre demand estimate against the theoretical ceiling of the operational fleet
       (MW × 8,760 h). The demand line sits at an implied fleet-average load factor of roughly <b>0.4–0.55</b> — shown
       as the shaded band. Per-site utilisation is not public anywhere and is not synthesised here. The system-level
-      tension: <b>&gt;70 GW</b> of connection requests against a ~8 GW realistic pipeline.</p>
+      tension: NESO counted <b>50 GW</b> of data centres in the connection queue, against 4.9–6.2 GW likely to be
+      built by 2030. Ofgem called the queue "far beyond forecast future need".</p>
   </div>
 
   <h2>The world map — major AI-relevant sites</h2>
@@ -132,13 +135,15 @@
   <h2>Reported vs location-based — the scope-2 gap</h2>
   <div class="panel">
     <p class="sub" style="margin-top:0">Fleet emissions can be counted two ways: <b>location-based</b> (grid average ×
-      consumption) or <b>market-based</b> (netting renewable certificates &amp; PPAs). Vendors report the second; the
-      delta is the certificates. The rules permit it — but REC-matched ≠ real-time zero-carbon. This site stays
+      consumption) or <b>market-based</b> (netting renewable certificates &amp; PPAs). Vendors lead with the second; the
+      difference is what the certificates and contracts net off. The GHG Protocol allows it, but a certificate
+      match is not the same as zero-carbon power at the time it was used. This site stays
       location-based throughout — <a href="handbook.html#carbon">handbook §4</a> explains why.</p>
     <div class="chartbox"><canvas id="scope2Chart"></canvas></div>
-    <p class="note">2024 reporting year, Mt CO₂e. Location-based estimates from an academic analysis of the 2025
-      sustainability reports; market-based figures are the vendors' own. Context: scope 3 dwarfs both — 97% of
-      Microsoft's total footprint (+26% since 2020); Google's scope 3 +22% YoY (2025 reports).</p>
+    <p class="note">Scope 2 only, Mt CO₂e, latest reporting year: Microsoft FY2025 (to June 2025) and Google calendar
+      2025. Both figures are the companies' own, from their 2026 reports. Microsoft's market-based figure rose
+      tenfold in the year after it stopped using unbundled renewable certificates. Context: scope 3 was 86% of
+      Microsoft's FY2025 footprint, and Google's electricity use grew 37% in 2025.</p>
   </div>
 
   <h2>Sources</h2>
@@ -146,10 +151,14 @@
     <table class="src">
       <thead><tr><th>Figure</th><th>Value</th><th>Source</th></tr></thead>
       <tbody>
-        <tr><td>UK capacity &amp; pipeline</td><td class="v">1.6 GW now · 8.1 GW pipeline · 4.9 GW likely by 2030</td>
-          <td><a href="https://www.computerweekly.com/news/366640935/Data-dive-Government-2030-datacentre-capacity-targets-look-shaky" target="_blank" rel="noopener">Computer Weekly / Barbour ABI (2026)</a></td></tr>
-        <tr><td>Gov 6 GW AI target; 266 DCs</td><td class="v">6 GW by 2030 · 266 sites (2024)</td>
-          <td><a href="https://www.oxfordeconomics.com/resource/the-uks-data-centre-boom-growth-trends-drivers-and-the-rising-power-challenge/" target="_blank" rel="noopener">Oxford Economics (2026)</a></td></tr>
+        <tr><td>UK capacity now</td><td class="v">1.6 GW co-location, Great Britain, 2024 (government estimate)</td>
+          <td><a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a>, citing DSIT</td></tr>
+        <tr><td>UK pipeline</td><td class="v">4.9 GW consented for 2030 · 6.2 GW incl. unconsented · 8.1 GW announced to 2037 · govt preliminary range 3.3–6.3 GW by 2030</td>
+          <td><a href="https://www.computerweekly.com/news/366640935/Data-dive-Government-2030-datacentre-capacity-targets-look-shaky" target="_blank" rel="noopener">Computer Weekly / Barbour ABI (Apr 2026)</a> · <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a></td></tr>
+        <tr><td>6 GW AI-capable target</td><td class="v">"at least 6GW of AI-capable data centre capacity by 2030"</td>
+          <td><a href="https://www.gov.uk/government/publications/uk-compute-roadmap" target="_blank" rel="noopener">DSIT / UKRI, UK Compute Roadmap (Jul 2025)</a></td></tr>
+        <tr><td>Number of data centres</td><td class="v">266 sites (2024)</td>
+          <td><a href="https://www.oxfordeconomics.com/resource/the-uks-data-centre-boom-growth-trends-drivers-and-the-rising-power-challenge/" target="_blank" rel="noopener">Oxford Economics (2026)</a> · IT-power capacity estimate 2.9 GW</td></tr>
         <tr><td>Construction embodied carbon</td><td class="v">~200 tCO₂e/MW (10 MW ≈ 1–2 kt concrete CO₂)</td>
           <td><a href="https://arxiv.org/pdf/2509.21312" target="_blank" rel="noopener">Texas DC LCA, arXiv (2025)</a> · <a href="https://arxiv.org/pdf/2505.08530" target="_blank" rel="noopener">ATLAS (200–800 kg/m²)</a></td></tr>
         <tr><td>Hardware embodied (per MW IT)</td><td class="v">1,100 tCO₂e/MW · range 750–1,500 · AI-dense halls likely &gt;1,500</td>
@@ -164,11 +173,12 @@
           <td>On-site WUE only: water consumed generating the electricity (thermal-plant cooling) typically exceeds
             on-site cooling water severalfold. And the UK concern is <b>peak coincidence</b> — hybrid-cooled sites draw
             water during heatwaves exactly when domestic demand peaks (WRc/MOSL) — which annual averages hide.</td></tr>
-        <tr><td>UK demand vs supply (NESO)</td><td class="v">~5.2 GW connected by 2030 · ~20 TWh demand · &gt;70 GW connection requests</td>
-          <td><a href="https://www.neso.energy/" target="_blank" rel="noopener">NESO</a> — the 70 GW connection queue
-            against the ~8 GW realistic pipeline is the hype-vs-steel gap.</td></tr>
-        <tr><td>Scope-2 gap (location vs market)</td><td class="v">Microsoft 25.2 vs 15.5 Mt · Google 23.4 vs 15.2 Mt (2024)</td>
-          <td><a href="https://policyreview.info/articles/news/big-techs-2025-sustainability-reports/2027" target="_blank" rel="noopener">Papaevangelou &amp; Vogiatzoglou (2026)</a> · vendor 2025 sustainability reports</td></tr>
+        <tr><td>Grid connection queue</td><td class="v">50 GW of data centres in the queue; 125 GW of all demand seeking connection (Jun 2025, up from 41 GW in Nov 2024)</td>
+          <td>NESO and Ofgem, via the <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a></td></tr>
+        <tr><td>UK data-centre demand (NESO)</td><td class="v">~5.2 GW connected and ~20 TWh by 2030 · 30–71 TWh by 2050</td>
+          <td><a href="https://www.neso.energy/publications/future-energy-scenarios-fes" target="_blank" rel="noopener">NESO Future Energy Scenarios</a> · 2050 range via the <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a>. The 2030 figures are VERIFY: widely cited, not yet traced to a NESO table.</td></tr>
+        <tr><td>Scope-2 gap (location vs market)</td><td class="v">Microsoft FY2025: 12.03 vs 2.71 Mt · Google 2025: 15.15 vs 2.82 Mt</td>
+          <td><a href="https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/msc/documents/presentations/CSR/2026-Microsoft-Environmental-Data-Fact-Sheet-PDF.pdf" target="_blank" rel="noopener">Microsoft 2026 Environmental Data Fact Sheet</a> · <a href="https://sustainability.google/files/google-2026-environmental-report.pdf" target="_blank" rel="noopener">Google 2026 Environmental Report</a> (both vendors' own figures)</td></tr>
         <tr><td>UK site map</td><td class="v">~23 curated sites (of ~190 EPC-identified)</td>
           <td><a href="https://www.gov.uk/government/collections/ai-growth-zones" target="_blank" rel="noopener">GOV.UK AI Growth Zones</a> · <a href="https://www.nscale.com/press-releases/nscale-uk-ai-infrastructure-announcement" target="_blank" rel="noopener">Nscale/Microsoft/OpenAI (2025)</a> · operator pages · press-cited planning applications — per-marker source &amp; confidence in each tooltip</td></tr>
         <tr><td>World map — capacity shares</td><td class="v">≈55 GW global IT (mid-2025) · US ≈50% · Europe ≈18% · China ≈10% · US 180 TWh / China 102 TWh (2024)</td>

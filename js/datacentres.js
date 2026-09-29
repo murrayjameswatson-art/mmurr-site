@@ -163,8 +163,8 @@ function drawScope2(){
   new Chart(el,{
     type:'bar',
     data:{ labels:S.rows.map(r=>r.vendor), datasets:[
-      {label:'Location-based estimate', data:S.rows.map(r=>r.location), backgroundColor:'#b18cff'},
-      {label:'Market-based, reported',  data:S.rows.map(r=>r.market),   backgroundColor:'#5bd1a6'},
+      {label:'Location-based (grid average)', data:S.rows.map(r=>r.location), backgroundColor:'#b18cff'},
+      {label:'Market-based (after certificates)',  data:S.rows.map(r=>r.market),   backgroundColor:'#5bd1a6'},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
@@ -174,7 +174,7 @@ function drawScope2(){
             return `certificates & PPAs: ${(r.location-r.market).toFixed(1)} Mt`;}}}},
       scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
         y:{beginAtZero:true,ticks:{color:'#6b7280',callback:v=>v+' Mt',font:{size:10}},grid:{color:'#222732'},
-           title:{display:true,text:'Scope 2, 2024 (Mt CO₂e)',color:'#9aa3b2',font:{size:11}}}}},
+           title:{display:true,text:'Scope 2, latest reporting year (Mt CO₂e)',color:'#9aa3b2',font:{size:11}}}}},
   });
 }
 

@@ -189,10 +189,11 @@
   function renderDisc(r, price){
     let s=`At the <b>${year}</b> baseline.`;
     if(price!=null){ const m=price-r.total;
-      s+= m>=0 ? ` The selected model's list price implies a <b>${usd(m)}</b> gross margin over fully-loaded cost `+
-                  `(${(m/price*100).toFixed(0)}% of price).`
+      s+= m>=0 ? ` The selected model's list price is <b>${usd(m)}</b> above this cost estimate `+
+                  `(${(m/price*100).toFixed(0)}% of price). That is the margin these inputs imply, not the vendor's `+
+                  `actual margin, which depends on its model size, hardware and traffic.`
                : ` The selected model lists <b>${usd(-m)}</b> <b style="color:var(--hot)">below</b> fully-loaded cost — `+
-                  `either loss-leading, or the cost inputs above are too high for this class.`;
+                  `either it is priced below cost, or the inputs above are too high for this model.`;
     } else { s+=` Pick a model above to compare its API price against this cost.`; }
     s+=` Physical serving here is the same quantity as "token cost" on the <a href="prices.html">Impact Calculator</a>.`;
     $('cm-disc').innerHTML=s;

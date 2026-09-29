@@ -59,10 +59,13 @@
       <div class="cm-slider">
         <label class="f" for="cm-served">Tokens served over the model's life <output id="cm-servedOut"></output></label>
         <input type="range" id="cm-served" class="svc-range" min="12.5" max="15.5" step="0.05" value="14.9">
-        <p class="cm-ref">No lab discloses this — it swings the $ total ~10×. For scale: OpenAI's reported ~1B
-          messages/day × ~1,500 tokens/message, over an ~18-month model life, lands almost exactly on the default
-          (8×10¹⁴) — that's where it comes from. A mid-size product copilot (1M users × 20 msgs/day, 1yr) lands
-          nearer 10¹³, the low end of the slider.</p>
+        <p class="cm-ref">No lab discloses this, and it moves the $ total about 10×. For scale: OpenAI's latest
+          published figure is <a href="https://techcrunch.com/2025/07/21/chatgpt-users-send-2-5-billion-prompts-a-day/" target="_blank" rel="noopener">2.5 billion
+          prompts a day (July 2025)</a>. At ~1,500 tokens each over an ~18-month model life, that is about 2×10¹⁵
+          tokens if every prompt ran on one model, near the top of the slider. Traffic is actually split across
+          several models, so the default (8×10¹⁴) assumes a flagship carries roughly 40% of it. That share is our
+          assumption, not a disclosure. A mid-size product copilot (1M users × 20 prompts/day for a year) is nearer
+          10¹³, the low end.</p>
       </div>
       <div class="cm-slider">
         <label class="f" for="cm-rnd">R&amp;D spend, as a multiple of the shipped run's cost <output id="cm-rndOut"></output></label>
@@ -91,7 +94,7 @@
       <div><span class="cm-k">Soft (training + R&amp;D)</span><span class="cm-v" id="cm-r-soft">—</span></div>
       <div><span class="cm-k">Fully-loaded / 1M tok</span><span class="cm-v" id="cm-r-total">—</span></div>
       <div><span class="cm-k">API list price / 1M tok</span><span class="cm-v" id="cm-r-price">—</span></div>
-      <div><span class="cm-k">Gross margin</span><span class="cm-v" id="cm-r-margin">—</span></div>
+      <div><span class="cm-k">Implied margin vs this estimate</span><span class="cm-v" id="cm-r-margin">—</span></div>
     </div>
 
     <div class="env-strip" id="cm-env"></div>
@@ -103,11 +106,12 @@
   </div>
 
   <!-- ============ COST OVER TIME ============ -->
-  <h2>Cost over time — the efficiency curve</h2>
+  <h2>Cost over time, on our assumed baselines</h2>
   <div class="panel">
-    <p class="sub" style="margin:0 0 6px">Fully-loaded and physical-only cost per 1M tokens across the year baselines, at
-      the current slider settings. The unit cost falls several-fold as throughput, batching and silicon improve —
-      directionally tracking the experience curve.</p>
+    <p class="sub" style="margin:0 0 6px">Fully-loaded and physical-only cost per 1M tokens for each year's baseline
+      assumptions (throughput, hardware price, power, tokens served), at the current slider settings. This plots our
+      inputs, not measured costs: it shows what those assumptions imply, which is a several-fold fall as throughput,
+      batching and chips improve.</p>
     <div class="chartbox"><svg id="cmTrend" viewBox="0 0 760 240" role="img" aria-label="Fully-loaded and physical cost per million tokens, 2023 to 2026"></svg></div>
     <div class="cm-legend">
       <span><i style="background:var(--ink)"></i>Fully-loaded $/1M</span>

@@ -124,13 +124,14 @@ function syncWuePreset(v){
 }
 
 // --- Demand vs supply: national band chart (v2 §7.3) ------------------------
-// NESO estimates (~5 TWh 2023 → ~20 TWh 2030; ~5.2 GW connected by 2030)
+// NESO FES 2025 ten-year forecast, data workbook fig. 49 / ED1 (7.4 TWh 2023 → 20.1 TWh 2030;
+// ~5.2 GW connected by 2030 per NESO evidence to the Environmental Audit Committee, 2026)
 // against the theoretical ceiling of the operational fleet (GW × 8.76 TWh/GW).
 // The implied fleet-average load factor is the 0.4–0.55 band — strictly a
 // NATIONAL figure; per-site utilisation is not public and never synthesised.
 const DEMAND_YEARS = ['2023','2024','2025','2026','2027','2028','2029','2030'];
 const FLEET_GW     = [1.5, 1.6, 1.8, 2.0, 2.5, 3.0, 4.0, 5.2];   // operational trajectory (CW basis → NESO 5.2 by 2030)
-const NESO_TWH     = [5.0, 6.0, 7.5, 9.0, 11.0, 13.5, 16.5, 20.0]; // NESO demand estimate, interpolated between anchors
+const NESO_TWH     = [7.40, 7.74, 8.13, 8.93, 10.46, 13.11, 16.59, 20.10]; // NESO FES 2025 ten-year forecast (TWh), as published
 function drawDemand(){
   const el = document.getElementById('demandChart'); if(!el) return;
   const ceiling = FLEET_GW.map(gw => +(gw*8.76).toFixed(1));
@@ -143,7 +144,7 @@ function drawDemand(){
        backgroundColor:'#e0b34122', fill:'+1', tension:.25, pointRadius:0},
       {label:'Ceiling × 0.40 load factor', data:ceiling.map(v=>+(v*0.40).toFixed(1)), borderColor:'transparent',
        backgroundColor:'transparent', tension:.25, pointRadius:0},
-      {label:'NESO data-centre demand estimate (TWh)', data:NESO_TWH, borderColor:'#5bd1a6',
+      {label:'NESO data-centre demand, ten-year forecast (TWh)', data:NESO_TWH, borderColor:'#5bd1a6',
        backgroundColor:'transparent', tension:.25, pointRadius:3, borderWidth:2},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},

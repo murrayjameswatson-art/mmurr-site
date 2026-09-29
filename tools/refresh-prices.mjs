@@ -22,12 +22,12 @@ const MAP = {
   // Thinking variant — omission (→ hand-set anchor) is more honest
   'oa:think': ['gpt-5.6-thinking', 'gpt-5.5-thinking', 'gpt-5.4-thinking', 'gpt-5-thinking'],
   'oa:mini':  ['gpt-5.6-luna', 'gpt-5-mini', 'gpt-5.4-mini', 'gpt-5.2-mini'],
-  'gm:flash': ['gemini/gemini-3.6-flash', 'gemini/gemini-3.5-flash', 'gemini/gemini-2.5-flash', 'gemini-2.5-flash'],
+  'gm:flash': ['gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.6-flash', 'gemini/gemini-3.5-flash', 'gemini/gemini-2.5-flash', 'gemini-2.5-flash'],
   'gm:pro':   ['gemini/gemini-3.1-pro-preview', 'gemini-3.1-pro-preview', 'gemini/gemini-3-pro-preview', 'gemini-3-pro-preview'],
   'an:haiku': ['claude-haiku-4-5', 'claude-haiku-4-5-20251001'],
-  'an:sonnet':['claude-sonnet-5', 'claude-sonnet-4-6', 'claude-sonnet-4-5'],
-  'an:opus':  ['claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6'],
-  'an:fable': ['claude-fable-5'],
+  'an:sonnet':['claude-sonnet-5-5', 'claude-sonnet-5', 'claude-sonnet-4-6', 'claude-sonnet-4-5'],
+  'an:opus':  ['claude-opus-5-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6'],
+  'an:fable': ['claude-fable-5-1', 'claude-fable-5'],
   'xa:grok':  ['xai/grok-4.5', 'xai/grok-4.3', 'xai/grok-4-3', 'xai/grok-4.1', 'xai/grok-4'],
   'mi:large': ['mistral/mistral-large-3', 'azure_ai/mistral-large-3', 'mistral/mistral-large-latest'],
 };

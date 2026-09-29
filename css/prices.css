@@ -137,3 +137,10 @@ canvas{width:100%!important;max-height:380px}
 .chk-td{font-size:.82rem;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
 .chk-td[aria-disabled=true]{opacity:.45;cursor:help}
 @media(max-width:680px){ .lab-controls{grid-template-columns:1fr 1fr} .lab-controls-top{grid-template-columns:1fr} }
+/* phone tap targets: expanders, sliders and ticks were 13–21px tall — lift them to a thumb-sized area */
+@media(max-width:680px){
+  .svc .more{min-height:40px;padding:10px 0 6px}
+  input[type=range]{min-height:32px}
+  input[type=checkbox]{width:20px;height:20px}
+  select{min-height:40px}
+}

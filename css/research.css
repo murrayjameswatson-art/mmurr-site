@@ -1,0 +1,92 @@
+/* Long-form reading pages under /agentic-research/ (research threads, hub, wake log).
+   Loaded AFTER base.css, so the dark theme, links and focus rings are shared with the
+   tool pages; this file only adds article typography and the research components
+   (confidence tags, asides, source lists, wake-log index). The mmurr.ai wordmark
+   keeps the homepage's gold Audiowide styling. */
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+
+body{max-width:760px;margin:0 auto;padding:22px 16px 80px;font-size:16px;line-height:1.65}
+
+/* mmurr.ai wordmark — same treatment as the homepage title, at header size */
+.site-mark{display:inline-block;font-family:'Audiowide',var(--sans);font-size:1.35rem;line-height:1;
+  text-decoration:none;letter-spacing:.01em;
+  background:linear-gradient(95deg,#FFB733 0%,#FFD700 48%,#FFA500 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 4px rgba(255,210,80,.45)) drop-shadow(0 0 14px rgba(255,150,20,.25))}
+.breadcrumb{font-size:.85rem;color:var(--muted);margin:6px 0 22px}
+.breadcrumb a{color:var(--muted)}
+
+/* article typography (base.css h2 is an uppercase panel label — undo that here) */
+h1{font-size:1.65rem;line-height:1.25;margin:0 0 6px}
+h2{font-size:1.2rem;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:650;
+  margin:2.4rem 0 .6rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+h3{font-size:1.02rem;margin:1.5rem 0 .4rem}
+p,li{color:#d5d9e0}
+.subtitle,.standfirst{color:var(--muted);font-size:1rem;margin:0 0 2rem}
+strong{color:var(--ink)}
+
+/* confidence tags */
+.tag{display:inline-block;font-size:.7rem;font-weight:600;padding:.1rem .5rem;border-radius:999px;
+  margin-left:.4rem;vertical-align:middle;border:1px solid}
+.tag-confirmed{color:var(--accent);border-color:rgba(91,209,166,.5);background:rgba(91,209,166,.1)}
+.tag-likely{color:var(--warn);border-color:rgba(224,179,65,.5);background:rgba(224,179,65,.1)}
+.tag-unverified{color:var(--hot);border-color:rgba(255,107,87,.5);background:rgba(255,107,87,.1)}
+
+.aside,.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:var(--radius);padding:.8rem 1rem;font-size:.92rem;margin:1.25rem 0}
+.aside p,.note p{margin:.4rem 0}
+
+/* tables scroll sideways on phones instead of squashing */
+table{display:block;overflow-x:auto;border-collapse:collapse;width:100%;margin:1.5rem 0;font-size:.92rem}
+th,td{text-align:left;border:1px solid var(--line);padding:.5rem .7rem;vertical-align:top;min-width:7rem}
+th{background:var(--panel2);color:var(--ink)}
+code{font-family:var(--mono);background:var(--panel2);padding:.1rem .3rem;border-radius:4px;font-size:.86em;
+  overflow-wrap:anywhere}
+
+.sources-method{margin-top:3rem;font-size:.9rem}
+.sources-method li{margin-bottom:.6rem}
+.sources-method a,p a,li a{overflow-wrap:anywhere}
+
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.84rem;color:var(--faint)}
+
+/* hub: research thread cards */
+ul.threads{list-style:none;padding-left:0}
+ul.threads li{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:.85rem 1rem;margin-bottom:.75rem;transition:border-color .2s ease}
+ul.threads li:hover{border-color:var(--accent)}
+ul.threads li a{font-weight:600}
+ul.threads .meta{font-size:.86rem;color:var(--muted);margin-top:.3rem}
+ul.threads li.featured{border-color:rgba(255,183,51,.55)}
+
+/* wake log */
+h2.index-head{margin-top:2rem}
+details.month{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);margin:.6rem 0}
+details.month>summary{cursor:pointer;padding:.6rem .9rem;font-weight:600;color:var(--ink)}
+details.month>summary .count{color:var(--muted);font-weight:400;font-size:.88rem;margin-left:.4rem}
+details.month[open]>summary{border-bottom:1px solid var(--line)}
+details.month>.month-body{padding:0 .9rem .6rem}
+ul.index{list-style:none;padding-left:0;margin:0}
+ul.index li{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+ul.index li:last-child{border-bottom:0}
+ul.index li a{font-weight:600;white-space:nowrap}
+ul.index .when{color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+ul.index .snip{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+article.wake{margin-top:1.6rem}
+article.wake h2{font-size:1.1rem;margin:0 0 .4rem}
+article.wake h2 .when{font-weight:400;font-size:.85rem;color:var(--faint);margin-left:.4rem}
+article.wake p{margin:.7rem 0}
+.empty{color:var(--faint);font-style:italic}
+
+@media(max-width:560px){
+  body{font-size:15.5px}
+  h1{font-size:1.4rem}
+  ul.index .snip{display:none}
+}
+
+/* numbered process flow (how-it-works): cards that stack on phones */
+ol.flow{list-style:none;counter-reset:step;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+ol.flow li{counter-increment:step;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:.75rem .9rem;font-size:.9rem}
+ol.flow li b{display:block;color:var(--ink);margin-bottom:.2rem}
+ol.flow li b::before{content:counter(step);display:inline-grid;place-items:center;width:1.4rem;height:1.4rem;margin-right:.45rem;
+  border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:.75rem}
+ol.flow li span{color:var(--muted)}

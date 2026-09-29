@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Impact Handbook — mmurr.ai</title>
 <meta name="description" content="Every calculation on mmurr.ai, derived from first principles: energy, carbon, water, cost economics and facility build-out — with worked examples, uncertainty ranges and numbered sources.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mmurr.ai">
+<meta property="og:title" content="Impact Handbook">
+<meta property="og:description" content="Every calculation on mmurr.ai, derived from first principles: energy, carbon, water, cost economics and facility build-out — with worked examples, uncertainty ranges and numbered sources.">
+<meta property="og:url" content="https://mmurr.ai/handbook.html">
+<meta name="twitter:card" content="summary">
 <style>
 :root{
   --bg:#0f1218; --panel:#171b23; --panel2:#1c212b; --line:#222732;
@@ -88,7 +94,8 @@ a.src{font-family:var(--mono);font-size:.68em;vertical-align:0.45em;color:var(--
 @media (max-width:640px){
   .worked li{padding-left:8px;padding-top:26px}
   .worked li::before{left:50%;transform:translateX(-50%);top:6px}
-  .eq{font-size:13.5px;padding:12px 10px}
+  .eq{font-size:13.5px;padding:12px 10px;overflow-x:auto}
+  .eq .t.small{white-space:normal}   /* long side-notes wrap; formula terms stay whole */
   .worked .m{font-size:13px}
 }
 
@@ -146,9 +153,12 @@ ol.srcs .u{font-family:var(--mono);font-size:12px;word-break:break-all}
 footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;color:var(--dim);font-size:13px}
 
 @media (max-width:900px){
-  .layout{grid-template-columns:1fr;gap:0}
+  .layout{grid-template-columns:minmax(0,1fr);gap:0}   /* minmax(0,…) stops wide figures stretching the column past the phone width */
   nav.toc{position:static;border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel);margin-bottom:26px}
   nav.toc ol{columns:2;column-gap:18px}
+}
+@media (max-width:520px){
+  nav.toc ol{columns:1}
 }
 </style>
 </head>

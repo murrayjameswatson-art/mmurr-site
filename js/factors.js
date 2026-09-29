@@ -315,14 +315,16 @@ window.MMURR_DATA = {
         steps:[['2024-03','Haiku 3',0.75,0.25,[0.25,1.25]],['2025-10','Haiku 4.5',3.0,0.3,[1,5]]]},
       // Sonnet held $3/$15 across 3.5 → 4.5 → 4.6 (the "price held while the model
       // was swapped" story — kept intentionally); Sonnet 5 (Jul 2026) cut it to
-      // $2/$10 on intro pricing through 31 Aug 2026.
-      'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[2,10,'Sonnet 5'],
-        steps:[['2024-06','Sonnet 3.5',9.0,0.34,[3,15]],['2025-09','Sonnet 4.5',9.0,0.34,[3,15]],['2026-01','Sonnet 4.6',9.0,0.34,[3,15]],['2026-07','Sonnet 5',6.0,0.34,[2,10]]]},
-      'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[5,25,'Opus 4.8'],
-        steps:[['2024-03','Opus 3',45,0.6,[15,75]],['2025-08','Opus 4.1',45,0.6,[15,75]],['2026-01','Opus 4.6',15,0.5,[5,25]],['2026-05','Opus 4.8',15,0.5,[5,25]]]},
-      // Fable 5 (Jul 2026) — new Claude 5 flagship above Opus, $10/$50 (LiteLLM). Wh assumed.
-      'an:fable': {group:'Anthropic', label:'Fable', conf:'SOURCED', assumedWh:true, io:[10,50,'Fable 5'],
-        steps:[['2026-07','Fable 5',30,0.6,[10,50]]]},
+      // $2/$10 on intro pricing through 31 Aug 2026; Sonnet 5.5 (28 Sep 2026) kept $2/$10.
+      // Opus 5 (24 Jul 2026) held $5/$25; Opus 5.5 (22 Sep 2026) cut it 20% to $4/$20.
+      'an:sonnet':{group:'Anthropic', label:'Sonnet', conf:'SOURCED', assumedWh:true, io:[2,10,'Sonnet 5.5'],
+        steps:[['2024-06','Sonnet 3.5',9.0,0.34,[3,15]],['2025-09','Sonnet 4.5',9.0,0.34,[3,15]],['2026-01','Sonnet 4.6',9.0,0.34,[3,15]],['2026-07','Sonnet 5',6.0,0.34,[2,10]],['2026-09','Sonnet 5.5',6.0,0.34,[2,10]]]},
+      'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[4,20,'Opus 5.5'],
+        steps:[['2024-03','Opus 3',45,0.6,[15,75]],['2025-08','Opus 4.1',45,0.6,[15,75]],['2026-01','Opus 4.6',15,0.5,[5,25]],['2026-05','Opus 4.8',15,0.5,[5,25]],['2026-07','Opus 5',15,0.5,[5,25]],['2026-09','Opus 5.5',12,0.5,[4,20]]]},
+      // Fable 5 (Jul 2026) — new Claude 5 flagship above Opus, $10/$50 (LiteLLM); Fable 5.1
+      // (Sep 2026) held the price. Wh assumed.
+      'an:fable': {group:'Anthropic', label:'Fable', conf:'SOURCED', assumedWh:true, io:[10,50,'Fable 5.1'],
+        steps:[['2026-07','Fable 5',30,0.6,[10,50]],['2026-09','Fable 5.1',30,0.6,[10,50]]]},
     },
 
     // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)
@@ -443,3 +445,14 @@ if(['localhost','127.0.0.1',''].includes(location.hostname)){
     console.assert(t.models.includes(t.lineage), `licence ${k}: default lineage is allowed on the licence`);
   }
 }
+
+// --- "Data as of" stamp -------------------------------------------------------
+// Any element with [data-asof] gets the dates of the Action-refreshed feeds, so a
+// visitor can see how fresh the numbers are without opening the sources table.
+document.addEventListener('DOMContentLoaded', function(){
+  const ref = window.MMURR_API_PRICES, F = window.MMURR_FX, bits = [];
+  if(ref && ref.fetched) bits.push(`API prices ${ref.fetched}`);
+  if(F && F.months && F.months.length) bits.push(`GBP/USD FX to ${F.months[F.months.length-1]}`);
+  if(!bits.length) return;
+  document.querySelectorAll('[data-asof]').forEach(el => { el.textContent = 'Data as of: ' + bits.join(' · '); });
+});

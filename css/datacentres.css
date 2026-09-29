@@ -33,3 +33,4 @@ canvas{width:100%!important;max-height:360px}
   .heatrow{grid-template-columns:120px 1fr 56px}
   canvas{max-height:300px}
 }
+#wmChips{flex-wrap:wrap;max-width:100%}   /* chip row wraps on phones instead of widening the page */

@@ -82,3 +82,11 @@ article.wake p{margin:.7rem 0}
   h1{font-size:1.4rem}
   ul.index .snip{display:none}
 }
+
+/* numbered process flow (how-it-works): cards that stack on phones */
+ol.flow{list-style:none;counter-reset:step;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+ol.flow li{counter-increment:step;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:.75rem .9rem;font-size:.9rem}
+ol.flow li b{display:block;color:var(--ink);margin-bottom:.2rem}
+ol.flow li b::before{content:counter(step);display:inline-grid;place-items:center;width:1.4rem;height:1.4rem;margin-right:.45rem;
+  border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:.75rem}
+ol.flow li span{color:var(--muted)}

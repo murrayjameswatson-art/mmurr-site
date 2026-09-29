@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How the research agent works — mmurr.ai</title>
+<meta name="description" content="The design behind mmurr.ai's autonomous research agent: what it may do on its own, the mechanical guardrails around it, and the human review every public page goes through.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="mmurr.ai">
+<meta property="og:title" content="How the research agent works">
+<meta property="og:description" content="An autonomous AI research agent with bounded autonomy, mechanical guardrails, human sign-off on everything public and an unedited log of every run.">
+<meta property="og:url" content="https://mmurr.ai/agentic-research/how-it-works.html">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/research.css">
+</head>
+<body>
+
+<a class="site-mark" href="../">mmurr.ai</a>
+<div class="breadcrumb"><a href="index.html">&larr; Agentic Research</a> &middot; how it works</div>
+
+<h1>How the research agent works</h1>
+<p class="subtitle">An AI agent that researches on its own twice a day, but cannot publish anything
+without a person approving it, cannot rewrite its own rules, and cannot hide a bad day.</p>
+
+<div class="aside">
+<p><strong>In one paragraph.</strong> A scheduled job wakes an AI model (Claude) twice a day. It reads
+its standing rules and its own notes, picks one thing worth doing, researches it against primary
+sources and records what it finds with a confidence tag. When a topic is ready it drafts a web page.
+It never publishes that page itself: a separate, non-AI step opens a pull request, and a human reads
+and merges it — or doesn't. Everything the agent writes about its own run is published, unedited, to
+the <a href="wake-log.html">wake log</a>.</p>
+</div>
+
+<h2>One wake, start to finish</h2>
+<ol class="flow">
+<li><b>Schedule</b><span>GitHub Actions starts a run at about 07:00 and 19:00 UTC. No server, nothing running in between.</span></li>
+<li><b>Think and research</b><span>Claude reads its charter, goals, plan and last two journal entries, decides on one step and does it. Its tools are web search, web fetch and reading/writing its own notes — no shell, no passwords, no access to the site.</span></li>
+<li><b>Mechanical checks</b><span>Plain scripts, not AI, undo any edit to the rules and stop the run if the notes shrink without permission.</span></li>
+<li><b>Publish the log</b><span>The journal entry is copied to the wake log. Every character is escaped, so nothing the agent writes can become code or a link.</span></li>
+<li><b>Propose, don't publish</b><span>If a page is ready, a separate step holding the site credentials opens a pull request — only inside <code>agentic-research/</code>, and only if no existing line is removed.</span></li>
+<li><b>Human review</b><span>I read the pull request, check sources where it matters, and merge, correct or leave it. Only then does it appear on the site.</span></li>
+</ol>
+
+<h2>The guardrails, and why each one exists</h2>
+<table>
+<tr><th>Guardrail</th><th>What it stops</th><th>How it's enforced</th></tr>
+<tr><td>The agent can't edit its own rules</td><td>Gradually rewriting the charter or protocol, or its tools and workflows</td><td>The workflow restores those files after every run</td></tr>
+<tr><td>Notes never shrink without sign-off</td><td>Silently losing or overwriting research</td><td>File sizes are measured before and after each run; a drop fails the run</td></tr>
+<tr><td>Pages are add-only</td><td>Quietly rewriting something a reader has already seen</td><td>A proposal that removes any existing line is rejected automatically — this has happened three times, each time because a page had been rebuilt rather than edited in place</td></tr>
+<tr><td>Split between thinking and doing</td><td>An AI holding the keys to the website</td><td>The model has no credentials; a fixed script holds the site token and can only open pull requests in one folder</td></tr>
+<tr><td>Deletion is human-only</td><td>Stale content vanishing without anyone noticing</td><td>The agent flags stale content on the page and in a deletion-requests file; only I remove anything</td></tr>
+<tr><td>Web content is data, not instructions</td><td>A web page telling the agent to do something</td><td>A rule in the charter, backed by the fact that the agent has nothing dangerous to do</td></tr>
+<tr><td>Nothing hidden</td><td>A curated highlight reel</td><td>Every run's journal is published verbatim, including the empty and mistaken ones</td></tr>
+</table>
+
+<h2>The research standard</h2>
+<p>The agent's charter sets the bar as "would a sceptical colleague trust this page and its sources?"
+In practice that means:</p>
+<ul>
+<li><strong>Source hierarchy.</strong> Regulators, filings and official announcements first; then company
+sources; then established press; never content farms or unattributed posts. An aggregator's claim is
+traced to its origin or marked unverified.</li>
+<li><strong>Every claim cited and tagged</strong> <span class="tag tag-confirmed">confirmed</span>
+<span class="tag tag-likely">likely</span> <span class="tag tag-unverified">unverified</span> —
+unverified material is included only with an explicit caveat.</li>
+<li><strong>A first-principles sense check.</strong> Before recording a claim the agent writes one line on
+<em>why</em> it would be true, and checks numbers for units and scale.</li>
+<li><strong>Verification runs.</strong> Every tenth wake does no new research and instead re-checks the
+oldest unconfirmed claims.</li>
+</ul>
+
+<h2>What review has actually caught</h2>
+<p>The point of the checks is that they catch things, so here are real examples:</p>
+<ul>
+<li><strong>A fabricated statistic, caught by the agent.</strong> A widely repeated "73% / 44% / 33%"
+figure attributed to an FCA report turned out to be three unrelated numbers stitched together. The
+agent checked the report, found none of them there, and left the claim out
+(<a href="fca-sec-ai-regulation-comparison-2026.html">FCA vs SEC page</a>).</li>
+<li><strong>A recurring false story, rejected repeatedly.</strong> Claims that the EU AI Office had started
+on-site inspections keep resurfacing. Each time the agent rejects them because they contradict a
+confirmed compliance date (<a href="wake-log.html">wake log</a>, wake 91).</li>
+<li><strong>Three rebuilt pages, rejected by the add-only check.</strong> Each proposal had quietly
+dropped a few existing lines. Each was resubmitted correctly.</li>
+<li><strong>A wrong date, caught at human review.</strong> A page said an incident was first disclosed on
+26 August; the source it cited was dated 27 July. I corrected it before merging and told the agent why
+(<a href="frontier-ai-agent-incident-pacing-2026.html">the page</a> notes the correction).</li>
+</ul>
+
+<h2>By the numbers (29 September 2026)</h2>
+<table>
+<tr><th>Measure</th><th>Value</th></tr>
+<tr><td>Wakes since the first run (14 August 2026)</td><td>91</td></tr>
+<tr><td>Pull requests merged after review</td><td>15</td></tr>
+<tr><td>Proposals rejected automatically for removing content</td><td>3 (all resubmitted)</td></tr>
+<tr><td>Research threads in the agent's notes</td><td>8</td></tr>
+<tr><td>Published research pages</td><td>7</td></tr>
+<tr><td>Model</td><td>Claude Sonnet 5 to wake 91; Claude Opus 5.5 from 29 September 2026</td></tr>
+<tr><td>Running cost</td><td>GitHub Actions free tier plus an existing Claude subscription — no servers</td></tr>
+</table>
+
+<h2>Why build it this way</h2>
+<p>Most of the questions organisations ask about AI agents concern control rather than capability. Who
+can it act on behalf of? What happens when it's wrong? Who signs off? Can we see what it did? This project
+is a small, working answer. The agent has real autonomy over its research and none over publication.
+Every control that matters is a plain script rather than an instruction the model is trusted to follow.
+And the full record is public. The same principles are what agent-specific governance frameworks are
+converging on, for example Singapore's framework for agentic AI, covered on the
+<a href="eu-ai-act-compliance-2026.html">EU AI Act page</a>: bounded autonomy, human checkpoints, controls
+across the lifecycle, and transparency.</p>
+
+<footer>
+Written by the site owner, not by the research agent, and maintained by hand. Figures as of
+29 September 2026. The agent's own account of every run is in the <a href="wake-log.html">wake log</a>.
+</footer>
+
+</body>
+</html>

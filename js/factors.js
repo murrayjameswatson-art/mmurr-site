@@ -276,18 +276,21 @@ window.MMURR_DATA = {
       ['2025-08','GPT-5',5.6,0.34,[1.25,10]],['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],
       // GPT-5.5 launched 23 Apr 2026 at $5/$30 — a straight 2× on GPT-5.4 ($2.50/$15).
       // GPT-5.6 (Sol/Terra/Luna) GA 9 Jul 2026; Sol is the flagship backend at the
-      // same $5/$30. The feed never touches backend, so these anchors carry the price.
+      // same $5/$30. OpenAI cut Sol to $4/$20 from 21 Aug 2026, a promotional rate
+      // "at least through November 21, 2026" (OpenAI pricing page). The feed never
+      // touches backend, so these anchors carry the price.
       ['2026-04','GPT-5.5',17.5,0.31,[5,30]],['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],
+      ['2026-08','GPT-5.6 Sol (promo to 21 Nov)',12,0.31,[4,20]],
     ],
 
     // Main-model axis: which lineage drives the API line + footprint overlay.
     // io=[inUSD/1M, outUSD/1M, current-model label]; steps=[date,label,blendedUSD/1M,Wh]
     defaultAxis: 'oa:auto',
     axis: {
-      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[5,30,'GPT-5.6 Sol (Auto)'],
+      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[4,20,'GPT-5.6 Sol (Auto)'],
         steps:[['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],['2025-08','GPT-5',5.6,0.34,[1.25,10]],
                ['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],['2026-04','GPT-5.5',17.5,0.31,[5,30]],
-               ['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]]]},
+               ['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],['2026-08','GPT-5.6 Sol (promo to 21 Nov)',12,0.31,[4,20]]]},
       // GPT-5.x Thinking tiers are not separately priced API SKUs — those steps
       // stay mix-locked (no io pair); o1/o3 archive prices are public. GPT-5.6
       // Thinking (VERIFY) rides the Sol backend from Jul 2026.
@@ -300,9 +303,11 @@ window.MMURR_DATA = {
       'oa:mini':  {group:'OpenAI', label:'Mini / Luna', conf:'VERIFY', io:[0.20,1.20,'GPT-5.6 Luna'],
         steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-07','GPT-5.6 Luna',0.70,0.12,[0.20,1.20]]]},
       // Flash moved fast: 2.5 Flash → 3.5 Flash ($1.50/$9, May 2026) → 3.6 Flash
-      // ($1.50/$7.50, Aug 2026). Removed the duplicate '2.5 Flash' placeholder.
-      'gm:flash': {group:'Google', label:'Gemini Flash', conf:'VERIFY', io:[1.50,7.50,'Gemini 3.6 Flash'],
-        steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','3.5 Flash',5.25,0.24,[1.50,9.00]],['2026-08','3.6 Flash',4.50,0.24,[1.50,7.50]]]},
+      // ($1.50/$7.50, 21 Jul 2026) → 3.7 Flash (13 Aug) and 3.8 Flash (2 Sep) on an
+      // introductory $0.75/$3.75, also applied to 3.6, "through December 31, 2026";
+      // $1.50/$7.50 from 1 Jan 2027 (ai.google.dev/gemini-api/docs/pricing).
+      'gm:flash': {group:'Google', label:'Gemini Flash', conf:'SOURCED', io:[0.75,3.75,'Gemini 3.8 Flash'],
+        steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','3.5 Flash',5.25,0.24,[1.50,9.00]],['2026-07','3.6 Flash',4.50,0.24,[1.50,7.50]],['2026-08','3.7 Flash (intro price to 31 Dec)',2.25,0.24,[0.75,3.75]],['2026-09','3.8 Flash (intro price to 31 Dec)',2.25,0.24,[0.75,3.75]]]},
       'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
         steps:[['2024-02','1.5 Pro',7.0,0.6,[3.5,10.5]],['2025-03','2.5 Pro',5.6,0.4,[1.25,10]],['2025-11','3 Pro',7.0,0.4,[2,12]],['2026-05','3.1 Pro',7.0,0.4,[2,12]]]},
       'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Grok 4.5'],
@@ -369,20 +374,25 @@ window.MMURR_DATA = {
 };
 
 // --- Referenced current API prices (js/data/api-prices.js, optional) --------
-// The lineage steps in models.axis are hand-set HISTORY; when the weekly-
-// refreshed feed is present (script tag loaded before this file), overwrite
-// each lineage's LATEST price point and the io[] display prices with the
-// referenced values. Same 50/50 in/out blend basis. Feed absent → anchors
-// stand unchanged (file:// safe).
+// The lineage steps in models.axis are hand-set, dated HISTORY. The weekly feed
+// only checks the latest price. If it matches the last step, nothing changes. If
+// it differs, a new step is added in the month the feed first saw the new price
+// (p.since), so a price cut is shown when it happened rather than backdated to the
+// model's launch. Same-month changes update the last step in place. Feed-added
+// steps are labelled "(feed <date>)" so they stand out for hand-curation.
+// Feed absent → anchors stand unchanged (file:// safe).
 (function(){
   const ref = window.MMURR_API_PRICES;
   if(!ref || !ref.models) return;
   for(const [k, p] of Object.entries(ref.models)){
     const ax = MMURR_DATA.models.axis[k]; if(!ax) continue;
+    const last = ax.steps[ax.steps.length-1], io = last[4];
+    if(io && io[0] === p.in && io[1] === p.out) continue;        // feed agrees with history
+    const seen = p.since || ref.fetched, month = (seen || '').slice(0,7);
+    const blend = +((p.in + p.out)/2).toFixed(2);                 // 50/50 blend (mix applied at read time)
+    if(!month || month <= last[0]){ last[2] = blend; last[4] = [p.in, p.out]; }
+    else ax.steps.push([month, `${p.id} (feed ${seen})`, blend, last[3], [p.in, p.out]]);
     ax.io[0] = p.in; ax.io[1] = p.out;
-    const last = ax.steps[ax.steps.length-1];
-    last[2] = +((p.in + p.out)/2).toFixed(2);   // stored 50/50 blend (mix applied at read time)
-    last[4] = [p.in, p.out];                    // io pair → the mix slider can re-blend it
   }
 })();
 

@@ -405,7 +405,9 @@ function renderSnapshot(){
 // --- Region-aware sources & assumptions (covers BOTH charts) -------------------
 const SRC = {
   litellm:'https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json',
-  openai:'https://openai.com/api/pricing/',
+  openai:'https://developers.openai.com/api/docs/pricing',
+  openaiPromo:'https://community.openai.com/t/20-price-reduction-for-gpt-5-6-sol-api-codex-credits-and-chatgpt-work/1391726',
+  opus55:'https://www.anthropic.com/claude-opus-5-5',
   gemini:'https://ai.google.dev/gemini-api/docs/pricing',
   geminiEnt:'https://cloud.google.com/blog/products/ai-machine-learning/gemini-enterprise-launch',
   googleOne:'https://blog.google/products-and-platforms/products/google-one/google-ai-subscriptions/',
@@ -457,6 +459,7 @@ function renderSources(){
     ['API token $ (the "if billed on API" line)', `blended <b>${mixIn}/${mixOut}</b> in/out per model, USD/1M, shown ${fxLine}. `+(ref
         ? `<b>Current</b> prices are referenced from the LiteLLM community registry, fetched <b>${ref.fetched}</b> (auto-refreshed weekly by a repo Action); history steps are hand-set anchors.`
         : `Referenced price feed not loaded — hand-set anchors in use.`), 'SOURCED', aLink(SRC.litellm,'LiteLLM registry')+' · '+aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
+    ['2026 price changes', `GPT-5.6 Sol cut from $5/$30 to $4/$20 from 21 Aug 2026, "at least through November 21, 2026". Gemini 3.6–3.8 Flash at an introductory $0.75/$3.75 "through December 31, 2026", then $1.50/$7.50. Claude Opus 5.5 (22 Sep 2026) at $4/$20, 20% below Opus 5. GPT-6 Sol (22 Sep 2026) at $2/$10 is not yet the model behind Copilot, so it is not on the chart. Each change is a dated step on the chart, not a revision of earlier prices.`, 'SOURCED', aLink(SRC.openaiPromo,'OpenAI')+' · '+aLink(SRC.gemini,'Google')+' · '+aLink(SRC.opus55,'Anthropic')+' · '+aLink(SRC.openai,'OpenAI pricing')],
     ['Copilot energy', `0.31 Wh / prompt (median; range 0.16–0.60; per-query water &lt;0.5 mL)`, 'SOURCED', 'Microsoft production disclosure (Jun 2026)'],
     ['Gemini energy', `0.24 Wh / prompt (fleet median)`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
     ['Anthropic / xAI / Mistral / Gemini-Pro energy', `per-query Wh not published — labelled assumptions`, 'ASSUMPTION', '(vendors publish none)'],

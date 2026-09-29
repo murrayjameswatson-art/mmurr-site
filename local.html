@@ -60,9 +60,11 @@
         reduces the memory footprint by roughly a factor of four. Every figure on this page assumes Q4 quantisation.</dd>
       <dt style="color:var(--ink);font-weight:600">Mixture-of-Experts (MoE) and active parameters</dt>
       <dd style="margin:0 0 8px">An architecture in which a model is divided into specialised sub-networks
-        ("experts"), only some of which are used to process any given request. The "active parameter" count is the
-        portion actually used per request, and is what determines hardware requirements — the total parameter count,
-        on its own, overstates the hardware a Mixture-of-Experts model needs.</dd>
+        ("experts"), only some of which are used for each word the model produces. All of the experts still have to be
+        held in memory, so the <em>total</em> parameter count sets how much graphics memory (VRAM) is needed. The
+        "active" parameter count is the part doing the work at any moment, so it sets how fast the model runs and how
+        much computation each answer costs. A Mixture-of-Experts model therefore needs the memory of a large model but
+        runs at roughly the speed of a small one.</dd>
       <dt style="color:var(--ink);font-weight:600">Capital cost (capex) and operating cost (opex)</dt>
       <dd style="margin:0 0 8px">Capital cost is the upfront cost of purchasing hardware. Operating cost is the
         ongoing cost of running it, principally electricity. This page reports both separately, since they behave
@@ -80,9 +82,9 @@
     <select id="lm-model" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
     <div class="lm-strip" id="lm-facts"></div>
     <p class="sub" id="lm-source" style="margin-top:8px"></p>
-    <p class="sub" style="margin-top:10px">For models using a Mixture-of-Experts architecture, the total parameter
-      count and the active parameter count differ; hardware requirements are determined by the active count (see
-      Glossary, above). The <strong>Q4 weight size</strong> shown is the amount of storage and graphics memory
+    <p class="sub" style="margin-top:10px">For models using a Mixture-of-Experts architecture, the total and active
+      parameter counts differ. Memory needs follow the total count and speed follows the active count (see Glossary,
+      above). The <strong>Q4 weight size</strong> shown is the amount of storage and graphics memory
       (VRAM) required to load the model at 4-bit quantisation — the reduced-precision format assumed throughout this
       page. Quantisation reduces the memory required to run a model, typically by a factor of roughly four relative
       to its unquantised form, at a small and generally acceptable cost to output quality.</p>
@@ -167,7 +169,7 @@
     <p class="sub" style="margin:0">Sourcing hierarchy: the provider's release announcement or model card is used
       for parameters and release dates; Hugging Face's <code>config.json</code> is used to confirm architecture;
       community hardware guides are used for real-world VRAM requirements; national energy statistics are used for
-      electricity prices. Every model links to its Hugging Face source. Enterprise-tier GPU price and power draw are
+      electricity prices. Every model links to its model card or the provider's own model page. Enterprise-tier GPU price and power draw are
       read from the <a href="costmodel.html">Cost-of-Service Model</a>'s figures rather than sourced a second time.</p>
     <p class="foot">Every figure is an editable value in <code>js/data/local-models.js</code>. Data anchors as of
       <span class="lm-asof">—</span>. These are planning estimates and should be verified independently before being

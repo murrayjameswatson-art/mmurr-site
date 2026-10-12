@@ -5,7 +5,7 @@
    dated at "since" (the first refresh that saw it). Absent file / absent key →
    factors.js anchors are used unchanged. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-10-05",
+  "fetched": "2026-10-12",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {

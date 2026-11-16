@@ -100,9 +100,9 @@
       const note = document.getElementById('ukMapNote');
       if(note) note.innerHTML =
         `Showing <b>${rows.length}</b> curated sites (of ~${S.totalIdentified} the Computer Weekly / Barbour ABI ` +
-        `EPC-derived series identifies — the misses are the long tail of small colocation sites). Every marker carries ` +
+        `EPC-derived series identifies; the rest are small colocation sites). Every marker carries ` +
         `its source and confidence in the tooltip; coordinates are town-level. Data as of ${S.as_of}. ` +
-        `Per-site utilisation is not public and is not shown — the national picture is in the chart below.`;
+        `Per-site utilisation is not public and is not shown; the national picture is in the chart below.`;
     }
     const seg = document.getElementById('ukFilter');
     if(seg) seg.addEventListener('click', e => {
@@ -188,12 +188,12 @@
     if(note){
       const cap = G.capacity;
       note.innerHTML =
-        `<b>Major AI-relevant sites, curated</b> — ${S.sites.length} campuses/clusters, never exhaustive (a full world ` +
+        `<b>Major AI sites, curated</b>: ${S.sites.length} campuses and clusters, not a complete list (a full world ` +
         `register is licensed analyst data). Choropleth = grid carbon intensity (display only; ${srcLabel(G,'ember')}, ` +
         `VERIFY except the UK/US/France anchors, which match gridFactor). Where the capacity actually sits (IEA, ` +
         `mid-2025): global ≈${cap.globalGw} GW IT — US ≈${cap.sharesPct.US}% · Europe ≈${cap.sharesPct.Europe}% · ` +
         `China ≈${cap.sharesPct.China}%; 2024 DC electricity US ${cap.twh2024.US} TWh · China ${cap.twh2024.China} TWh. ` +
-        `Model→region mappings churn quarterly — data as of ${S.as_of}.`;
+        `Which models run where changes every quarter; data as of ${S.as_of}.`;
     }
     draw();
   })();

@@ -68,8 +68,8 @@ const lineageOf = s => s.billing==='sub' ? s.lt.lineage : s.lineage;
 function modeChip(mode){
   if(!mode) return '';
   const M = {
-    regional_list:['regional list','The vendor bills a per-market list price — a point, not an FX conversion.'],
-    usd_fx:      ['USD×FX','Billed USD worldwide; the local price lands at card FX (+VAT for consumer plans) — a band, not a point.'],
+    regional_list:['regional list','The vendor sets a list price for each market, so it is a fixed point, not an FX conversion.'],
+    usd_fx:      ['USD×FX','Billed in USD worldwide; the local price depends on the card exchange rate (plus VAT on consumer plans), so it is a band, not a point.'],
     usd_metered: ['USD metered','Metered in USD per unit (tokens/credits), converted for display.'],
   }[mode];
   return M ? `<span class="badge mode-${mode}" title="${M[1]}">${M[0]}</span>` : '';
@@ -374,7 +374,7 @@ function renderSnapshot(){
     const costTxt = cost==null ? '—' : R.sym+Math.round(cost).toLocaleString();
     let body;
     if(wh==null){
-      body = `<div class="snap-note">Infrastructure credits — footprint depends on the workloads you run, not a per-prompt rate, so it isn't counted here.</div>`;
+      body = `<div class="snap-note">Infrastructure credits: the footprint depends on the workloads you run, not on a per-prompt rate, so it isn't counted here.</div>`;
     } else {
       const kg = wh/1000*R.pue*MMURR_ENV.ci(s.provider), L = wh/1000*R.wue;   // CO₂e kg/mo · water L/mo
       body = `<div class="snap-fp">
@@ -388,7 +388,7 @@ function renderSnapshot(){
       <div class="cost">${costTxt} <small>/ month</small> ${modeChip(s.billing==='sub' ? s.lt.pricing_mode : s.pricing_mode)}</div>
       ${body}</div>`;
   }
-  host.innerHTML = html || `<p class="sub" style="margin:0">No services selected — open a card above and tick “Include in basket”.</p>`;
+  host.innerHTML = html || `<p class="sub" style="margin:0">No services selected. Open a card above and tick “Include in basket”.</p>`;
 }
 
 // --- Region-aware sources & assumptions (covers BOTH charts) -------------------
@@ -439,7 +439,7 @@ function renderSources(){
     ['Gemini (enterprise) licence', `${R.sym}${gemNow}/licence/mo now (Gemini Enterprise, since 9 Oct 2025)`, 'VERIFY', aLink(SRC.geminiEnt,'Google Cloud')],
     ['Gemini price history', `$20/$30 Workspace add-on → discontinued &amp; folded into Workspace (Jan–Mar 2025) → relaunched as Gemini Enterprise $30/licence (Oct 2025). The discontinued period is shown as a REAL GAP in the chart.`, 'SOURCED', aLink(SRC.gemini,'Google')],
     ['Claude (enterprise) licence', `$20/licence/mo base + usage at API rates (shown ${fxLine}); was ≈$40–200 with bundled tokens before the Nov 2025 restructure`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
-    ['ChatGPT Plus (personal)', `$20 USD/mo since Feb 2023; the UK checkout price is a fixed ≈£20 incl VAT — a regional list price, not an FX conversion`, 'SOURCED', aLink(SRC.openai,'OpenAI')],
+    ['ChatGPT Plus (personal)', `$20 USD/mo since Feb 2023; the UK checkout price is a fixed ≈£20 including VAT, a regional list price rather than an FX conversion`, 'SOURCED', aLink(SRC.openai,'OpenAI')],
     ['Claude Pro / Max (personal)', `$${LT.claudePro.usd[0][1]} · $${LT.claudeMax5.usd[0][1]} · $${LT.claudeMax20.usd[0][1]} USD/mo flat (shown ${fxLine}); Pro since Sep 2023, Max tiers since Apr 2025`, 'SOURCED', aLink(SRC.anthropic,'Anthropic pricing')],
     ['Google AI Pro / Ultra (personal)', `AI Premium $19.99/mo (Feb 2024) → renamed Google AI Pro (Apr 2026, price held) · Ultra $249.99/mo (May 2025) → $200 (May 2026; the 5× Ultra tier is not modelled). UK shows Google's own £ list (Pro £18.99 · Ultra £189.99); other regions ${fxLine}`, 'SOURCED', aLink(SRC.googleOne,'Google')],
     ['SuperGrok / Heavy (personal)', `SuperGrok $30/mo (≈Feb 2025, with Grok 3) · Heavy $300/mo (9 Jul 2025). Shown ${fxLine}`, 'VERIFY', aLink(SRC.xai,'xAI')],
@@ -464,15 +464,15 @@ function renderSources(){
         : `not applicable — no source-backed adder for the current carbon basis (only the UK has one: +0.0185, DESNZ 2025)`, 'SOURCED', aLink(SRC.grid,'DESNZ/Defra (2025)')],
     ['Grid intensity (region defaults)', `UK ${gridFactor('UK',false)} (DESNZ 2025) · US ${gridFactor('US',false)} (EPA eGRID 2023 Rev 2) · EU ${gridFactor('EU',false)} (EEA 2024 early est.) · France ${gridFactor('FR',false)} (RTE/EEA) — read via the shared gridFactor() so no page can disagree`, 'SOURCED', aLink(SRC.grid,'DESNZ/Defra (2025)')],
     ['Equivalences', `car ${MMURR_BASES.car} kgCO₂e/km (Defra 2025) · smartphone charge ${MMURR_BASES.phone} kgCO₂e (US-grid basis, EPA; ≈half on the UK grid)`, 'SOURCED', aLink(SRC.grid,'Defra')+' · <a href="https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator" target="_blank" rel="noopener">US EPA</a>'],
-    ['Per-token energy (API-metered view only)', `${MMURR_BASES.whPer1kTok} Wh / 1k tokens (Gemini basis) — an alternative basis to the per-prompt figures above, never multiplied with them`, 'ASSUMPTION', 'derived from Google (2025)'],
+    ['Per-token energy (API-metered view only)', `${MMURR_BASES.whPer1kTok} Wh / 1k tokens (Gemini basis): an alternative to the per-prompt figures above, never combined with them`, 'ASSUMPTION', 'derived from Google (2025)'],
   ];
   host.innerHTML = `
-    <p class="sub" style="margin-top:0">These reflect the <b>${R.label}</b> selection above — switch region/currency and the
+    <p class="sub" style="margin-top:0">These reflect the <b>${R.label}</b> selection above. Switch region or currency and the
       prices, grid and FX here update too. Every value is flagged ${confTag('SOURCED')} ${confTag('VERIFY')} ${confTag('ASSUMPTION')} and links to its origin.
       EU figures are localised approximations (flagged VERIFY).</p>
     <table class="src"><thead><tr><th>Item</th><th>Value (this region)</th><th>Conf.</th><th>Source</th></tr></thead>
     <tbody>${rows.map(([k,v,c,s])=>`<tr><td>${k}</td><td>${v}</td><td>${confTag(c)}</td><td>${s}</td></tr>`).join('')}</tbody></table>
-    <p class="foot">Prices are list/indicative — overwrite them with your own contract rates in the dataset. GBP conversion uses the
+    <p class="foot">Prices are list or indicative; replace them with your own contract rates in the dataset. GBP conversion uses the
       committed ECB monthly series (no runtime network calls); EUR is an editable anchor. Runs entirely in your browser.</p>`;
 }
 
@@ -504,7 +504,7 @@ window.renderEnvStrip = function(){
     `1,000 prompts ≈ <b>${Math.round(kgPer1k/MMURR_BASES.phone).toLocaleString()}</b> smartphone charges (US-grid basis) `+
     `or <b>${(kgPer1k/MMURR_BASES.car).toFixed(1)} km</b> of average car driving. `+
     `Carbon basis: ${MMURR_ENV.basisLabel(ax.group)}; water at ${R.label} WUE ${R.wue} L/kWh`+
-    `${ax.assumedWh?' — this vendor publishes no per-query Wh, so the energy figure is a labelled assumption':''}. `+
+    `${ax.assumedWh?'; this vendor publishes no per-query energy figure, so it is a labelled assumption':''}. `+
     `Per-prompt figures: the input/output ratio never moves these. Alternative API-metered basis: `+
     `${MMURR_BASES.whPer1kTok} Wh/1k tokens ≈ ${(MMURR_BASES.whPer1kTok*TPP/1000).toFixed(2)} Wh per standardised prompt (kept separate, never blended).`;
 };
@@ -548,7 +548,7 @@ function init(){
       tdBox.disabled=!ok; tdBox.checked=ok && MMURR_ENV.td;
       tdWrap.setAttribute('aria-disabled', ok?'false':'true');
       tdWrap.title = ok ? 'Adds the sourced T&D adder to the grid factor (UK +0.0185 kgCO₂e/kWh, DESNZ 2025)'
-                        : 'Only source-backed T&D adders are applied — pick a country basis with one (UK) to enable';
+                        : 'Only sourced T&D adders are applied; choose a country basis that has one (the UK) to enable this';
     }
     const hn=document.getElementById('hostNote');
     if(hn) hn.innerHTML = MMURR_ENV.hosting==='vendor'
@@ -557,7 +557,7 @@ function init(){
         `≈${MMURR_HOSTING.vendors.Mistral.fleet_ci} kgCO₂e/kWh), inferred from disclosed siting elsewhere (e.g. xAI's `+
         `gas-heavy Memphis campus ≈${MMURR_HOSTING.vendors.xAI.fleet_ci}), and a labelled US/EU-weighted assumption `+
         `(${MMURR_HOSTING.fallback.ci}) where nothing usable is disclosed. No vendor reveals which region served your `+
-        `prompt — these are fleet-weighted estimates, graded per vendor in the sources panel (data as of ${MMURR_HOSTING.as_of}).`
+        `prompt, so these are fleet-weighted estimates, graded per vendor in the sources panel (data as of ${MMURR_HOSTING.as_of}).`
       : `All models' CO₂e uses <b>${MMURR_ENV.basisLabel()}</b> kgCO₂e/kWh. Pick “Vendor fleet” to give each model its own vendor's serving-grid estimate.`;
   }
   if(hostSel){

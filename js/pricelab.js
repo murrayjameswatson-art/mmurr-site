@@ -354,16 +354,16 @@
       const fees = feeSeries(t);
       const bandD = t.pricing_mode==='usd_fx' ? feeBand(t) : null;
       const feeTxt = feeIsLocal(t)
-        ? `<b>${R.sym}${price.toFixed(2)}</b>/mo — the vendor's own ${R.label} list price`
+        ? `<b>${R.sym}${price.toFixed(2)}</b>/mo, the vendor's own ${R.label} list price`
         : bandD
         ? `<b>$${usdAt(t.usd,T1)} USD billed worldwide → ${R.sym}${bandD[0].toFixed(2)}–${R.sym}${bandD[1].toFixed(2)}</b>/mo `+
-          `(ECB monthly FX over the trailing 12 months${subVat(MMURR_REGION.get())>1?' × '+subVat(MMURR_REGION.get()).toFixed(2)+' VAT':''} — a band, not a point; currently ${R.sym}${price.toFixed(2)})`
+          `(ECB monthly FX over the trailing 12 months${subVat(MMURR_REGION.get())>1?' × '+subVat(MMURR_REGION.get()).toFixed(2)+' VAT':''}, so a band rather than a point; currently ${R.sym}${price.toFixed(2)})`
         : `<b>$${usdAt(t.usd,T1)} USD × ${fxCur()} FX → ${R.sym}${price.toFixed(2)}</b>/mo (billed USD worldwide)`;
       note = `Fee = ${feeTxt}`+
-             (fees.length>1 ? ` — the fee has changed over time; the steps are plotted on the line. ` : `. `)+
+             (fees.length>1 ? `. The fee has changed over time; the steps are plotted on the line. ` : `. `)+
              `<b>100% usage</b> = exhausting the plan's estimated <b>${t.windowMTok}M tokens per ${SW.windowHours}-hour window</b>, `+
              `restarting after a ${SW.gapHours}-hour gap → ${windowsPerDay} maxed windows/day ≈ <b>${Math.round(t.windowMTok*windowsPerDay*30).toLocaleString()}M tokens/mo</b>. `+
-             `The per-window allowance is an <b>editable assumption</b> — vendors publish no exact token limits, and rolling/weekly caps can bind before the window maths does. `+
+             `The per-window allowance is an <b>editable assumption</b>: vendors publish no exact token limits, and rolling or weekly caps can bind before the window maths does. `+
              `You are at <b>${usagePct}%</b> ≈ ${Math.round(promptsDay()).toLocaleString()} prompts/day.`;
     } else if(type==='list'){
       note = `Licence = ${R.sym}${(MMURR_DATA.seat.list[MMURR_REGION.get()]??MMURR_DATA.seat.list.UK).toFixed(2)} list − <b>${Math.round(disc*100)}%</b> expected EA discount at ${licences.toLocaleString()} licences.`;
@@ -371,15 +371,15 @@
       note = `Licence = ${R.sym}${price.toFixed(2)} regional list for this SKU.`;
     }
     if(!isSub() && type==='business' && licences>MMURR_DATA.seat.businessCap)
-      note += ` <b style="color:var(--hot)">Business SKU is capped at ${MMURR_DATA.seat.businessCap} employees</b> — this licence count can't use it; sits on the E-series.`;
+      note += ` <b style="color:var(--hot)">Business SKU is capped at ${MMURR_DATA.seat.businessCap} employees</b>, so this licence count can't use it and is priced on the E-series.`;
     if(on.api){
       const usageTxt = isSub() ? `${usagePct}% usage` : `${ppd} prompts/user/day`;
       const verdict = apiNow<lic ? `the metered API is <b>cheaper</b> than the licence at ${usageTxt}`
                                  : `the flat licence <b>wins</b> at ${usageTxt}`;
       note += ` At your usage, ${verdict}; break-even ≈ <b>${beTxt}</b>. The shaded bands mark where each side wins. `+
               (isSub()
-                ? `A subscription also buys the apps, projects and priority access — the API line prices tokens only, so this isn't strictly like-for-like.`
-                : `A Copilot licence also buys Graph grounding, security and the in-app surfaces — the API line prices tokens only, so this isn't strictly like-for-like.`);
+                ? `A subscription also buys the apps, projects and priority access. The API line prices tokens only, so this isn't strictly like-for-like.`
+                : `A Copilot licence also buys Graph grounding, security and the in-app features. The API line prices tokens only, so this isn't strictly like-for-like.`);
     } else {
       note += isSub()
         ? ` Markers are the plan's model line stepping underneath; the fee stays flat. Toggle <b>Same workload on raw API</b> to see what your usage would cost metered.`

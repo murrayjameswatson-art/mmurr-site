@@ -29,10 +29,10 @@
 
   // --- hardware-tier ladder metadata -----------------------------------------
   const TIERS = [
-    {k:'A', hw:'API only',              desc:'No local hardware — the request is sent to a cloud-hosted provider.'},
+    {k:'A', hw:'API only',              desc:'No local hardware: the request goes to a cloud-hosted provider.'},
     {k:'B', hw:'1 consumer GPU',        desc:'One consumer graphics card, 24–48GB of VRAM.'},
     {k:'C', hw:'2–4 data-centre GPUs',  desc:'Two to four data-centre-grade accelerators.'},
-    {k:'D', hw:'4–8 data-centre GPUs',  desc:'Four to eight data-centre-grade accelerators — a substantial local deployment.'},
+    {k:'D', hw:'4–8 data-centre GPUs',  desc:'Four to eight data-centre-grade accelerators, a substantial local deployment.'},
     {k:'E', hw:'Multi-node cluster',    desc:'More than one physical server, networked together.'},
   ];
 

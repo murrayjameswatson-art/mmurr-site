@@ -22,8 +22,8 @@
   <header class="top">
     <div>
       <h1>AI Impact Calculator</h1>
-      <p class="sub bright">How the cost — and energy — of a <em>fixed</em> AI &amp; data stack has changed since 2023,
-        even as the model behind each licence was swapped underneath you.</p>
+      <p class="sub bright">How the cost and energy of a <em>fixed</em> AI and data stack have changed since 2023,
+        while the model behind each licence kept changing underneath you.</p>
       <p class="sub asof" data-asof></p>
     </div>
     <div><a class="back" href="costmodel.html">Cost-of-Service Model</a> · <a class="back" href="handbook.html">Impact Handbook</a> · <a class="back" href="index.html">← mmurr.ai</a></div>
@@ -42,7 +42,7 @@
       </div>
     </div>
     <div class="host-row">
-      <div><label class="f" for="hosting">Served from — carbon basis</label>
+      <div><label class="f" for="hosting">Served from (carbon basis)</label>
         <select id="hosting"></select></div><!-- options built in prices.js from gridFactor (no hard-coded factors) -->
       <div id="hostCustomWrap" hidden><label class="f" for="hostCustom">Custom kgCO₂e/kWh</label>
         <input type="number" id="hostCustom" min="0" step="any"></div>
@@ -60,12 +60,13 @@
       (Copilot, Gemini, Claude) have barely moved since 2023: you pay per head, whatever model sits underneath.
       <strong>API token prices</strong> have been far more volatile. They fell through 2023–25, then OpenAI's flagship
       rate <strong>doubled</strong> in April 2026 (GPT-5.5 at $5/$30 per million tokens, against GPT-5.4's $2.50/$15).
-      Since August they have come back down. OpenAI cut GPT-5.6 Sol to $4/$20 from 21 August, Google put its Flash
-      models on a half-price introductory rate, Opus 5.5 launched 20% below Opus 5, and GPT-6 Sol arrived on
-      22 September at $2/$10. Two of those cuts are <strong>temporary</strong>: GPT-5.6 Sol's rate runs to at least
-      21 November 2026, and Gemini Flash returns to $1.50/$7.50 on 1 January 2027. Energy per prompt has broadly
-      fallen throughout. The charts below show where a licence is still the better deal and where paying per token
-      now wins. Sources are listed at the bottom of the page.
+      Since August they have come down again. OpenAI cut GPT-5.6 Sol to $4/$20 from 21 August, then launched GPT-6 Sol
+      and GPT-6.1 Sol in September at $2/$10. Google put its Flash models on a half-price introductory rate.
+      Anthropic launched Opus 5.5 and Fable 5.2 at 20% below their predecessors, and Haiku 5.5 at a tenth of Haiku 4.5's
+      price. Two of those cuts are <strong>temporary</strong>: GPT-5.6 Sol's promotion ends on 30 November 2026, and
+      Gemini Flash returns to $1.50/$7.50 on 1 January 2027. Energy per prompt has broadly fallen throughout. The
+      charts below show where a licence is still the better deal and where paying per token now wins. Sources are
+      listed at the bottom of the page.
     </p>
   </details>
 
@@ -74,15 +75,15 @@
   <div class="panel">
     <details class="logic-disclose">
       <summary>Licence logic</summary>
-      <p class="sub" style="margin:10px 0 0">A licence price barely moves while the model underneath it is swapped — the
-        markers carry that story. <strong>Enterprise types</strong> are regional list per licence; your licence count drives
-        the expected enterprise-agreement discount on the E5 add-on (≈20% at 5,000) — set a real rate in
-        <em>Licence price override</em> to pin it. <strong>Personal subscriptions</strong> (Claude Pro / Max) are flat USD
-        fees, FX-converted. Early access is now part of the licence type: the E7 Frontier Suite receives new models on
-        release day, standard enterprise licences ≈6 weeks later, and personal Claude plans on release day. (The free
-        Frontier <em>program</em> — early preview features — is not the paid E7 Frontier <em>Suite</em>; same name,
-        different thing.) The <strong>Main model</strong> list greys out models the selected licence can't access —
-        M365 Copilot has offered Anthropic models alongside OpenAI's since Sep 2025.</p>
+      <p class="sub" style="margin:10px 0 0">A licence price barely moves while the model underneath it changes; each
+        marker on the chart is one of those changes. <strong>Enterprise licences</strong> use the regional list price, and
+        your licence count sets the expected enterprise-agreement discount (about 20% at 5,000 on the E5 add-on). To use
+        your real rate, enter it in <em>Licence price override</em>. <strong>Personal subscriptions</strong> (Claude Pro
+        and Max) are flat USD fees, converted at each month's exchange rate. New models reach each licence type on its own
+        timetable: the E7 Frontier Suite and personal Claude plans on release day, standard enterprise licences about six
+        weeks later. (Microsoft's free Frontier <em>program</em> of preview features is a different thing from the paid
+        E7 Frontier <em>Suite</em>.) The <strong>Main model</strong> list greys out models the selected licence can't use.
+        M365 Copilot has offered Anthropic models alongside OpenAI's since September 2025.</p>
     </details>
 
     <!-- top row: the two dropdowns, full-width so option text reads unopened -->
@@ -126,12 +127,12 @@
     </div>
     <p class="sub lab-hover" id="lab-hover">Hover the chart to read the values at any month.</p>
 
-    <p class="sub" style="margin:10px 0 0">Seat pricing is insensitive to your input/output ratio; API pricing is
-      not — the ratio control above moves the API line and the break-even, never the licence line. That asymmetry is
-      part of what the seat premium buys.</p>
+    <p class="sub" style="margin:10px 0 0">Seat prices don't change with your input/output ratio; API prices do. The
+      ratio control above moves the API line and the break-even, never the licence line. That stability is part of
+      what the seat premium buys.</p>
 
-    <p class="sub" style="margin:8px 0 0">Price and energy are set <strong>independently</strong>: a model's $/token
-      reflects the vendor's pricing decisions and its Wh/prompt reflects its engineering, so a new model can be
+    <p class="sub" style="margin:8px 0 0">Price and energy are set <strong>independently</strong>: a model's price per token is
+      a commercial decision and its energy per prompt is an engineering result, so a new model can be
       <strong>pricier and more efficient at the same time</strong>. GPT-5.6 launched at GPT-5.5's price on similar
       energy; Grok 4.3 cost about 79% less than Grok 4 on similar energy. Price can also change with no new model at
       all, as with GPT-5.6 Sol's August promotion, which is a cost step with no energy step. CO₂ and water are fixed
@@ -162,11 +163,11 @@
   </div>
 
   <!-- ============ BASKET (blended usage) ============ -->
-  <h2>Blended Usage</h2>
+  <h2>Your stack over time</h2>
   <details class="panel" id="blended" open>
-    <summary class="blended-summary"><strong>Build your stack</strong> <span class="sub">— open a card, tick “Include in
-      basket”, then set licences &amp; usage. Enterprise cards meter prompts/user/day; personal plans meter % of plan
-      capacity — the same logic as the chart above.</span></summary>
+    <summary class="blended-summary"><strong>Build your stack</strong> <span class="sub">Open a card, tick “Include in
+      basket”, then set licences and usage. Enterprise cards count prompts per user per day; personal plans count the
+      share of the plan's capacity you use, as in the chart above.</span></summary>
 
     <div class="tracks" id="tracks"></div>
 
@@ -192,12 +193,12 @@
 
     <div class="chartbox" id="chart"></div>
 
-    <p class="sub snap-head">Each service right now — its monthly <strong>cost</strong> set against the <strong>environmental
-      footprint</strong> of the same workload, for every model in your stack at the current settings.</p>
+    <p class="sub snap-head">What each service in your stack costs a month right now, set against the
+      <strong>environmental footprint</strong> of the same workload, at the current settings.</p>
     <div class="snap" id="snap"></div>
   </details>
 
-  <h2>Per-prompt impact — at your current settings</h2>
+  <h2>Per-prompt impact at your current settings</h2>
   <div class="env-strip" id="envStrip"></div>
   <p class="env-note" id="envNote"></p>
 

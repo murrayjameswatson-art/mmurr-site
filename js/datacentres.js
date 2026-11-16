@@ -76,7 +76,7 @@ function calc(){
   $('ctx').textContent =
     `At ${GW} GW and ${(load*100).toFixed(0)}% load, annual running emissions ≈ ${t(annualT)} CO₂e `+
     `(${km>=1e9 ? (km/1e9).toFixed(1)+' billion' : (km/1e6).toFixed(0)+' million'} car-km), plus a one-off ${t(constructionT)} to build the shells. `+
-    `Hardware embodied is ${operationalT>0?Math.round(hardwareT/operationalT*100):0}% of operational here — it rises as the grid decarbonises.`;
+    `Hardware embodied is ${operationalT>0?Math.round(hardwareT/operationalT*100):0}% of operational here, and that share rises as the grid decarbonises.`;
 }
 
 // --- Cluster heat bars ----------------------------------------------------
@@ -102,7 +102,7 @@ function applyRegion(){
   if(box){
     box.disabled = !ok; box.checked = TD;
     wrap.title = ok ? 'Adds the sourced T&D adder to the grid factor (UK +0.0185 kgCO₂e/kWh, DESNZ 2025)'
-                    : 'No source-backed T&D adder for this region — only the UK has one (DESNZ 2025)';
+                    : 'No sourced T&D adder for this region; only the UK has one (DESNZ 2025)';
     wrap.style.opacity = ok ? '' : '.45';
   }
   $('grid').value = gridFactor(code, TD);

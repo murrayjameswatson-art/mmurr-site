@@ -71,7 +71,7 @@ window.MMURR_REGION = (function(){
       <div class="region-row">
         <div class="region-info">
           <strong>Region &amp; currency</strong>
-          <span class="sub">Changes prices <em>and</em> footprint — see below. Default: ${regions[MMURR_DATA.defaultRegion].flag} UK · London.</span>
+          <span class="sub">Changes prices <em>and</em> footprint below. Default: ${regions[MMURR_DATA.defaultRegion].flag} UK · London.</span>
         </div>
         <div class="seg region-seg" role="group" aria-label="Region and currency">${buttons}</div>
       </div>

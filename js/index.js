@@ -18,7 +18,7 @@ function renderRunningCosts(){
 
   host.innerHTML = `
     <h2 class="run-h">What this costs to run</h2>
-    <p class="run-lead">No ads, no servers, no analytics — just a domain, some time and the occasional whisky.</p>
+    <p class="run-lead">No ads, no servers, no analytics: just a domain, some time and the occasional whisky.</p>
     <dl class="run-grid">
       <dt>.ai domain</dt><dd>~${R.sym}${dom[0]}–${dom[1]} / yr</dd>
       <dt>Hosting — GitHub Pages (public repo)</dt><dd>${z(R.sym+'0')}</dd>

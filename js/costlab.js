@@ -192,7 +192,7 @@
       s+= m>=0 ? ` The selected model's list price is <b>${usd(m)}</b> above this cost estimate `+
                   `(${(m/price*100).toFixed(0)}% of price). That is the margin these inputs imply, not the vendor's `+
                   `actual margin, which depends on its model size, hardware and traffic.`
-               : ` The selected model lists <b>${usd(-m)}</b> <b style="color:var(--hot)">below</b> fully-loaded cost — `+
+               : ` The selected model lists <b>${usd(-m)}</b> <b style="color:var(--hot)">below</b> fully-loaded cost: `+
                   `either it is priced below cost, or the inputs above are too high for this model.`;
     } else { s+=` Pick a model above to compare its API price against this cost.`; }
     s+=` Physical serving here is the same quantity as "token cost" on the <a href="prices.html">Impact Calculator</a>.`;
@@ -214,9 +214,9 @@
     $('cm-cotiles').innerHTML = tiles.map(([lab,big,sub])=>
       `<div class="stat"><div class="big">${big}</div><div class="lab">${lab}<br><span style="color:var(--faint)">${sub}</span></div></div>`).join('');
     // implied per-1M reconciliation + cash gap
-    let note=`<b>${c.label}</b> — ${c.anchor}. `;
+    let note=`<b>${c.label}</b>: ${c.anchor}. `;
     if(disclosed) note+=`Disclosed spend ≈ <b>$${disclosed}B</b> is mostly cash capex buying <em>new</em> capacity; `+
-      `the accrual cost of running the fleet that exists is <b>${fmtB(r.total)}</b> — the gap is the buildout. `;
+      `the accrual cost of running the fleet that exists is <b>${fmtB(r.total)}</b>. The difference is the buildout. `;
     note+=`These MW/R&D figures are order-of-magnitude estimates (see the caveat above); Google's cleaner grid correctly `+
       `yields lower CO₂ despite more power. Year baseline: <b>${year}</b>.`;
     $('cm-conote').innerHTML=note;

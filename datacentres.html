@@ -22,8 +22,8 @@
   <header class="top">
     <div>
       <h1>UK Data Centres</h1>
-      <p class="sub">The capacity being built, what it delivers, and the sourced footprint of constructing and
-        running it — CO₂e, water and hardware lifecycle.</p>
+      <p class="sub">Where the UK's data-centre capacity is being built, and the carbon, water and hardware cost of
+        building and running it.</p>
     </div>
     <div><a class="back" href="handbook.html">Impact Handbook</a> · <a class="back" href="index.html">← mmurr.ai</a></div>
   </header>
@@ -46,9 +46,9 @@
 
   <h2>Capacity over time</h2>
   <div class="chartbox" id="capChart"></div>
-  <p class="note">Cumulative installed capacity (area) versus the full announced pipeline (line). The government's
-    6 GW AI-capable target for 2030 sits above the planning-approved trajectory of ~4.9 GW — the gap is the build
-    that is announced but not yet consented. Figures are approximate, drawn from the sources below.</p>
+  <p class="note">The government's 6 GW target for AI-capable capacity by 2030 sits above the ~4.9 GW that has planning
+    consent; the gap is building that is announced but not yet consented. The shaded area is installed or on-track
+    capacity and the dashed line the full announced pipeline. Figures are approximate, from the sources below.</p>
 
   <h2>Footprint of the build-out</h2>
   <div class="panel">
@@ -92,19 +92,18 @@
     <p class="note" id="ctx"></p>
   </div>
 
-  <h2>Where it is — capacity by cluster</h2>
+  <h2>Where the capacity is</h2>
   <div class="panel">
     <p class="sub" style="margin-top:0">Operational capacity is heavily concentrated. London and the M4 corridor
       hold over half; the next planned giants shift weight toward the Humber, North East and Scotland.</p>
     <div class="heat" id="heatNow"></div>
     <p class="sub" style="margin:16px 0 6px">Largest single planned builds <span class="pill">announced</span></p>
     <div class="heat" id="heatPlan"></div>
-    <p class="note">A full geographic heatmap (production vs consumption by postcode/region) is a sensible next step,
-      but reliable per-site consumption data is scarce — operators self-report inconsistently. This cluster view uses
-      the regional figures that are actually published.</p>
+    <p class="note">A finer map of supply against demand by region would need per-site consumption data, which is
+      scarce because operators report it inconsistently. This view uses the regional figures that are published.</p>
   </div>
 
-  <h2>UK map — the curated sites</h2>
+  <h2>UK sites on a map</h2>
   <div class="panel">
     <div class="seg" id="ukFilter">
       <button type="button" data-f="all" class="on">All sites</button>
@@ -117,7 +116,7 @@
     <p class="note" id="ukMapNote"></p>
   </div>
 
-  <h2>Demand vs supply — the national picture</h2>
+  <h2>Demand against capacity, nationally</h2>
   <div class="panel">
     <div class="chartbox" id="demandChart"></div>
     <p class="note">NESO's data-centre demand forecast against the most the connected fleet could draw if it ran flat
@@ -131,7 +130,7 @@
       speculative projects out of the queue.</p>
   </div>
 
-  <h2>The world map — major AI-relevant sites</h2>
+  <h2>Major AI sites worldwide</h2>
   <div class="panel">
     <div class="seg" id="wmChips"></div>
     <div class="map-legend" id="wmLegend"></div>
@@ -139,13 +138,13 @@
     <p class="note" id="worldMapNote"></p>
   </div>
 
-  <h2>Reported vs location-based — the scope-2 gap</h2>
+  <h2>The scope-2 gap: reported vs location-based</h2>
   <div class="panel">
     <p class="sub" style="margin-top:0">Fleet emissions can be counted two ways: <b>location-based</b> (grid average ×
       consumption) or <b>market-based</b> (netting renewable certificates &amp; PPAs). Vendors lead with the second; the
       difference is what the certificates and contracts net off. The GHG Protocol allows it, but a certificate
-      match is not the same as zero-carbon power at the time it was used. This site stays
-      location-based throughout — <a href="handbook.html#carbon">handbook §4</a> explains why.</p>
+      match is not the same as zero-carbon power at the time it was used. This site uses location-based figures
+      throughout; <a href="handbook.html#carbon">Handbook §4</a> explains why.</p>
     <div class="chartbox" id="scope2Chart"></div>
     <p class="note">Scope 2 only, Mt CO₂e, latest reporting year: Microsoft FY2025 (to June 2025) and Google calendar
       2025. Both figures are the companies' own, from their 2026 reports. Microsoft's market-based figure rose
@@ -178,8 +177,8 @@
           <td><a href="https://mosl.co.uk/" target="_blank" rel="noopener">WRc for MOSL (2026)</a> · <a href="https://www.eesi.org/articles/view/data-centers-and-water-consumption" target="_blank" rel="noopener">EESI / Green Grid</a> · <a href="https://blog.policy.manchester.ac.uk/sci-tech/2025/08/too-hot-to-ignore-fixing-the-infrastructure-gap-in-data-centre-cooling/" target="_blank" rel="noopener">Univ. of Manchester (2025)</a> · <a href="https://assets.publishing.service.gov.uk/media/688cb407dc6688ed50878367/Water_use_in_data_centre_and_AI_report.pdf" target="_blank" rel="noopener">UK Gov water report (2025)</a></td></tr>
         <tr><td>What the water figures exclude</td><td class="v">off-site water · seasonality</td>
           <td>On-site WUE only: water consumed generating the electricity (thermal-plant cooling) typically exceeds
-            on-site cooling water severalfold. And the UK concern is <b>peak coincidence</b> — hybrid-cooled sites draw
-            water during heatwaves exactly when domestic demand peaks (WRc/MOSL) — which annual averages hide.</td></tr>
+            on-site cooling water severalfold. And the UK concern is <b>peak coincidence</b>: hybrid-cooled sites draw
+            water during heatwaves, exactly when household demand peaks (WRc/MOSL), which annual averages hide.</td></tr>
         <tr><td>Grid connection queue</td><td class="v">~73 GW of data centres (~315 projects, 1–1,500 MW each) within 125 GW of contracted demand · GB peak demand 45 GW (2025) · earlier NESO count: ~140 projects, 50 GW, only ~20 GW at final investment decision</td>
           <td><a href="https://www.ofgem.gov.uk/consultation/proposed-data-centre-connection-reforms" target="_blank" rel="noopener">Ofgem, Curate consultation (29 Jul 2026)</a> · earlier figures via the <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315</a></td></tr>
         <tr><td>GB data-centre demand (NESO)</td><td class="v">Now: 2.4 GW connected, 7.6 TWh/yr · 2030: 20.1 TWh (ten-year forecast; pathways 13.2–24.7) and ~5.2 GW connected · 2035: 33 TWh (20–41) · 2050: 30–71 TWh, 6.1–14.6 GW</td>
@@ -194,7 +193,7 @@
           <td><a href="https://ember-energy.org/data/yearly-electricity-data/" target="_blank" rel="noopener">Ember Yearly Electricity Data (2024)</a> — non-anchor countries VERIFY</td></tr>
       </tbody>
     </table>
-    <p class="foot">All factors are editable and represent academic/industry approximations — the literature spans wide
+    <p class="foot">All factors are editable academic and industry approximations. The literature spans wide
       ranges (server embodied carbon alone varies ~40× across published LCAs), so treat outputs as order-of-magnitude.
       The CO₂e/water bases here are read from the same shared factors as the AI Impact Calculator (one gridFactor, one
       WUE set) so totals reconcile across the site. Runs in your browser.</p>

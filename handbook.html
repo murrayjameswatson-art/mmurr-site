@@ -2,6 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Impact Handbook — mmurr.ai</title>
 <meta name="description" content="Every calculation on mmurr.ai, derived from first principles: energy, carbon, water, cost economics and facility build-out — with worked examples, uncertainty ranges and numbered sources.">
@@ -621,21 +622,6 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;colo
   Impact Handbook · mmurr.ai · All defaults editable on the live tools; this page documents the mathematics behind them. Figures dated at last edit; FX and prices refresh monthly via the repo's data pipeline. If you can break one of these derivations, please do — that's what it's for.
 </footer>
 
-<script>
-(function(){
-  var t=document.getElementById('tdToggle'),s=document.getElementById('tdState');
-  if(!t)return;
-  function apply(){
-    var on=t.checked;
-    document.body.classList.toggle('td',on);
-    if(s)s.textContent=on?'generation + T&D (delivered energy)':'generation only';
-    document.querySelectorAll('.tdv').forEach(function(el){
-      el.textContent=on?el.dataset.t:el.dataset.g;
-    });
-  }
-  t.addEventListener('change',apply);
-  apply();
-})();
-</script>
+<script src="js/handbook.js"></script>
 </body>
 </html>

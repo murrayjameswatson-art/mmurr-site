@@ -1,6 +1,9 @@
 /* Styles for index.html — landing page.
    Dark theme matching the tool pages (dashboard / prices / datacentres). */
-@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+/* Audiowide (SIL Open Font License), latin subset, served from this site rather
+   than Google Fonts: no third-party request, so no visitor IP leaves for Google. */
+@font-face{font-family:'Audiowide';font-style:normal;font-weight:400;font-display:swap;
+  src:url('../fonts/audiowide-latin.woff2') format('woff2')}
 :root{
   --bg:#0f1115; --panel:#171a21; --line:#2a2f3a;
   --ink:#e8eaed; --muted:#9aa3b2;

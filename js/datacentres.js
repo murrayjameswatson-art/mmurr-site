@@ -2,7 +2,8 @@
    mmurr.ai — UK Data Centres
    Capacity timeline + build-out footprint calculator + cluster heat.
    The CO2/water bases match the usage dashboard (grid & car come from
-   js/factors.js, loaded first) so site totals reconcile. Chart.js from cdnjs.
+   js/factors.js, loaded first) so site totals reconcile. Charts are plain SVG
+   via js/svgchart.js (no libraries).
 ---------------------------------------------------------------------------- */
 
 // Cumulative UK capacity (GW), approximate. Installed/likely vs full pipeline.
@@ -35,22 +36,14 @@ const L = x=> x>=1e9 ? (x/1e9).toFixed(2)+' bn L' : x>=1e6 ? (x/1e6).toFixed(1)+
 
 // --- Capacity chart -------------------------------------------------------
 function drawCap(){
-  new Chart($('capChart'),{
-    type:'line',
-    data:{labels:CAP_YEARS, datasets:[
-      {label:'Installed / on-track (GW)', data:CAP_INSTALLED, borderColor:'#5bd1a6',
-       backgroundColor:'#5bd1a655', fill:true, tension:.25, pointRadius:3, spanGaps:true, borderWidth:2},
-      {label:'Full announced pipeline (GW)', data:CAP_PIPELINE, borderColor:'#7db7ff',
-       backgroundColor:'transparent', fill:false, borderDash:[5,4], tension:.25, pointRadius:3, spanGaps:true, borderWidth:2},
-      {label:'Gov 2030 target (6 GW)', data:CAP_YEARS.map(y=> y==='2030'?GOV_TARGET:null),
-       borderColor:'#e0b341', backgroundColor:'#e0b341', pointRadius:6, pointStyle:'rectRot', showLine:false},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=> c.parsed.y==null?null:` ${c.dataset.label}: ${c.parsed.y} GW`}}},
-      scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
-        y:{ticks:{color:'#6b7280',callback:v=>v+' GW',font:{size:10}},grid:{color:'#222732'},
-           title:{display:true,text:'Cumulative capacity',color:'#9aa3b2',font:{size:11}}}}},
+  MMURR_CHART.line($('capChart'), {
+    label:'UK data-centre capacity, installed and announced, 2015 to 2037',
+    labels:CAP_YEARS, yTitle:'Cumulative capacity', yFmt:v=>+v.toFixed(1)+' GW',
+    series:[
+      {name:'Installed / on-track', data:CAP_INSTALLED, color:'#5bd1a6', area:true, points:true, spanGaps:true},
+      {name:'Full announced pipeline', data:CAP_PIPELINE, color:'#7db7ff', dash:true, points:true, spanGaps:true},
+      {name:'Government 2030 target', data:CAP_YEARS.map(y=> y==='2030'?GOV_TARGET:null), color:'#e0b341', line:false, marker:'diamond'},
+    ],
   });
 }
 
@@ -82,7 +75,7 @@ function calc(){
     <div class="outrow"><span class="k">Water (per year)</span><span class="v" style="color:var(--link)">${L(waterLyr)}</span></div>`;
   $('ctx').textContent =
     `At ${GW} GW and ${(load*100).toFixed(0)}% load, annual running emissions ≈ ${t(annualT)} CO₂e `+
-    `(${(km/1e6).toFixed(1)} million car-km), plus a one-off ${t(constructionT)} to build the shells. `+
+    `(${km>=1e9 ? (km/1e9).toFixed(1)+' billion' : (km/1e6).toFixed(0)+' million'} car-km), plus a one-off ${t(constructionT)} to build the shells. `+
     `Hardware embodied is ${operationalT>0?Math.round(hardwareT/operationalT*100):0}% of operational here — it rises as the grid decarbonises.`;
 }
 
@@ -135,25 +128,15 @@ const NESO_TWH     = [7.40, 7.74, 8.13, 8.93, 10.46, 13.11, 16.59, 20.10]; // NE
 function drawDemand(){
   const el = document.getElementById('demandChart'); if(!el) return;
   const ceiling = FLEET_GW.map(gw => +(gw*8.76).toFixed(1));
-  new Chart(el,{
-    type:'line',
-    data:{ labels:DEMAND_YEARS, datasets:[
-      {label:'Theoretical ceiling (operational GW × 8,760 h)', data:ceiling, borderColor:'#7db7ff',
-       backgroundColor:'transparent', borderDash:[5,4], tension:.25, pointRadius:0, borderWidth:2},
-      {label:'Ceiling × 0.55 load factor', data:ceiling.map(v=>+(v*0.55).toFixed(1)), borderColor:'transparent',
-       backgroundColor:'#e0b34122', fill:'+1', tension:.25, pointRadius:0},
-      {label:'Ceiling × 0.40 load factor', data:ceiling.map(v=>+(v*0.40).toFixed(1)), borderColor:'transparent',
-       backgroundColor:'transparent', tension:.25, pointRadius:0},
-      {label:'NESO data-centre demand, ten-year forecast (TWh)', data:NESO_TWH, borderColor:'#5bd1a6',
-       backgroundColor:'transparent', tension:.25, pointRadius:3, borderWidth:2},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11},
-          filter:i=>!i.text.startsWith('Ceiling ×')}},
-        tooltip:{callbacks:{label:c=> c.dataset.label.startsWith('Ceiling ×')?null:` ${c.dataset.label}: ${c.parsed.y} TWh`}}},
-      scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
-        y:{beginAtZero:true,ticks:{color:'#6b7280',callback:v=>v+' TWh',font:{size:10}},grid:{color:'#222732'},
-           title:{display:true,text:'TWh / year',color:'#9aa3b2',font:{size:11}}}}},
+  MMURR_CHART.line(el, {
+    label:'NESO data-centre electricity demand against the theoretical ceiling of the operational fleet, 2023 to 2030',
+    labels:DEMAND_YEARS, yTitle:'TWh / year', yFmt:v=>+v.toFixed(1)+' TWh',
+    band:{ lo:ceiling.map(v=>+(v*0.40).toFixed(1)), hi:ceiling.map(v=>+(v*0.55).toFixed(1)),
+           color:'#e0b341', name:'Implied load factor 0.40–0.55' },
+    series:[
+      {name:'Theoretical ceiling (operational GW × 8,760 h)', data:ceiling, color:'#7db7ff', dash:true},
+      {name:'NESO data-centre demand forecast', data:NESO_TWH, color:'#5bd1a6', points:true},
+    ],
   });
 }
 
@@ -161,21 +144,15 @@ function drawDemand(){
 function drawScope2(){
   const S = window.MMURR_SCOPE2, el = document.getElementById('scope2Chart');
   if(!S || !el) return;
-  new Chart(el,{
-    type:'bar',
-    data:{ labels:S.rows.map(r=>r.vendor), datasets:[
-      {label:'Location-based (grid average)', data:S.rows.map(r=>r.location), backgroundColor:'#b18cff'},
-      {label:'Market-based (after certificates)',  data:S.rows.map(r=>r.market),   backgroundColor:'#5bd1a6'},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{
-          label:c=>` ${c.dataset.label}: ${c.parsed.y} Mt CO₂e (${S.rows[c.dataIndex].year})`,
-          footer:items=>{const r=S.rows[items[0].dataIndex];
-            return `certificates & PPAs: ${(r.location-r.market).toFixed(1)} Mt`;}}}},
-      scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#222732'}},
-        y:{beginAtZero:true,ticks:{color:'#6b7280',callback:v=>v+' Mt',font:{size:10}},grid:{color:'#222732'},
-           title:{display:true,text:'Scope 2, latest reporting year (Mt CO₂e)',color:'#9aa3b2',font:{size:11}}}}},
+  MMURR_CHART.bars(el, {
+    label:'Scope 2 emissions, location-based versus market-based, Microsoft and Google',
+    labels:S.rows.map(r=>r.vendor), yTitle:'Scope 2, latest reporting year (Mt CO₂e)', yFmt:v=>+v.toFixed(1)+' Mt',
+    series:[
+      {name:'Location-based (grid average)', data:S.rows.map(r=>r.location), color:'#b18cff'},
+      {name:'Market-based (after certificates)', data:S.rows.map(r=>r.market), color:'#5bd1a6'},
+    ],
+    tipExtra:i=>{ const r=S.rows[i]; return `${r.year} · certificates & PPAs net off ${(r.location-r.market).toFixed(1)} Mt`; },
+    height:260,
   });
 }
 

@@ -127,8 +127,8 @@ details.worked[open]>summary::after{content:"collapse \25B4"}
 details.note{padding:0}
 details.note>summary.nh{display:block;padding:11px 16px;margin:0;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--water)}
 details.note.honest>summary.nh{color:var(--embodied)}
-details.note>summary.nh::after{content:" \25BE";color:var(--dim)}
-details.note[open]>summary.nh::after{content:" \25B4"}
+details.note>summary.nh::after{content:"show \25BE";float:right;letter-spacing:.1em;color:var(--muted)}
+details.note[open]>summary.nh::after{content:"hide \25B4"}
 details.note .nb{padding:0 16px 12px}
 
 /* tables */
@@ -259,7 +259,7 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;colo
   <div class="eq"><span class="t v-cost">p<sub>blend</sub></span><span class="op">=</span><span class="t">( p<sub>in</sub> + p<sub>out</sub> )</span><span class="op">/</span><span class="t">2</span>&nbsp;&nbsp;<span class="t small">[$ per 1M tokens]</span></div>
   <p class="where">Example: GPT-5.6 Sol, the model behind Copilot, lists $4 in / $20 out (a promotional rate from 21 Aug 2026, now running "until November 30, 2026"; it was $5/$30 before. GPT-6.1 Sol, at $2/$10, has been selectable in Copilot since 30 Sep 2026)<a class="src" href="#src-1">[1]</a> → <b>p<sub>blend</sub> = 12</b> <span class="tag sourced">SOURCED</span>. A 50/50 blend overweights output for context-heavy work (real traffic is often ~70/30 in/out); the split is exposed on the AI Impact Calculator as a single global traffic-mix slider (default 50/50) so every model and licence is compared on the same mix. Moving it changes API cost by up to ~40% — revisited in §13.</p>
 
-  <details class="note honest"><summary class="nh">Honest caveat</summary><div class="nb">Reasoning models bill their hidden "thinking" tokens as output. A 300-token visible answer can carry thousands of invisible billed tokens. The standard prompt does not model this — it is the main reason real API bills exceed this page's estimates for "thinking" model classes.</div></details>
+  <details class="note honest"><summary class="nh">Caveat · reasoning models bill hidden tokens</summary><div class="nb">Reasoning models bill their hidden "thinking" tokens as output. A 300-token visible answer can carry thousands of invisible billed tokens. The standard prompt does not model this — it is the main reason real API bills exceed this page's estimates for "thinking" model classes.</div></details>
 </section>
 
 <!-- ============ §3 ============ -->
@@ -285,7 +285,7 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:24px 0 48px;colo
 
   <h3>Per-token cross-check (and where it doesn't reconcile)</h3>
   <div class="eq"><span class="t v-energy">e<sub>tok</sub></span><span class="op">=</span><span class="t v-energy">E<sub>prompt</sub></span><span class="op">/</span><span class="t">T<sub>prompt</sub></span><span class="op">→</span><span class="t">0.31 Wh / 1,500 tok</span><span class="op">=</span><span class="t">0.21 Wh per 1k tokens</span></div>
-  <details class="note honest"><summary class="nh">Honest caveat</summary><div class="nb">The dashboard's per-token factor (0.70 Wh/1k, aligned to Gemini) implies a much smaller median prompt: 0.24 Wh ÷ 0.70 Wh/1k ≈ <b>343 tokens</b>. Plausible — most real prompts are short — but it means the per-prompt and per-token bases <em>do not reconcile under the 1,500-token standard prompt</em>. They are two internally consistent frames, not one. Use per-prompt figures for personal-usage questions, per-token for API-metered workloads, and never mix them in one calculation.</div></details>
+  <details class="note honest"><summary class="nh">Caveat · per-prompt and per-token figures don't reconcile</summary><div class="nb">The per-token factor (0.70 Wh/1k, aligned to Gemini) implies a much smaller median prompt: 0.24 Wh ÷ 0.70 Wh/1k ≈ <b>343 tokens</b>. Plausible — most real prompts are short — but it means the per-prompt and per-token bases <em>do not reconcile under the 1,500-token standard prompt</em>. They are two internally consistent frames, not one. Use per-prompt figures for personal-usage questions, per-token for API-metered workloads, and never mix them in one calculation.</div></details>
 
   <details class="worked">
     <summary class="wh"><b>Worked example · W3</b><span>energy for one user-month of Copilot</span></summary>

@@ -285,7 +285,10 @@
     }
 
     // model-transition markers on the licence line
-    let lastLabX = -1e9;                   // drop a label below the line when it would collide
+    // Labels go above the line, else below, else are skipped (the marker keeps
+    // its tooltip). Widths are estimated from the text so close releases such
+    // as GPT-5.4 / 5.5 / 5.6 don't print over each other.
+    const rowEdge = [-1e9, -1e9];          // right edge of the last label, above / below
     markers.forEach(m=>{
       const tt = addDays(D(m[0]), t.lagDays);
       if(tt<t0 || tt>T1) return;
@@ -293,8 +296,13 @@
       if(licHere==null) return;            // before the subscription launched
       const xx=x(tt), yy=yC(licHere), g=el('g',{}); g.style.cursor='pointer';
       g.appendChild(el('circle',{class:'lab-mk',cx:xx,cy:yy,r:5}));
-      const below = (xx - lastLabX) < 52; lastLabX = xx;
-      g.appendChild(txt('lab-mklab',xx,below?yy+19:yy-11,'middle',m[1]));
+      const half = (m[1].length*5.8 + 10)/2;
+      const lx = Math.min(W-PR-half, Math.max(PL+half, xx));   // keep labels inside the plot
+      const row = rowEdge.findIndex(edge => lx - half > edge);
+      if(row >= 0){
+        rowEdge[row] = lx + half;
+        g.appendChild(txt('lab-mklab',lx,row?yy+19:yy-11,'middle',m[1]));
+      }
       const reach = fmtMonth(tt);
       g.addEventListener('mouseenter',()=>{
         const mixTxt = stepLocked(m)

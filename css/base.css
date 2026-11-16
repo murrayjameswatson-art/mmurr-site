@@ -69,3 +69,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
   table.src{font-size:.78rem}
 }
 .asof{font-size:.76rem;color:var(--faint);margin-top:4px}
+/* SVG charts (js/svgchart.js) — shared by the calculator and data-centres pages */
+.svgc-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.76rem;color:var(--muted);margin-bottom:8px}
+.svgc-legend span{display:inline-flex;align-items:center;gap:6px}
+.svgc-legend i,.svgc-tip i{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--c)}
+.svgc-legend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 8px)}
+.svgc-legend i.area{height:10px;width:10px;border-radius:2px}
+.svgc-legend i.dot{height:9px;width:9px;border-radius:2px;transform:rotate(45deg)}
+.svgc-plot{position:relative}
+.svgc-plot svg{display:block;width:100%;height:auto;overflow:visible}
+.svgc-plot text{font-family:var(--sans);font-size:10.5px;fill:var(--faint)}
+.svgc-plot text.svgc-ytitle{fill:var(--muted);font-size:11px}
+.svgc-plot text.svgc-val{fill:var(--muted);font-family:var(--mono);font-size:10.5px}
+.svgc-grid{stroke:var(--line);stroke-width:1}
+.svgc-guide{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.svgc-tip{position:absolute;pointer-events:none;background:#0f1218;border:1px solid var(--line);border-radius:7px;
+  padding:7px 9px;font-size:.76rem;line-height:1.5;color:var(--ink);white-space:nowrap;z-index:3;transform:translate(-50%,-100%)}
+.svgc-tip .r{display:flex;justify-content:space-between;gap:16px}
+.svgc-tip .r span{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.svgc-tip b{font-family:var(--mono);font-weight:500}
+.svgc-tip .dim{color:var(--faint)}
+.svgc-table{margin-top:10px;font-size:.8rem;color:var(--muted)}
+.svgc-table summary{cursor:pointer;color:var(--link);width:max-content}
+.svgc-table .tw{overflow-x:auto}

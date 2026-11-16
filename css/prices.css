@@ -59,13 +59,11 @@
 .snap-fp .k i{width:7px;height:7px;border-radius:50%;display:inline-block;flex:0 0 auto}
 .snap-fp .v{font-family:var(--mono);font-size:.8rem;color:var(--ink);white-space:nowrap}
 .snap-note{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:.74rem;color:var(--muted)}
-canvas{width:100%!important;max-height:380px}
 @media(max-width:680px){
   .tracks{grid-template-columns:1fr}
   .ro-grid{grid-template-columns:1fr}
   .stat-row{grid-template-columns:1fr}
   .svc input[type=checkbox]{width:20px;height:20px}
-  canvas{max-height:300px}
   .controls{gap:10px}
 }
 

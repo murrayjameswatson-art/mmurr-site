@@ -34,7 +34,8 @@ body{
   /* layered neon halo: tight bright core + wider amber bloom (~10% softer) */
   filter:drop-shadow(0 0 5px rgba(255,210,80,.50)) drop-shadow(0 0 20px rgba(255,150,20,.31));
 }
-.lead{color:var(--muted);font-size:1.05rem;margin:18px auto 30px;max-width:34rem}
+.lead2{color:var(--muted);font-size:.9rem;max-width:560px;margin:0 auto 18px;line-height:1.55}
+.lead{color:var(--ink);font-size:1.05rem;margin:18px auto 10px;max-width:34rem}
 
 /* Tool links as slick dark cards */
 .links{display:flex;flex-direction:column;gap:12px;text-align:left}

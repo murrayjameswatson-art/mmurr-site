@@ -19,8 +19,8 @@ Source for [mmurr.ai](https://mmurr.ai): small browser-based experiments in AI, 
 
 ## Data freshness
 
-A GitHub Action refreshes API prices weekly from the LiteLLM registry (`tools/refresh-prices.mjs` → `js/data/api-prices.js`). Another refreshes GBP/USD FX monthly from ECB data (`tools/refresh-fx.mjs` → `js/data/fx-history.js`). Each tool page shows a "Data as of" line. Price *history* is hand-curated in `js/factors.js`, the single source of truth for every cross-page number.
+A GitHub Action refreshes API prices weekly from the LiteLLM registry (`tools/refresh-prices.mjs` → `js/data/api-prices.js`). Another refreshes GBP/USD FX monthly from ECB data (`tools/refresh-fx.mjs` → `js/data/fx-history.js`). Each tool page shows a "Data as of" line. When the registry gains a new model ID in a family the site tracks, the weekly run opens a GitHub issue so the lineages in `js/factors.js` get a human update instead of quietly going stale. Price *history* is hand-curated in `js/factors.js`, the single source of truth for every cross-page number.
 
 ## Layout
 
-`css/base.css` holds the shared dark theme for the tool pages. `css/research.css` layers long-form reading styles on top of it for `agentic-research/`. `index.html` keeps its own look.
+`css/base.css` holds the shared dark theme for the tool pages. Charts are hand-rolled SVG (`js/svgchart.js`), and the maps use outlines pre-projected by `tools/build-maps.mjs`, so the site loads no third-party scripts, styles or fonts; each page's Content-Security-Policy enforces that. `css/research.css` layers long-form reading styles on top of it for `agentic-research/`. `index.html` keeps its own look.

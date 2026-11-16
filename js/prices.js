@@ -5,7 +5,7 @@
    Cards are collapsed expandables to keep the page uncluttered. Every service
    carries its OWN usage control, matching the chart's logic: enterprise cards
    meter prompts/user/day; subscription cards meter % of the plan's estimated
-   capacity (windowMTok × maxed rolling windows). Client-side except Chart.js.
+   capacity (windowMTok × maxed rolling windows). Fully client-side; charts are plain SVG (js/svgchart.js).
 ---------------------------------------------------------------------------- */
 
 // --- Timeline (matched to the decision chart above) -------------------------
@@ -327,7 +327,6 @@ function setStats(totals, labels){
 }
 
 // --- Draw ----------------------------------------------------------------------
-let chart;
 function draw(){
   const R=MMURR_REGION.data();
   const {datasets,totals}=compute();
@@ -342,24 +341,14 @@ function draw(){
   for(const d of datasets) d.data=d.data.slice(first);
   const totalsT=totals.slice(first);
   setStats(totalsT, labels);
-  const cfg={
-    type:'line', data:{labels, datasets},
-    options:{
-      responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-      plugins:{
-        legend:{labels:{color:'#9aa3b2',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtVal(c.parsed.y)}`}},
-      },
-      scales:{
-        x:{ticks:{color:'#6b7280',maxTicksLimit:10,font:{size:10}},grid:{color:'#222732'}},
-        y:{stacked:false, beginAtZero:true, ticks:{color:'#6b7280',font:{size:10},
-             callback:v=> metric==='cost' ? R.sym+(v>=1000?(+(v/1000).toFixed(1))+'k':v) : v.toLocaleString()},
-           grid:{color:'#222732'},title:{display:true,text:yLabel(),color:'#9aa3b2',font:{size:11}}},
-      },
-    },
-  };
-  if(chart) chart.destroy();
-  chart=new Chart(document.getElementById('chart'),cfg);
+  // Plain SVG via js/svgchart.js. Ticks abbreviate thousands; the hover readout
+  // and the "Show as table" view use the full fmtVal format.
+  const tick = v => metric==='cost' ? R.sym+(v>=1000?(+(v/1000).toFixed(1))+'k':v) : v>=1000 ? (+(v/1000).toFixed(1))+'k' : String(v);
+  MMURR_CHART.line(document.getElementById('chart'), {
+    label: yLabel()+' for the selected stack, by month',
+    labels, yTitle: yLabel(), yFmt: fmtVal, tickFmt: tick,
+    series: datasets.map(d => ({ name:d.label, data:d.data, color:d.borderColor, dash:!!d.borderDash, width:d.borderWidth })),
+  });
   renderSnapshot();   // keep the per-service cost/footprint cards in sync with the chart
 }
 
@@ -624,9 +613,6 @@ function init(){
   });
   document.getElementById('showTotal').addEventListener('change',draw);
   document.getElementById('showApi').addEventListener('change',e=>{ showApi=e.target.checked; draw(); });
-  // Chart.js can't size a canvas inside a closed <details> — redraw on open.
-  const blended=document.getElementById('blended');
-  if(blended) blended.addEventListener('toggle',()=>{ if(blended.open) draw(); });
 
   MMURR_REGION.onChange(()=>{ draw(); renderSources(); });
   draw();

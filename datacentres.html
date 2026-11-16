@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UK Data Centres — mmurr.ai</title>
 <meta name="description" content="UK data-centre capacity, the construction pipeline, and the sourced environmental footprint of building and running it — CO2e, water and hardware lifecycle. Runs in your browser.">
@@ -44,7 +44,7 @@
     all of these in the <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10315/" target="_blank" rel="noopener">House of Commons Library, CBP-10315 (27 May 2026)</a>.</p>
 
   <h2>Capacity over time</h2>
-  <div class="chartbox"><canvas id="capChart"></canvas></div>
+  <div class="chartbox" id="capChart"></div>
   <p class="note">Cumulative installed capacity (area) versus the full announced pipeline (line). The government's
     6 GW AI-capable target for 2030 sits above the planning-approved trajectory of ~4.9 GW — the gap is the build
     that is announced but not yet consented. Figures are approximate, drawn from the sources below.</p>
@@ -118,7 +118,7 @@
 
   <h2>Demand vs supply — the national picture</h2>
   <div class="panel">
-    <div class="chartbox"><canvas id="demandChart"></canvas></div>
+    <div class="chartbox" id="demandChart"></div>
     <p class="note">NESO's data-centre demand estimate against the theoretical ceiling of the operational fleet
       (MW × 8,760 h). The demand line sits at an implied fleet-average load factor of roughly <b>0.4–0.55</b> — shown
       as the shaded band. Per-site utilisation is not public anywhere and is not synthesised here. The system-level
@@ -142,7 +142,7 @@
       difference is what the certificates and contracts net off. The GHG Protocol allows it, but a certificate
       match is not the same as zero-carbon power at the time it was used. This site stays
       location-based throughout — <a href="handbook.html#carbon">handbook §4</a> explains why.</p>
-    <div class="chartbox"><canvas id="scope2Chart"></canvas></div>
+    <div class="chartbox" id="scope2Chart"></div>
     <p class="note">Scope 2 only, Mt CO₂e, latest reporting year: Microsoft FY2025 (to June 2025) and Google calendar
       2025. Both figures are the companies' own, from their 2026 reports. Microsoft's market-based figure rose
       tenfold in the year after it stopped using unbundled renewable certificates. Context: scope 3 was 86% of
@@ -198,17 +198,15 @@
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha384-su5kReKyYlIFrI62mbQRKXHzFobMa7BHp1cK6julLPbnYcCW9NIZKJiTODjLPeDh" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" integrity="sha384-9dCJK6nh7skY14HrcvlLYlFga9/MehJjL9ONWRflmiXNRuf8p2jiF4Y5PR881PTq" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="js/data/fx-history.js"></script>
 <script src="js/factors.js"></script>
 <script src="js/data/scope2.js"></script>
-<script src="js/data/world-110m.js"></script>
+<script src="js/data/maps.js"></script>
 <script src="js/data/sites-uk.js"></script>
 <script src="js/data/sites-world.js"></script>
 <script src="js/data/dc-geo.js"></script>
 <script src="js/region.js"></script>
+<script src="js/svgchart.js"></script>
 <script src="js/worldmap.js"></script>
 <script src="js/datacentres.js"></script>
 </body>

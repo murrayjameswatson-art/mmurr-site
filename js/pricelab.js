@@ -70,7 +70,7 @@
   // --- date + scale helpers ------------------------------------------------
   const D = s => { const [y,m] = s.split('-'); return new Date(+y, +m-1, 1).getTime(); };
   const addDays = (t,d) => t + d*864e5;
-  const T0 = D('2024-01'), T1 = D('2026-08');   // matched to the Blended Usage chart
+  const T0 = D('2024-01'), T1 = D(MMURR_DATA.models.chartEnd);   // current month; matched to the Blended Usage chart
   const NS = 'http://www.w3.org/2000/svg';
   const W=760, H=320, PL=52, PR=46, PT=22, PB=34;
   const el = (n,a) => { const e=document.createElementNS(NS,n); for(const k in a) e.setAttribute(k,a[k]); return e; };
@@ -311,10 +311,10 @@
     const cursor = el('line',{class:'lab-cursor',x1:PL,x2:PL,y1:PT,y2:H-PB,opacity:0});
     svg.appendChild(cursor);
 
-    // readouts — static values at a FIXED reference date (chart end), labelled
-    // on-page so they aren't mistaken for live figures
+    // readouts — values at the chart end (the current month), using the latest
+    // dated price step; labelled so the vintage is visible
     document.getElementById('lab-refnote').innerHTML =
-      `Static values below are read at <b>${fmtMonth(T1)}</b> — the chart's fixed reference date — not live figures.`;
+      `Values below are for <b>${fmtMonth(T1)}</b>, using the latest dated price for each model.`;
     const disc = (!isSub() && type==='list') ? seatDiscount(licences) : 0;
     const fpNow = footprint(mdlAt(T1)[3], R);
     const apiNow = apiSeries[apiSeries.length-1];

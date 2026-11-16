@@ -69,12 +69,14 @@ window.MMURR_LOCAL = {
       totalB:400, activeB:17, quantGB:200, minGPUs:4, gpuVramGB:80,
       sourceUrl:'https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct' },
 
-    // Mistral 3 launch, 2 Dec 2025: 675B total / 41B active MoE, Apache 2.0 (Mistral docs).
+    // Mistral Large 4 (v4.0), 5 Nov 2026: 1.05T total / 52B active MoE, open weights under
+    // the Mistral Ecosystem Open Weight License v26.10 (Mistral docs, checked 16 Nov 2026).
     // Q4 size scaled from total params at the same ratio as the other rows (~0.5 GB per B).
-    { provider:'Mistral AI', model:'Mistral Large 3', date:'2025-12',
-      licence:'Apache 2.0', licenceNote:'fully permissive',
-      totalB:675, activeB:41, quantGB:334, minGPUs:5, gpuVramGB:80,
-      sourceUrl:'https://docs.mistral.ai/models/mistral-large-3-25-12' },
+    // Replaces Large 3 (675B/41B, Apache 2.0, Dec 2025).
+    { provider:'Mistral AI', model:'Mistral Large 4', date:'2026-11',
+      licence:'Mistral Ecosystem Open Weight License', licenceNote:'custom licence — read the terms before commercial use',
+      totalB:1050, activeB:52, quantGB:525, minGPUs:8, gpuVramGB:80,
+      sourceUrl:'https://docs.mistral.ai/models/mistral-large-4-0' },
 
     { provider:'Google', model:'Gemma 4', date:'2026-03',
       licence:'Gemma Terms of Use', licenceNote:'permissive with limited use restrictions',
@@ -91,9 +93,11 @@ window.MMURR_LOCAL = {
       totalB:14, activeB:14, quantGB:7, minGPUs:1, gpuVramGB:24,
       sourceUrl:'https://huggingface.co/microsoft/phi-4' },
 
-    { provider:'Cohere', model:'Command R', date:'2024-03',
-      licence:'CC-BY-NC 4.0', licenceNote:'non-commercial; commercial use needs a separate agreement',
-      totalB:35, activeB:35, quantGB:18, minGPUs:1, gpuVramGB:24,
-      sourceUrl:'https://huggingface.co/CohereForAI/c4ai-command-r-v01' },
+    // Command A+ (20 May 2026): 218B total / 25B active MoE, Apache 2.0 — Cohere's first
+    // fully permissive open model; quantised builds reportedly fit two H100s (press coverage).
+    { provider:'Cohere', model:'Command A+', date:'2026-05',
+      licence:'Apache 2.0', licenceNote:'fully permissive',
+      totalB:218, activeB:25, quantGB:109, minGPUs:2, gpuVramGB:80,
+      sourceUrl:'https://huggingface.co/CohereLabs' },
   ],
 };

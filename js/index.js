@@ -22,7 +22,7 @@ function renderRunningCosts(){
     <dl class="run-grid">
       <dt>.ai domain</dt><dd>~${R.sym}${dom[0]}–${dom[1]} / yr</dd>
       <dt>Hosting — GitHub Pages (public repo)</dt><dd>${z(R.sym+'0')}</dd>
-      <dt>Build assistant — Claude subscription (Pro)</dt><dd>${R.sym}${claude} / mo</dd>
+      <dt>Claude subscription (Pro) — builds the site and runs its three agents</dt><dd>${R.sym}${claude} / mo</dd>
       <dt>Compute to serve you</dt><dd>${z(R.sym+'0')} · runs in your browser</dd>
     </dl>`;
 }

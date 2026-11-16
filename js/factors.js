@@ -261,6 +261,10 @@ window.MMURR_DATA = {
   // markers carry that story. Token $ are blended 50/50 in/out, USD per 1M.
   // Anthropic per-query Wh are ASSUMPTIONS (vendor publishes none). (§4.1-4.3, §7)
   models: {
+    // Chart window ends in the CURRENT month (was hard-coded to 2026-08, which
+    // froze every "now" readout). History steps stay dated; the last step simply
+    // carries forward until a new one is added here or by the weekly price feed.
+    chartEnd: new Date().toISOString().slice(0,7),
     tokPerPrompt: 1500,                 // tokens per standard prompt (editable, §4.5)
     defaultPpd: 20,                     // prompts / user / day (a standard working day)
     // (early-access cohorts removed — release lag now lives on each licence type as lagDays)
@@ -277,47 +281,66 @@ window.MMURR_DATA = {
       // GPT-5.5 launched 23 Apr 2026 at $5/$30 — a straight 2× on GPT-5.4 ($2.50/$15).
       // GPT-5.6 (Sol/Terra/Luna) GA 9 Jul 2026; Sol is the flagship backend at the
       // same $5/$30. OpenAI cut Sol to $4/$20 from 21 Aug 2026, a promotional rate
-      // "at least through November 21, 2026" (OpenAI pricing page). The feed never
-      // touches backend, so these anchors carry the price.
+      // "at least through November 21, 2026", later extended: the pricing page now
+      // says "available until November 30, 2026" (checked 16 Nov 2026). The feed
+      // never touches backend, so these anchors carry the price.
+      // GPT-6.1 Sol ($2/$10) began rolling into Copilot Chat on 30 Sep 2026 via the
+      // model picker (Message Center MC1483844). Microsoft does not say it is the
+      // DEFAULT model, so treat this marker as VERIFY. Wh carried from GPT-5.6 (assumption).
       ['2026-04','GPT-5.5',17.5,0.31,[5,30]],['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],
-      ['2026-08','GPT-5.6 Sol (promo to 21 Nov)',12,0.31,[4,20]],
+      ['2026-08','GPT-5.6 Sol promo',12,0.31,[4,20]],
+      ['2026-10','GPT-6.1 Sol',6,0.31,[2,10]],
     ],
 
     // Main-model axis: which lineage drives the API line + footprint overlay.
     // io=[inUSD/1M, outUSD/1M, current-model label]; steps=[date,label,blendedUSD/1M,Wh]
     defaultAxis: 'oa:auto',
     axis: {
-      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[4,20,'GPT-5.6 Sol (Auto)'],
+      // GPT-6 Sol launched 22 Sep 2026 and GPT-6.1 Sol reached ChatGPT on 29 Sep, both
+      // at $2/$10 (OpenAI pricing page, 16 Nov 2026). Wh carried from GPT-5.6 (assumption).
+      'oa:auto':  {group:'OpenAI', label:'Auto', conf:'SOURCED', io:[2,10,'GPT-6.1 Sol (Auto)'],
         steps:[['2024-05','GPT-4o',6.25,0.9,[2.5,10]],['2025-03','GPT-4.1',5.0,0.6,[2,8]],['2025-08','GPT-5',5.6,0.34,[1.25,10]],
                ['2025-12','GPT-5.2',7.9,0.31,[1.75,14]],['2026-03','GPT-5.4',8.75,0.55,[2.5,15]],['2026-04','GPT-5.5',17.5,0.31,[5,30]],
-               ['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],['2026-08','GPT-5.6 Sol (promo to 21 Nov)',12,0.31,[4,20]]]},
+               ['2026-07','GPT-5.6 Sol',17.5,0.31,[5,30]],['2026-08','GPT-5.6 Sol promo',12,0.31,[4,20]],
+               ['2026-10','GPT-6.1 Sol',6,0.31,[2,10]]]},
       // GPT-5.x Thinking tiers are not separately priced API SKUs — those steps
       // stay mix-locked (no io pair); o1/o3 archive prices are public. GPT-5.6
-      // Thinking (VERIFY) rides the Sol backend from Jul 2026.
+      // Thinking (VERIFY) rides the Sol backend from Jul 2026. Not yet moved to GPT-6:
+      // OpenAI's GPT-6 tiers (Astra $10/$50, Sol, Luna) don't map 1:1 onto "Thinking".
       'oa:think': {group:'OpenAI', label:'Deep Thinking', conf:'SOURCED', io:[5,30,'GPT-5.6 Thinking'],
         steps:[['2024-12','o1',30,3.4,[15,60]],['2025-04','o3',20,3.0,[10,40]],['2025-08','GPT-5 Thinking',6.5,3.1],
                ['2025-12','GPT-5.2 Thinking',9,3.1],['2026-03','GPT-5.4 Thinking',9.5,5.5],['2026-05','GPT-5.5 Thinking',9.5,3.1],
                ['2026-07','GPT-5.6 Thinking',9.5,3.1]]},
       // Cheap tier: o3/o4-mini → GPT-5 mini → GPT-5.6 Luna ($0.20/$1.20 after the
       // 30 Jul 2026 −80% cut). Removed the duplicate 'GPT-5 mini' placeholder step.
-      'oa:mini':  {group:'OpenAI', label:'Mini / Luna', conf:'VERIFY', io:[0.20,1.20,'GPT-5.6 Luna'],
-        steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-07','GPT-5.6 Luna',0.70,0.12,[0.20,1.20]]]},
+      // GPT-6 Luna (22 Sep 2026) $0.10/$0.50 — OpenAI pricing page, 16 Nov 2026.
+      'oa:mini':  {group:'OpenAI', label:'Mini / Luna', conf:'SOURCED', io:[0.10,0.50,'GPT-6 Luna'],
+        steps:[['2025-01','o3-mini',2.8,0.2,[1.1,4.4]],['2025-04','o4-mini',2.8,0.2,[1.1,4.4]],['2025-08','GPT-5 mini',1.1,0.15,[0.25,2]],['2026-07','GPT-5.6 Luna',0.70,0.12,[0.20,1.20]],['2026-09','GPT-6 Luna',0.30,0.12,[0.10,0.50]]]},
       // Flash moved fast: 2.5 Flash → 3.5 Flash ($1.50/$9, May 2026) → 3.6 Flash
       // ($1.50/$7.50, 21 Jul 2026) → 3.7 Flash (13 Aug) and 3.8 Flash (2 Sep) on an
       // introductory $0.75/$3.75, also applied to 3.6, "through December 31, 2026";
       // $1.50/$7.50 from 1 Jan 2027 (ai.google.dev/gemini-api/docs/pricing).
       'gm:flash': {group:'Google', label:'Gemini Flash', conf:'SOURCED', io:[0.75,3.75,'Gemini 3.8 Flash'],
         steps:[['2024-05','1.5 Flash',0.70,0.30,[0.35,1.05]],['2024-08','1.5 Flash-002',0.19,0.24,[0.075,0.30]],['2025-06','2.5 Flash',1.40,0.24,[0.30,2.50]],['2026-05','3.5 Flash',5.25,0.24,[1.50,9.00]],['2026-07','3.6 Flash',4.50,0.24,[1.50,7.50]],['2026-08','3.7 Flash (intro price to 31 Dec)',2.25,0.24,[0.75,3.75]],['2026-09','3.8 Flash (intro price to 31 Dec)',2.25,0.24,[0.75,3.75]]]},
+      // Gemini 4 "Argon" (broad API access 13 Oct 2026; reported $2/$10 intro to 30 Nov,
+      // then $4/$20) is not added: Google hasn't said which tier it replaces, and the
+      // figures are secondary-source only. Revisit once ai.google.dev lists it.
       'gm:pro':   {group:'Google', label:'Gemini Pro', conf:'VERIFY', assumedWh:true, io:[2.00,12.00,'Gemini 3.1 Pro'],
         steps:[['2024-02','1.5 Pro',7.0,0.6,[3.5,10.5]],['2025-03','2.5 Pro',5.6,0.4,[1.25,10]],['2025-11','3 Pro',7.0,0.4,[2,12]],['2026-05','3.1 Pro',7.0,0.4,[2,12]]]},
-      'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Grok 4.5'],
-        steps:[['2025-02','Grok 3',9.0,0.4,[3,15]],['2025-07','Grok 4',9.0,0.4,[3,15]],['2026-03','Grok 4.3',1.9,0.35,[1.25,2.5]],['2026-07','Grok 4.5',4.0,0.35,[2,6]]]},
-      'mi:large': {group:'Mistral', label:'Large / Medium', conf:'VERIFY', assumedWh:true, io:[0.50,1.50,'Large 3'],
+      // Grok 4.6 and 4.7 (21 Sep 2026) held $2/$6 (xAI language-models API via LiteLLM).
+      'xa:grok':  {group:'xAI', label:'Grok', conf:'VERIFY', assumedWh:true, io:[2.00,6.00,'Grok 4.7'],
+        steps:[['2025-02','Grok 3',9.0,0.4,[3,15]],['2025-07','Grok 4',9.0,0.4,[3,15]],['2026-03','Grok 4.3',1.9,0.35,[1.25,2.5]],['2026-07','Grok 4.5',4.0,0.35,[2,6]],['2026-09','Grok 4.7',4.0,0.35,[2,6]]]},
+      'mi:large': {group:'Mistral', label:'Large / Medium', conf:'SOURCED', assumedWh:true, io:[0.70,2.10,'Large 4'],
         // Large 3 (Dec 2025) lists $0.50/$1.50 — mistral.ai/pricing agrees with the
         // LiteLLM feed; the old 4.0 anchor carried Large 2's price forward.
-        steps:[['2024-07','Large 2',4.0,0.3,[2,6]],['2025-05','Medium 3',1.2,0.25,[0.4,2]],['2025-12','Large 3',1.0,0.3,[0.5,1.5]]]},
-      'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[1,5,'Haiku 4.5'],
-        steps:[['2024-03','Haiku 3',0.75,0.25,[0.25,1.25]],['2025-10','Haiku 4.5',3.0,0.3,[1,5]]]},
+        // Large 4 (v4.0, 5 Nov 2026; preview from 6 Oct) $0.70/$2.10, open weights —
+        // docs.mistral.ai/models/mistral-large-4-0, checked 16 Nov 2026.
+        steps:[['2024-07','Large 2',4.0,0.3,[2,6]],['2025-05','Medium 3',1.2,0.25,[0.4,2]],['2025-12','Large 3',1.0,0.3,[0.5,1.5]],['2026-11','Large 4',1.4,0.3,[0.70,2.10]]]},
+      // Haiku 5.5 (7 Oct 2026) $0.10/$0.50 for prompts up to 100K tokens (Anthropic pricing
+      // page, 16 Nov 2026). Its new tokenizer reportedly yields ~30% more tokens for the same
+      // text, which this per-token comparison does not model.
+      'an:haiku': {group:'Anthropic', label:'Haiku', conf:'SOURCED', assumedWh:true, io:[0.10,0.50,'Haiku 5.5'],
+        steps:[['2024-03','Haiku 3',0.75,0.25,[0.25,1.25]],['2025-10','Haiku 4.5',3.0,0.3,[1,5]],['2026-10','Haiku 5.5',0.30,0.3,[0.10,0.50]]]},
       // Sonnet held $3/$15 across 3.5 → 4.5 → 4.6 (the "price held while the model
       // was swapped" story — kept intentionally); Sonnet 5 (Jul 2026) cut it to
       // $2/$10 on intro pricing through 31 Aug 2026; Sonnet 5.5 (28 Sep 2026) kept $2/$10.
@@ -327,9 +350,10 @@ window.MMURR_DATA = {
       'an:opus':  {group:'Anthropic', label:'Opus', conf:'SOURCED', assumedWh:true, io:[4,20,'Opus 5.5'],
         steps:[['2024-03','Opus 3',45,0.6,[15,75]],['2025-08','Opus 4.1',45,0.6,[15,75]],['2026-01','Opus 4.6',15,0.5,[5,25]],['2026-05','Opus 4.8',15,0.5,[5,25]],['2026-07','Opus 5',15,0.5,[5,25]],['2026-09','Opus 5.5',12,0.5,[4,20]]]},
       // Fable 5 (Jul 2026) — new Claude 5 flagship above Opus, $10/$50 (LiteLLM); Fable 5.1
-      // (Sep 2026) held the price. Wh assumed.
-      'an:fable': {group:'Anthropic', label:'Fable', conf:'SOURCED', assumedWh:true, io:[10,50,'Fable 5.1'],
-        steps:[['2026-07','Fable 5',30,0.6,[10,50]],['2026-09','Fable 5.1',30,0.6,[10,50]]]},
+      // (Sep 2026) held the price; Fable 5.2 (9 Nov 2026) cut it 20% to $8/$40 (Anthropic
+      // pricing page, 16 Nov 2026). Wh assumed.
+      'an:fable': {group:'Anthropic', label:'Fable', conf:'SOURCED', assumedWh:true, io:[8,40,'Fable 5.2'],
+        steps:[['2026-07','Fable 5',30,0.6,[10,50]],['2026-09','Fable 5.1',30,0.6,[10,50]],['2026-11','Fable 5.2',24,0.6,[8,40]]]},
     },
 
     // Power Automate -> Copilot Credits transition (used in Phase 6). (§7.7)

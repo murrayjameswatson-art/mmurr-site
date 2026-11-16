@@ -9,16 +9,16 @@ window.MMURR_API_PRICES = {
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {
-      "id": "gpt-5.6",
-      "in": 4,
-      "out": 20,
-      "since": "2026-09-29"
+      "id": "gpt-6.1-sol",
+      "in": 2,
+      "out": 10,
+      "since": "2026-11-16"
     },
     "oa:mini": {
-      "id": "gpt-5.6-luna",
-      "in": 0.2,
-      "out": 1.2,
-      "since": "2026-09-29"
+      "id": "gpt-6-luna",
+      "in": 0.1,
+      "out": 0.5,
+      "since": "2026-11-16"
     },
     "gm:flash": {
       "id": "gemini/gemini-3.8-flash",
@@ -33,10 +33,10 @@ window.MMURR_API_PRICES = {
       "since": "2026-09-29"
     },
     "an:haiku": {
-      "id": "claude-haiku-4-5",
-      "in": 1,
-      "out": 5,
-      "since": "2026-09-29"
+      "id": "claude-haiku-5-5",
+      "in": 0.1,
+      "out": 0.5,
+      "since": "2026-11-16"
     },
     "an:sonnet": {
       "id": "claude-sonnet-5-5",
@@ -51,22 +51,97 @@ window.MMURR_API_PRICES = {
       "since": "2026-09-29"
     },
     "an:fable": {
-      "id": "claude-fable-5-1",
-      "in": 10,
-      "out": 50,
-      "since": "2026-09-29"
+      "id": "claude-fable-5-2",
+      "in": 8,
+      "out": 40,
+      "since": "2026-11-16"
     },
     "xa:grok": {
-      "id": "xai/grok-4.5",
+      "id": "xai/grok-4.7",
       "in": 2,
       "out": 6,
-      "since": "2026-09-29"
+      "since": "2026-11-16"
     },
     "mi:large": {
-      "id": "mistral/mistral-large-3",
-      "in": 0.5,
-      "out": 1.5,
-      "since": "2026-09-29"
+      "id": "mistral/mistral-large-4",
+      "in": 0.7,
+      "out": 2.1,
+      "since": "2026-11-16"
     }
-  }
+  },
+  "seen": [
+    "claude-fable-5",
+    "claude-fable-5-1",
+    "claude-fable-5-2",
+    "claude-haiku-4-5",
+    "claude-haiku-5-5",
+    "claude-mythos-5",
+    "claude-mythos-5-1",
+    "claude-mythos-5-2",
+    "claude-opus-4-5",
+    "claude-opus-4-6",
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-opus-5-5",
+    "claude-sonnet-4-5",
+    "claude-sonnet-4-6",
+    "claude-sonnet-5",
+    "claude-sonnet-5-5",
+    "gemini/gemini-2.5-flash",
+    "gemini/gemini-2.5-flash-lite",
+    "gemini/gemini-2.5-pro",
+    "gemini/gemini-3.1-flash-lite",
+    "gemini/gemini-3.5-flash",
+    "gemini/gemini-3.5-flash-lite",
+    "gemini/gemini-3.6-flash",
+    "gemini/gemini-3.7-flash",
+    "gemini/gemini-3.8-flash",
+    "gemini/gemini-4-argon",
+    "gemini/gemini-4-carbon",
+    "gemini/gemini-4-hydrogen",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-instruct",
+    "gpt-4",
+    "gpt-4-turbo",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-5",
+    "gpt-5-mini",
+    "gpt-5-nano",
+    "gpt-5-pro",
+    "gpt-5.1",
+    "gpt-5.2",
+    "gpt-5.2-pro",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "gpt-5.4-nano",
+    "gpt-5.4-pro",
+    "gpt-5.5",
+    "gpt-5.5-pro",
+    "gpt-5.6",
+    "gpt-5.6-luna",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-6-astra",
+    "gpt-6-luna",
+    "gpt-6-sol",
+    "gpt-6.1-sol",
+    "gpt-6.1-terra",
+    "mistral/mistral-large-3",
+    "mistral/mistral-large-4",
+    "mistral/mistral-large-4-0",
+    "mistral/mistral-medium-3",
+    "mistral/mistral-medium-3-5",
+    "mistral/mistral-medium-3.5",
+    "xai/grok-4.20",
+    "xai/grok-4.3",
+    "xai/grok-4.5",
+    "xai/grok-4.6",
+    "xai/grok-4.7"
+  ]
 };

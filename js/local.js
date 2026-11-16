@@ -66,9 +66,10 @@
   }
 
   // Default selection: NOT Kimi K3 — presenting a model that cannot be run
-  // on ordinary hardware as the default would be a dead end. Phi-4 has the
-  // smallest hardware floor of the set, so it is always runnable.
-  let provider = rowFor('Microsoft') ? 'Microsoft' : providers[0];
+  // on ordinary hardware as the default would be a dead end. Gemma 4 (Mar 2026)
+  // is the newest model here that still fits one consumer GPU (Phi-4, Dec 2024,
+  // has a lower floor but is older).
+  let provider = rowFor('Google') ? 'Google' : providers[0];
   let utilHours = 8;       // hours/day under load — Block D slider
   let compareKey = '';     // '' = generic hosted-service estimate; else an AX lineage key
 

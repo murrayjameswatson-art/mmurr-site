@@ -14,7 +14,7 @@ function monthList(start, end){
   while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} }
   return out;
 }
-const START='2024-01', END='2026-08';
+const START='2024-01', END=MMURR_DATA.models.chartEnd;   // current month (factors.js)
 const MONTHS = monthList(START,END);
 const D = s => { const [y,m]=s.split('-').map(Number); return new Date(y,m-1,1).getTime(); };
 const TS = MONTHS.map(D);
@@ -408,6 +408,9 @@ const SRC = {
   openai:'https://developers.openai.com/api/docs/pricing',
   openaiPromo:'https://community.openai.com/t/20-price-reduction-for-gpt-5-6-sol-api-codex-credits-and-chatgpt-work/1391726',
   opus55:'https://www.anthropic.com/claude-opus-5-5',
+  anthropicPricing:'https://platform.claude.com/docs/en/about-claude/pricing',
+  copilotMC:'https://mc.merill.net/message/MC1483844',
+  mistralL4:'https://docs.mistral.ai/models/mistral-large-4-0',
   gemini:'https://ai.google.dev/gemini-api/docs/pricing',
   geminiEnt:'https://cloud.google.com/blog/products/ai-machine-learning/gemini-enterprise-launch',
   googleOne:'https://blog.google/products-and-platforms/products/google-one/google-ai-subscriptions/',
@@ -459,7 +462,7 @@ function renderSources(){
     ['API token $ (the "if billed on API" line)', `blended <b>${mixIn}/${mixOut}</b> in/out per model, USD/1M, shown ${fxLine}. `+(ref
         ? `<b>Current</b> prices are referenced from the LiteLLM community registry, fetched <b>${ref.fetched}</b> (auto-refreshed weekly by a repo Action); history steps are hand-set anchors.`
         : `Referenced price feed not loaded — hand-set anchors in use.`), 'SOURCED', aLink(SRC.litellm,'LiteLLM registry')+' · '+aLink(SRC.openai,'OpenAI')+' · '+aLink(SRC.anthropic,'Anthropic')+' · '+aLink(SRC.gemini,'Gemini')+' · '+aLink(SRC.xaiApi,'xAI')+' · '+aLink(SRC.mistral,'Mistral')],
-    ['2026 price changes', `GPT-5.6 Sol cut from $5/$30 to $4/$20 from 21 Aug 2026, "at least through November 21, 2026". Gemini 3.6–3.8 Flash at an introductory $0.75/$3.75 "through December 31, 2026", then $1.50/$7.50. Claude Opus 5.5 (22 Sep 2026) at $4/$20, 20% below Opus 5. GPT-6 Sol (22 Sep 2026) at $2/$10 is not yet the model behind Copilot, so it is not on the chart. Each change is a dated step on the chart, not a revision of earlier prices.`, 'SOURCED', aLink(SRC.openaiPromo,'OpenAI')+' · '+aLink(SRC.gemini,'Google')+' · '+aLink(SRC.opus55,'Anthropic')+' · '+aLink(SRC.openai,'OpenAI pricing')],
+    ['2026 price changes', `GPT-5.6 Sol cut from $5/$30 to $4/$20 from 21 Aug 2026; OpenAI's pricing page now says the promotion runs "until November 30, 2026". GPT-6 Sol (22 Sep) and GPT-6.1 Sol (29 Sep) at $2/$10; GPT-6.1 Sol began rolling into Copilot on 30 Sep through the model picker (Microsoft does not say it is the default, so that marker is VERIFY). GPT-6 Luna at $0.10/$0.50. Gemini 3.6–3.8 Flash at an introductory $0.75/$3.75 "through December 31, 2026", then $1.50/$7.50. Claude Opus 5.5 (22 Sep) at $4/$20, Haiku 5.5 (7 Oct) at $0.10/$0.50, Fable 5.2 (9 Nov) at $8/$40. Mistral Large 4 (5 Nov) at $0.70/$2.10. Each change is a dated step on the chart, not a revision of earlier prices.`, 'SOURCED', aLink(SRC.openaiPromo,'OpenAI')+' · '+aLink(SRC.gemini,'Google')+' · '+aLink(SRC.opus55,'Anthropic')+' · '+aLink(SRC.anthropicPricing,'Anthropic pricing')+' · '+aLink(SRC.openai,'OpenAI pricing')+' · '+aLink(SRC.copilotMC,'Microsoft MC1483844')+' · '+aLink(SRC.mistralL4,'Mistral')],
     ['Copilot energy', `0.31 Wh / prompt (median; range 0.16–0.60; per-query water &lt;0.5 mL)`, 'SOURCED', 'Microsoft production disclosure (Jun 2026)'],
     ['Gemini energy', `0.24 Wh / prompt (fleet median)`, 'SOURCED', aLink(SRC.gEnergy,'Google Cloud (2025)')],
     ['Anthropic / xAI / Mistral / Gemini-Pro energy', `per-query Wh not published — labelled assumptions`, 'ASSUMPTION', '(vendors publish none)'],

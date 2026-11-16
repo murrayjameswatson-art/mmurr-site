@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  issues: write   # new-model alert (see the "Flag new models" step)
 
 jobs:
   refresh:
@@ -21,7 +22,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node tools/refresh-prices.mjs
+      - id: refresh
+        run: node tools/refresh-prices.mjs
+      - name: Flag new models (opens an issue so the lineages get a human update)
+        if: steps.refresh.outputs.new_ids != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_IDS: ${{ steps.refresh.outputs.new_ids }}
+        run: |
+          body="The weekly price refresh saw model IDs that weren't in the LiteLLM registry last week:"$'\n\n'
+          for id in $NEW_IDS; do body+="- \`$id\`"$'\n'; done
+          body+=$'\n'"If one of these replaces a model on the site, add a dated step for it in js/factors.js (models.axis) and point its lineage in tools/refresh-prices.mjs (MAP) at the new ID. Otherwise close this issue."
+          gh issue create --title "New AI models to review ($(date +%Y-%m-%d))" --body "$body"
       - name: Commit if changed
         run: |
           if ! git diff --quiet js/data/api-prices.js; then

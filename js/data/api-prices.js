@@ -69,6 +69,58 @@ window.MMURR_API_PRICES = {
       "since": "2026-11-16"
     }
   },
+  "open": {
+    "Moonshot AI": {
+      "in": 3,
+      "out": 15,
+      "n": 19
+    },
+    "DeepSeek": {
+      "in": 1.69,
+      "out": 3.48,
+      "n": 21
+    },
+    "Alibaba": {
+      "in": 0.6,
+      "out": 3.6,
+      "n": 8
+    },
+    "Zhipu / Z.ai": {
+      "in": 1.4,
+      "out": 4.4,
+      "n": 13
+    },
+    "Meta": {
+      "in": 0.302,
+      "out": 0.925,
+      "n": 12
+    },
+    "Mistral AI": {
+      "in": 0.7,
+      "out": 2.1,
+      "n": 2
+    },
+    "Google": {
+      "in": 0.145,
+      "out": 0.4,
+      "n": 12
+    },
+    "MiniMax": {
+      "in": 0.3,
+      "out": 1.2,
+      "n": 19
+    },
+    "Microsoft": {
+      "in": 0.097,
+      "out": 0.32,
+      "n": 2
+    },
+    "Cohere": {
+      "in": 1.65,
+      "out": 6.6,
+      "n": 2
+    }
+  },
   "seen": [
     "claude-fable-5",
     "claude-fable-5-1",

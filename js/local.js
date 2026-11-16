@@ -3,16 +3,18 @@
 
    Two views off js/data/local-models.js (MMURR_LOCAL):
      1. Fact strip + hardware-tier ladder — minimum hardware requirement
-     2. Capital cost (capex), operating cost (opex) and a hosted-API
-        comparison, by region
+     2. Build or buy: the monthly cost of self-hosting (hardware recovered
+        over its life + electricity) against buying the SAME model per token
+        from hosting providers, expressed as a break-even volume and speed.
+        Frontier models appear only as a reference for the capability gap.
 
    Hand-rolled SVG (no chart library), same conventions as js/costlab.js.
    GPU capex/wattage for the enterprise tiers (C/D/E) is READ from
    MMURR_COST (js/cost-model.js) rather than sourced twice; region FX and
    currency come from MMURR_DATA (js/factors.js) via the shared
-   MMURR_REGION control. The hosted-model comparison reads
-   MMURR_DATA.models.axis + stepPrice/MMURR_MIX — the same mechanism
-   js/costlab.js uses to overlay a real model's API price.
+   MMURR_REGION control. Hosted prices for the open models come from the
+   weekly feed (MMURR_API_PRICES.open) with row.hosted as the fallback; the
+   frontier reference reads MMURR_DATA.models.axis + stepPrice/MMURR_MIX.
 ---------------------------------------------------------------------------- */
 (function(){
   const DATA = window.MMURR_LOCAL; if(!DATA) return;
@@ -51,18 +53,18 @@
   // --- data + comparison-model helpers ----------------------------------------
   const providers = DATA.rows.map(r=>r.provider);
   function rowFor(p){ return DATA.rows.find(r=>r.provider===p); }
-  // Display label for a comparison option; empty key = the generic estimate.
-  function compareLabel(key){
-    if(!key) return 'Generic hosted-service average';
-    const m=AX[key]; return m ? `${m.group} — ${m.io[2]||m.label}` : key;
+  // What the SAME model costs per 1M tokens from hosting providers: the weekly
+  // feed's median if present, else the dated anchor in local-models.js.
+  function hostedFor(row){
+    const feed = window.MMURR_API_PRICES && MMURR_API_PRICES.open && MMURR_API_PRICES.open[row.provider];
+    const h = feed || row.hosted;
+    return { ...h, usd: mix()*h.in + (1-mix())*h.out, fromFeed: !!feed };
   }
-  // USD list price per 1,000,000 tokens for the chosen comparison, blended
-  // at the site-wide input/output mix (defaults to 50/50 if never set).
-  function comparePriceUSD(key){
-    if(!key) return COST ? COST.unit(COST.params(2026,'standard')).total : null;
+  // Frontier reference: latest list price of a lineage, blended at the site mix.
+  function frontierUSD(key){
     const m=AX[key]; if(!m) return null;
     const step=m.steps[m.steps.length-1];
-    return window.stepPrice ? stepPrice(step, mix()) : step[2];
+    return { name: m.io[2] || m.label, usd: window.stepPrice ? stepPrice(step, mix()) : step[2] };
   }
 
   // Default selection: NOT Kimi K3 — presenting a model that cannot be run
@@ -71,7 +73,6 @@
   // has a lower floor but is older).
   let provider = rowFor('Google') ? 'Google' : providers[0];
   let utilHours = 8;       // hours/day under load — Block D slider
-  let compareKey = '';     // '' = generic hosted-service estimate; else an AX lineage key
 
   // --- capex / opex / hosted comparison ---------------------------------------
   // Enterprise tiers reuse the cost-model's data-centre-GPU anchor instead of
@@ -95,22 +96,22 @@
     const lifeYears = row.gpuVramGB<=48 ? 4 : (COST ? COST.YP[2026].life : 5);
     const capexPerMonth = capexLocal/(lifeYears*12);
     const totalMonthlyLocal = capexPerMonth + opexLocal;
-    // Hosted comparison: reuse the chosen model's real list price rather
-    // than a second estimate. Token VOLUME is held constant between the two
-    // options (this tier's throughput at the chosen utilisation) so the
-    // comparison is "the same usage, two different ways to pay for it".
-    // ponytail: throughput 'r' is MMURR_COST's "standard frontier model"
-    // figure, applied uniformly regardless of the selected model's own
-    // size — a stand-in for a representative request volume, not a
-    // per-model inference-speed simulation.
-    let apiEquivLocal = null;
-    const priceUSD = comparePriceUSD(compareKey);
-    if(priceUSD!=null && COST){
-      const p = COST.params(2026,'standard');
-      const tokPerMonth = p.r * row.minGPUs * 3600 * utilHours * 30;
-      apiEquivLocal = tokPerMonth/1e6 * priceUSD * fx;
-    }
-    return { capexLocal, capexPerMonth, opexLocal, totalMonthlyLocal, apiEquivLocal, kWhPerMonth };
+    // Build or buy, without assuming a throughput: the self-hosting bill buys
+    // N million tokens of the SAME model from a hosting provider. Self-hosting
+    // only saves money if the hardware really produces more than N — i.e. a
+    // sustained rate of breakEvenTps over the hours it runs.
+    const hosted = hostedFor(row);
+    const breakEvenMTok = totalMonthlyLocal / (hosted.usd * fx);
+    const breakEvenTps = breakEvenMTok*1e6 / (utilHours*3600*30);
+    // Reference speeds. Consumer tier: one user, memory-bandwidth bound —
+    // each token reads every active weight once (Q4 ≈ 0.5 bytes/param).
+    // Data-centre tiers: the Cost-of-Service model's tokens/s per GPU for a
+    // busy, batched service (an ASSUMPTION there, labelled as such here).
+    const singleUserTps = row.gpuVramGB<=48
+      ? DATA.consumerGpu.bandwidthGBs*row.minGPUs / (row.activeB*0.5) : null;
+    const busyTps = row.gpuVramGB<=48 ? null : (COST ? COST.YP[2026].r : 900) * row.minGPUs;
+    return { capexLocal, capexPerMonth, opexLocal, totalMonthlyLocal, kWhPerMonth, lifeYears,
+             hosted, breakEvenMTok, breakEvenTps, singleUserTps, busyTps };
   }
 
   // --- model select + fact strip -----------------------------------------------
@@ -118,17 +119,6 @@
     const sel=$('lm-model'); sel.innerHTML='';
     for(const r of DATA.rows){ const o=document.createElement('option'); o.value=r.provider;
       o.textContent=`${r.provider} — ${r.model}`; if(r.provider===provider) o.selected=true; sel.appendChild(o); }
-  }
-  function buildCompareSelect(){
-    const sel=$('lm-compare'); sel.innerHTML='';
-    const generic=document.createElement('option'); generic.value=''; generic.textContent='Generic hosted-service average'; sel.appendChild(generic);
-    let og=null,last=null;
-    for(const k in AX){ const m=AX[k];
-      if(m.group!==last){ og=document.createElement('optgroup'); og.label=m.group; sel.appendChild(og); last=m.group; }
-      const o=document.createElement('option'); o.value=k;
-      o.textContent=`${m.io[2]||m.label} — $${m.io[0].toFixed(2)}/$${m.io[1].toFixed(2)} per 1,000,000 tokens`;
-      (og||sel).appendChild(o);
-    }
   }
   function renderFactStrip(row){
     const cells=[
@@ -166,24 +156,41 @@
   function renderCost(row){
     const region = window.MMURR_REGION ? MMURR_REGION.get() : 'UK';
     const sym = window.MMURR_REGION ? MMURR_REGION.data().sym : '£';
-    const {capexLocal, capexPerMonth, opexLocal, totalMonthlyLocal, apiEquivLocal, kWhPerMonth} = economics(row, region);
-    const energyTxt = window.fmtEnergy ? window.fmtEnergy(kWhPerMonth*1000) : kWhPerMonth.toFixed(0)+' kWh';
+    const E = economics(row, region);
+    const fx = (window.MMURR_DATA && MMURR_DATA.regions[region] && MMURR_DATA.regions[region].fx) || 1;
+    const money = v => sym + Math.round(v).toLocaleString();
+    const mtok = v => v>=100 ? Math.round(v).toLocaleString() : v>=10 ? v.toFixed(0) : v.toFixed(1);
+    const tps = v => v>=100 ? Math.round(v).toLocaleString() : v.toFixed(v>=10?0:1);
+    const energyTxt = window.fmtEnergy ? window.fmtEnergy(E.kWhPerMonth*1000) : E.kWhPerMonth.toFixed(0)+' kWh';
+    const gpus = row.minGPUs+' GPU'+(row.minGPUs>1?'s':'');
     const tiles=[
-      ['Capital cost (hardware)', sym+Math.round(capexLocal).toLocaleString(), row.minGPUs+' GPU'+(row.minGPUs>1?'s':'')+', '+region+' pricing · approximately '+sym+capexPerMonth.toFixed(0)+'/month if depreciated evenly'],
-      ['Operating cost (electricity)', sym+opexLocal.toFixed(0)+' / month', energyTxt+' / month at '+utilHours+' hours/day'],
-      ['Cost via '+compareLabel(compareKey), apiEquivLocal==null?'—':sym+apiEquivLocal.toFixed(0)+' / month', 'same monthly token volume, purchased via a hosted API'],
+      ['Self-hosting, per month', money(E.totalMonthlyLocal),
+       `${gpus} (${money(E.capexLocal)} up front, recovered over ${E.lifeYears} years) plus ${money(E.opexLocal)} of electricity (${energyTxt}) at ${utilHours} hours/day`],
+      ['The same money, bought as a service', mtok(E.breakEvenMTok)+' million tokens / month',
+       `${row.model} from hosting providers at $${E.hosted.in.toFixed(2)} in / $${E.hosted.out.toFixed(2)} out per million tokens (median of ${E.hosted.n} provider${E.hosted.n>1?'s':''})`],
+      ['Break-even speed', tps(E.breakEvenTps)+' tokens / second',
+       `what the hardware must average for every one of those ${utilHours} hours to beat buying the tokens`],
     ];
     $('lm-cost').innerHTML = tiles.map(([lab,big,sub])=>
       `<div class="stat"><div class="big" style="font-size:1.15rem">${big}</div><div class="lab">${lab}<br><span style="color:var(--faint)">${sub}</span></div></div>`).join('');
-    if(apiEquivLocal!=null){
-      // The fair comparison is the hosted price against the TOTAL monthly
-      // cost of self-hosting (capital cost recovered over its working life,
-      // plus electricity) — not electricity alone.
-      const cheaper = apiEquivLocal < totalMonthlyLocal;
-      $('lm-api-note').textContent = cheaper
-        ? `At ${utilHours} hours/day, the hosted option is less expensive than self-hosting once the recovery of capital cost is included (${sym}${totalMonthlyLocal.toFixed(0)}/month total, versus ${sym}${apiEquivLocal.toFixed(0)}/month hosted). Self-hosting becomes more economical at higher, sustained usage, or where data cannot leave the organisation's own premises.`
-        : `At ${utilHours} hours/day, the total monthly cost of self-hosting (${sym}${totalMonthlyLocal.toFixed(0)}, comprising capital-cost recovery and electricity) is already lower than the equivalent hosted option (${sym}${apiEquivLocal.toFixed(0)}/month). Sustained usage at this tier favours owning the hardware.`;
-    } else { $('lm-api-note').textContent=''; }
+
+    // Reading the break-even against what the hardware can physically do.
+    let read;
+    if(E.singleUserTps != null){
+      const ok = E.breakEvenTps <= E.singleUserTps;
+      read = `One consumer GPU serving one person tops out at about ${tps(E.singleUserTps)} tokens/second for ${row.model} (memory bandwidth ÷ model size). ` +
+        (ok ? `So it can break even, but only if it is generating for ${Math.round(E.breakEvenTps/E.singleUserTps*100)}% or more of those ${utilHours} hours.`
+            : `That is below the break-even speed: at these prices this hardware cannot pay for itself on token volume, even flat out. The case for it is privacy or offline use, not cost.`);
+    } else {
+      const share = E.breakEvenTps / E.busyTps;
+      read = `A data-centre server batching many requests at once is much faster than one user: the site's Cost-of-Service model assumes about ${tps(E.busyTps/row.minGPUs)} tokens/second per GPU for a busy service (an assumption, not a measurement). ` +
+        (share <= 1 ? `On that basis this setup breaks even only if your own demand keeps it at least ${Math.max(1,Math.round(share*100))}% as busy as a commercial service, for ${utilHours} hours a day.`
+                    : `Even that busy, it would not break even at ${utilHours} hours a day: hosting providers sell this model for less than it costs to run it yourself.`);
+    }
+    const refs = ['oa:auto','an:opus'].map(frontierUSD).filter(Boolean)
+      .map(f => `${money(E.breakEvenMTok*f.usd*fx)} on ${f.name}`);
+    if(refs.length) read += ` For reference, the same ${mtok(E.breakEvenMTok)} million tokens a month would cost ${refs.join(' or ')}, the price of frontier capability this model does not match.`;
+    $('lm-api-note').textContent = read;
     $('lm-util-out').textContent = utilHours+' hours/day';
   }
 
@@ -193,9 +200,8 @@
     renderFactStrip(row); drawLadder(row); renderCost(row);
   }
   function init(){
-    buildModelSelect(); buildCompareSelect();
+    buildModelSelect();
     $('lm-model').addEventListener('change', e=>{ provider=e.target.value; render(); });
-    $('lm-compare').addEventListener('change', e=>{ compareKey=e.target.value; renderCost(rowFor(provider)); });
     $('lm-util').addEventListener('input', e=>{ utilHours=+e.target.value; renderCost(rowFor(provider)); });
     document.querySelectorAll('.lm-asof').forEach(n=> n.textContent = DATA.asOf);
     if(window.MMURR_REGION) MMURR_REGION.onChange(()=>renderCost(rowFor(provider)));
@@ -207,7 +213,7 @@
   if(['localhost','127.0.0.1',''].includes(location.hostname)){
     const phi4 = rowFor('Microsoft'), k3 = rowFor('Moonshot AI');
     console.assert(tierFor(phi4)==='B', 'Phi-4 (1 consumer GPU) lands on tier B');
-    console.assert(tierFor(k3)==='D', 'Kimi K3 (8x data-centre GPU, single server) lands on tier D');
+    console.assert(tierFor(k3)==='E', 'Kimi K3 (2.8T params, 21 data-centre GPUs) lands on tier E');
     console.assert(DATA.rows.length===10, 'exactly 10 provider rows');
     const e = economics(phi4,'UK');
     console.assert(e.capexLocal>0 && isFinite(e.capexLocal), 'capex is a positive finite number');

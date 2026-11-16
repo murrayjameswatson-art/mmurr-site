@@ -121,18 +121,41 @@
   <div class="panel">
     <div id="region-bar"></div>
 
-    <label class="f" for="lm-compare" style="margin-top:14px">Compare against</label>
-    <select id="lm-compare" style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:.9rem"></select>
-    <p class="sub" style="margin:6px 0 0">Select a specific hosted model — for example, Anthropic Opus or OpenAI
-      GPT-5.5 — to compare its cost against self-hosting, at the same monthly token volume. The default option is a
-      generic estimate of hosted-service cost, drawn from the <a href="costmodel.html">Cost-of-Service Model</a>.</p>
+    <p class="sub" style="margin:14px 0 0">Build or buy, for the model selected above. Self-hosting is a fixed monthly
+      bill; buying the same model from a hosting provider is paid per token. The figures below show how many tokens
+      that bill would buy, and so how hard your own hardware would have to work to beat it.</p>
 
     <label class="f" for="lm-util" style="margin-top:14px">Utilisation — hours per day under load <output id="lm-util-out"></output></label>
     <input type="range" id="lm-util" class="lm-range" min="1" max="24" step="1" value="8">
     <div id="lm-cost"></div>
     <p class="lm-note" id="lm-api-note"></p>
-    <p class="sub" style="margin-top:6px">Prices are sourced by hand and dated, not retrieved live — see Methods and
-      Sources, below.</p>
+    <p class="sub" style="margin-top:6px">Hosted prices are the median across the providers serving each model in the
+      LiteLLM price registry, refreshed weekly. Hardware and electricity prices are sourced by hand and dated — see
+      Methods and Sources, below.</p>
+  </div>
+
+  <!-- ============ WHEN SELF-HOSTING MAKES SENSE ============ -->
+  <h2>When self-hosting makes sense</h2>
+  <div class="panel lm-check">
+    <div>
+      <h3>Reasons to run it yourself</h3>
+      <ul>
+        <li><strong>Data must stay on your premises.</strong> Regulation, client contracts or data classification rule
+          out sending it to a third party. In financial services this is usually the deciding reason, not cost.</li>
+        <li><strong>Steady, high volume.</strong> Hardware only beats per-token prices when it is kept busy, day after day.</li>
+        <li><strong>Latency or offline needs.</strong> Responses must be fast and predictable, or work without an internet connection.</li>
+        <li><strong>Fine-tuning.</strong> You need to adapt the model's weights to your own data.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Reasons to buy it as a service</h3>
+      <ul>
+        <li><strong>Spiky or uncertain demand.</strong> You pay only for what you use; idle hardware still costs money.</li>
+        <li><strong>You need frontier quality.</strong> The most capable models are not released as open weights.</li>
+        <li><strong>No team to run it.</strong> Serving software, drivers, security patching and capacity planning are
+          ongoing work, and none of it is in the costs above.</li>
+      </ul>
+    </div>
   </div>
 
   <!-- ============ OPERATIONAL CONSIDERATIONS ============ -->
@@ -142,22 +165,22 @@
       <li><strong>Serving software.</strong> Running a model requires dedicated serving software, such as vLLM or
         SGLang (open-source programs designed to run large language models efficiently). The maximum context
         length — the amount of text the model can consider at once — is limited by available memory, not merely by a
-        software setting. For example, Kimi K3's advertised 1,000,000-token context window is, in practice, limited
-        to approximately 128,000–256,000 tokens on typical local hardware, unless the intermediate calculation data
-        (known as the "key-value cache", or "KV cache") is distributed across multiple graphics cards.</li>
+        software setting: a model's advertised context window is often out of reach on local hardware unless the
+        intermediate calculation data (known as the "key-value cache", or "KV cache") is spread across several
+        graphics cards.</li>
       <li><strong>Concurrent users.</strong> The ability to load a model does not imply the ability to serve multiple
         people simultaneously. Tier B hardware comfortably supports a single user. Supporting several people at once
         without requests queuing typically requires Tier D or Tier E hardware.</li>
       <li><strong>Storage requirements.</strong> The model weights alone require substantial storage — for example,
-        approximately 594 gigabytes for Kimi K3 at Q4 precision. Additional storage should be allowed for checkpoints
+        approximately 1,390 gigabytes for Kimi K3 at Q4 precision. Additional storage should be allowed for checkpoints
         (saved copies of the model) and for experimenting with alternative quantisation levels.</li>
       <li><strong>Ongoing maintenance.</strong> Running a model locally requires periodic maintenance, including
         updates to graphics-card drivers and to CUDA (NVIDIA's software platform for running computations on its
         GPUs), and occasionally re-processing ("re-quantising") the model as improved community-produced versions
         become available. GGUF is a common file format used for these community-produced, quantised models.</li>
       <li><strong>Licensing.</strong> The terms under which a model may be used vary by provider and should be read
-        directly from the official source repository. The licences referenced on this page — including Modified MIT,
-        Apache 2.0, MIT, and Meta's custom Llama licence — differ materially, particularly for commercial use at
+        directly from the official source repository. The licences on this page — Apache 2.0, MIT, Meta's Llama licence and
+        several custom licences (Kimi, MiniMax, Mistral) — differ materially, particularly for commercial use at
         scale.</li>
       <li><strong>Hybrid deployment.</strong> Many organisations run sensitive workloads on local hardware while
         using a hosted API for occasional tasks that require the largest models or the longest context windows. This
@@ -168,10 +191,12 @@
   <!-- ============ METHODS ============ -->
   <h2>Methods and Sources</h2>
   <div class="panel">
-    <p class="sub" style="margin:0">Sourcing hierarchy: the provider's release announcement or model card is used
-      for parameters and release dates; Hugging Face's <code>config.json</code> is used to confirm architecture;
-      community hardware guides are used for real-world VRAM requirements; national energy statistics are used for
-      electricity prices. Every model links to its model card or the provider's own model page. Enterprise-tier GPU price and power draw are
+    <p class="sub" style="margin:0">Sourcing hierarchy: parameter counts, licences and release dates come from each
+      model's Hugging Face card (or the provider's own page), checked November 2026; <code>config.json</code> is
+      used where a card omits the active-parameter count. The number of GPUs is derived by one rule: the Q4 weights
+      plus 20% for working memory, divided by the card's memory. Hosted prices are the median across providers in
+      the LiteLLM registry. National energy statistics are used for electricity prices. The single-user speed on a
+      consumer GPU is its published memory bandwidth (RTX 4090: 1,008 GB/s) divided by the model's active weights. Every model links to its model card or the provider's own model page. Enterprise-tier GPU price and power draw are
       read from the <a href="costmodel.html">Cost-of-Service Model</a>'s figures rather than sourced a second time.</p>
     <p class="foot">Every figure is an editable value in <code>js/data/local-models.js</code>. Data anchors as of
       <span class="lm-asof">—</span>. These are planning estimates and should be verified independently before being

@@ -34,6 +34,24 @@ const MAP = {
   'mi:large': ['mistral/mistral-large-4', 'mistral/mistral-large-4-0'],
 };
 
+// Run It Locally: what each open-weight model costs per 1M tokens from hosting
+// providers. Keyed by the provider name used in js/data/local-models.js; each
+// pattern matches the exact model's IDs across hosts (not its fast/thinking/
+// dated variants). The page shows the MEDIAN input and output price across the
+// matches — a typical market rate, not one cherry-picked vendor.
+const OPEN = {
+  'Moonshot AI':  /(^|\/)kimi-k3$/i,
+  'DeepSeek':     /(^|\/)deepseek-v4-pro$/i,
+  'Alibaba':      /qwen3\.5-397b-a17b$/i,
+  'Zhipu / Z.ai': /(^|\/)glm-5(\.|p)1$/i,
+  'Meta':         /llama-4-maverick(-17b-128e-instruct)?(-fp8)?(-maas)?$/i,
+  'Mistral AI':   /mistral-large-4(-0)?$/i,
+  'Google':       /gemma-4-31b-it$/i,
+  'MiniMax':      /minimax-m3$/i,
+  'Microsoft':    /(^|\/)phi-4$/i,
+  'Cohere':       /command-a-plus-05-2026$/i,
+};
+
 // New-model watch: the families the site tracks. Any ID in these families
 // that wasn't in the registry at the last refresh is reported, so a new
 // release prompts a human update instead of the site silently going stale.
@@ -74,6 +92,19 @@ for (const [axisKey, candidates] of Object.entries(MAP)) {
   models[axisKey] = price;
 }
 
+const median = a => { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+const open = {};
+for (const [prov, re] of Object.entries(OPEN)) {
+  const ids = Object.keys(reg).filter(id => re.test(id) && reg[id].input_cost_per_token > 0 && reg[id].output_cost_per_token > 0
+                                         && (reg[id].mode || 'chat') === 'chat');
+  if (!ids.length) continue;   // page falls back to its dated anchor
+  open[prov] = {
+    in:  +(median(ids.map(id => reg[id].input_cost_per_token)) * 1e6).toFixed(3),
+    out: +(median(ids.map(id => reg[id].output_cost_per_token)) * 1e6).toFixed(3),
+    n: ids.length,
+  };
+}
+
 const seen = Object.keys(reg).filter(id => FAMILY.test(id) && !NOISE.test(id)).sort();
 let prevSeen = null;
 if (existsSync(prevPath)) {
@@ -93,6 +124,7 @@ window.MMURR_API_PRICES = ${JSON.stringify({
     fetched: today,
     source: SOURCE,
     models,
+    open,
     seen,
   }, null, 2)};
 `;
@@ -107,6 +139,7 @@ writeFileSync(join(root, 'js', 'data', 'api-prices.js'), out);
 console.log(`wrote js/data/api-prices.js — ${Object.keys(models).length}/${Object.keys(MAP).length} lineages referenced`);
 for (const [k, v] of Object.entries(models)) console.log(`  ${k.padEnd(10)} ${v.id.padEnd(34)} $${v.in}/$${v.out} per 1M`);
 if (misses.length) console.log(`  (no match, anchors keep covering: ${misses.join(', ')})`);
+console.log(`open-weight hosted medians: ${Object.entries(open).map(([k, v]) => `${k} $${v.in}/$${v.out} (n=${v.n})`).join(' · ')}`);
 if (newIds.length) {
   console.log(`NEW model IDs since the last refresh: ${newIds.join(', ')}`);
   // The workflow opens an issue from this list (GitHub emails the repo owner).

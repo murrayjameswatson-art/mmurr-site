@@ -392,7 +392,7 @@ window.MMURR_DATA = {
   // GBP figure (shown verbatim under UK, FX-converted elsewhere).
   running: {
     domainUsdPerYear: [75, 100],     // .ai domain — wholesale +$10/yr from Mar 2026 (SOURCED)
-    claudeGbpPerMonth: 20,           // Claude Pro — owner's actual (SOURCED)
+    claudeGbpPerMonth: 18,           // Claude Pro — owner's actual invoice, Nov 2026 (SOURCED): $20 + tax, ≈£18 incl. VAT
     ghPagesLimits: '1 GB storage · 100 GB/mo bandwidth',
   },
 };

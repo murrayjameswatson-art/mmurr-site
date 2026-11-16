@@ -22,8 +22,12 @@
    Every value below is an editable anchor. Verify before load-bearing use.
 --------------------------------------------------------------------------- */
 (function(){
-  // when the YP/CO anchors below were last checked against disclosures
-  const DATA_AS_OF = '2026-08';
+  // when the YP/CO anchors below were last checked against disclosures. Nov 2026
+  // review: GPU price, hardware life, training cost and served tokens re-checked
+  // (sources in the page's sources table, js/costlab.js); values unchanged, labels
+  // added. Served tokens is probably low for 2026 (Google: 3.2 quadrillion
+  // tokens/month, May 2026), which makes the soft-cost layers an upper estimate.
+  const DATA_AS_OF = '2026-11';
 
   // ---- year baselines: a standard frontier chat model, served at scale ------
   // r tok/s/GPU · gpuW · cap $ · pue · elec $/kWh · grid gCO2/kWh · wue onsite

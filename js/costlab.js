@@ -232,14 +232,19 @@
       ['Cost split', 'HW 47–67%, R&D staff 29–49%, energy 2–6%; +2.4×/yr; +23% interconnect', 'SOURCED', 'Epoch AI, frontier training cost'],
       ['Grid intensity', 'year baselines 410→370 gCO₂e/kWh (global, −3%/yr); company presets use each lab’s siting', 'SOURCED', 'IEA Electricity 2025'],
       ['PUE / WUE', 'PUE 1.08–1.15; WUE 0.19–1.9 L/kWh; offsite water ~1.8 grid-avg (latent-heat derived)', 'SOURCED', 'Hyperscaler disclosures; steam tables'],
-      ['Served tokens T_s', 'tokens served over model life — undisclosed; swings the $ total ~10× (a slider)', 'ASSUMPTION', '(editable)'],
+      ['Served tokens T_s', 'tokens served over a model’s life — undisclosed per model; default 8×10¹⁴ from OpenAI’s 2.5B prompts/day (Jul 2025) × an assumed 40% flagship share. Google’s 3.2 quadrillion tokens/month (May 2026) suggests 2026 volumes are higher, which would lower the soft-cost layers', 'ASSUMPTION', '<a href="https://techcrunch.com/2025/07/21/chatgpt-users-send-2-5-billion-prompts-a-day/" target="_blank" rel="noopener">TechCrunch (OpenAI)</a> · <a href="https://blog.google/innovation-and-ai/sundar-pichai-io-2026/" target="_blank" rel="noopener">Google I/O 2026</a>'],
       ['R&D multiple m', 'dark compute + salaries over the shipped run — undisclosed (a slider)', 'ASSUMPTION', '(editable)'],
+      ['Training cost (2026)', '$300M for a frontier run. Epoch AI finds frontier training costs rising 2–3.5× a year, with the largest runs passing $1B by 2027; $300M sits in the lower half of the 2026 range', 'ASSUMPTION', '<a href="https://epoch.ai/publications/how-much-does-it-cost-to-train-frontier-ai-models" target="_blank" rel="noopener">Epoch AI</a>'],
+      ['GPU price (2026)', '$35k per accelerator, the chip alone. Estimates for an NVIDIA B200 run $30–40k; a full 8-GPU server works out at $48–70k per GPU, which this figure does not include (the network layer adds 10%)', 'VERIFY', '<a href="https://siliconanalysts.com/analysis/nvidia-b200-blackwell-cost-breakdown" target="_blank" rel="noopener">Silicon Analysts</a> · <a href="https://gpuperhour.com/blog/nvidia-gpu-prices" target="_blank" rel="noopener">GPU per hour</a> (secondary; NVIDIA publishes no price)'],
+      ['Hardware life', '5 years (2026), 4 before. Hyperscalers depreciate servers over 5 years (Amazon, shortened from 6 in 2025), 5.5 (Meta) or 6 (Microsoft, Alphabet)', 'VERIFY', 'company filings, as reported in secondary analyses'],
+      ['Throughput r', '900 tokens/s per GPU for a busy, batched 2026 service (120 in 2023); sets the GPU-seconds per token', 'ASSUMPTION', '(advanced input)'],
+      ['Utilisation', '65% of each GPU-hour doing paid work (2026)', 'ASSUMPTION', '(advanced input)'],
       ['Company MW / R&D', 'order-of-magnitude, back-solved to disclosed capex (OpenAI ~$50B, Anthropic ~$15B/yr)', 'VERIFY', 'company capex disclosures'],
       ['API list prices', 'overlaid from the model lineages on the Impact Calculator (LiteLLM-referenced, 50/50 blend)', 'SOURCED', 'js/factors.js + LiteLLM'],
     ];
     $('cm-sources').innerHTML=`
       <p class="sub" style="margin:12px 0 0">Anchors as of <b>${asof}</b>. Physical inputs are firm; soft-cost and
-        per-company inputs are explicitly estimates.</p>
+        per-company inputs are explicitly estimates. Every input tagged ASSUMPTION is ours, not a disclosure.</p>
       <table class="src"><thead><tr><th>Item</th><th>Basis</th><th>Conf.</th><th>Source</th></tr></thead>
       <tbody>${rows.map(([a,b,c,d])=>`<tr><td>${a}</td><td>${b}</td><td>${conf(c)}</td><td>${d}</td></tr>`).join('')}</tbody></table>`;
   }

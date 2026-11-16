@@ -59,18 +59,20 @@
 
     <div class="cm-controls" style="margin-top:0">
       <div class="cm-slider">
-        <label class="f" for="cm-served">Tokens served over the model's life <output id="cm-servedOut"></output></label>
-        <input type="range" id="cm-served" class="svc-range" min="12.5" max="15.5" step="0.05" value="14.9">
-        <p class="cm-ref">No lab discloses this, and it moves the $ total about 10×. For scale: OpenAI's latest
-          published figure is <a href="https://techcrunch.com/2025/07/21/chatgpt-users-send-2-5-billion-prompts-a-day/" target="_blank" rel="noopener">2.5 billion
-          prompts a day (July 2025)</a>. At ~1,500 tokens each over an ~18-month model life, that is about 2×10¹⁵
-          tokens if every prompt ran on one model, near the top of the slider. Traffic is actually split across
-          several models, so the default (8×10¹⁴) assumes a flagship carries roughly 40% of it. That share is our
-          assumption, not a disclosure. A mid-size product copilot (1M users × 20 prompts/day for a year) is nearer
-          10¹³, the low end.</p>
+        <label class="f" for="cm-served">Tokens served over the model's life <span class="conf assumption">assumption</span> <output id="cm-servedOut"></output></label>
+        <input type="range" id="cm-served" class="svc-range" min="12.5" max="17" step="0.05" value="14.9">
+        <p class="cm-ref">No lab discloses this per model, and it moves the $ total about 10×. The default (8×10¹⁴)
+          comes from OpenAI's <a href="https://techcrunch.com/2025/07/21/chatgpt-users-send-2-5-billion-prompts-a-day/" target="_blank" rel="noopener">2.5 billion
+          prompts a day (July 2025)</a>: at ~1,500 tokens each over an ~18-month model life that is about 2×10¹⁵ tokens,
+          and we assume a flagship carries roughly 40% of it. Volumes have since grown fast: Google reported
+          <a href="https://blog.google/innovation-and-ai/sundar-pichai-io-2026/" target="_blank" rel="noopener">over 3.2 quadrillion
+          tokens a month across its products (May 2026)</a>, seven times a year earlier. If a 2026 flagship really
+          serves ten times the default, the training and R&amp;D layers shrink tenfold and the fully-loaded figure falls
+          towards the physical serving cost, so <b>treat the default total as an upper-end estimate</b>. A mid-size
+          product copilot (1M users × 20 prompts/day for a year) is nearer 10¹³, the low end.</p>
       </div>
       <div class="cm-slider">
-        <label class="f" for="cm-rnd">R&amp;D spend, as a multiple of the shipped run's cost <output id="cm-rndOut"></output></label>
+        <label class="f" for="cm-rnd">R&amp;D spend, as a multiple of the shipped run's cost <span class="conf assumption">assumption</span> <output id="cm-rndOut"></output></label>
         <input type="range" id="cm-rnd" class="svc-range" min="0" max="4" step="0.1" value="2">
         <p class="cm-ref">Also undisclosed. Epoch AI's cost-split finding (R&amp;D staff = 29–49% of total dev spend)
           implies the shipped run is roughly a third of total spend — R&amp;D ≈2× the run itself, the default. A lean
@@ -83,7 +85,7 @@
       <div class="cm-controls" style="margin-top:8px">
         <div><label class="f" for="cm-elec">Electricity $/kWh</label><input type="number" id="cm-elec" min="0" step="any"></div>
         <div><label class="f" for="cm-grid">Grid gCO₂e/kWh</label><input type="number" id="cm-grid" min="0" step="any"></div>
-        <div><label class="f" for="cm-util">Utilisation (0–1)</label><input type="number" id="cm-util" min="0.05" max="1" step="0.01"></div>
+        <div><label class="f" for="cm-util">Utilisation (0–1) <span class="conf assumption">assumption</span></label><input type="number" id="cm-util" min="0.05" max="1" step="0.01"></div>
       </div>
     </details>
 

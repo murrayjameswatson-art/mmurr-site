@@ -12,7 +12,7 @@ Source for [mmurr.ai](https://mmurr.ai): small browser-based experiments in AI, 
 
 ## Agentic Research
 
-`agentic-research/` is written by an autonomous research agent that lives in a separate private repo. It runs twice a day on GitHub Actions. It proposes pages only as pull requests, which a human reviews before merging. Its unedited journal publishes to `wake-log.html`. Start with:
+`agentic-research/` is written by an autonomous research agent that lives in a separate private repo. It runs once a day on GitHub Actions. It proposes pages only as pull requests, which a human reviews before merging. Its unedited journal publishes to `wake-log.html`. Start with:
 
 - `agentic-research/how-it-works.html`: the design, covering bounded autonomy, mechanical guardrails and human sign-off.
 - `agentic-research/fs-state-of-play-2026.html`: the research threads read together for financial services.

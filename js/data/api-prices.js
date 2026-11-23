@@ -5,7 +5,7 @@
    dated at "since" (the first refresh that saw it). Absent file / absent key →
    factors.js anchors are used unchanged. */
 window.MMURR_API_PRICES = {
-  "fetched": "2026-11-16",
+  "fetched": "2026-11-23",
   "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
   "models": {
     "oa:auto": {
@@ -73,12 +73,12 @@ window.MMURR_API_PRICES = {
     "Moonshot AI": {
       "in": 3,
       "out": 15,
-      "n": 19
+      "n": 20
     },
     "DeepSeek": {
-      "in": 1.69,
+      "in": 1.67,
       "out": 3.48,
-      "n": 21
+      "n": 22
     },
     "Alibaba": {
       "in": 0.6,
@@ -152,6 +152,7 @@ window.MMURR_API_PRICES = {
     "gemini/gemini-4-argon",
     "gemini/gemini-4-carbon",
     "gemini/gemini-4-hydrogen",
+    "gemini/gemini-4-neon",
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-instruct",
@@ -184,6 +185,8 @@ window.MMURR_API_PRICES = {
     "gpt-6-sol",
     "gpt-6.1-sol",
     "gpt-6.1-terra",
+    "gpt-6.2-astra",
+    "gpt-6.2-sol",
     "mistral/mistral-large-3",
     "mistral/mistral-large-4",
     "mistral/mistral-large-4-0",
